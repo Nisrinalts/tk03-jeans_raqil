@@ -1,3 +1,128 @@
+-- =====================================================
+-- BAGIAN RAQIL: USER_ACCOUNT, ROLE, ACCOUNT_ROLE,
+--               CUSTOMER, ORGANIZER, VENUE, EVENT
+-- =====================================================
+
+-- USER_ACCOUNT
+CREATE TABLE IF NOT EXISTS user_account (
+    user_id  UUID PRIMARY KEY,
+    username VARCHAR(100) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL
+);
+
+INSERT INTO user_account (user_id, username, password) VALUES
+('550e8400-e29b-41d4-a716-446655443001', 'admin',      'admin123'),
+('550e8400-e29b-41d4-a716-446655443002', 'organizer1', 'org123'),
+('550e8400-e29b-41d4-a716-446655443003', 'organizer2', 'org456'),
+('550e8400-e29b-41d4-a716-446655443004', 'customer1',  'cust123');
+
+
+-- ROLE
+CREATE TABLE IF NOT EXISTS role (
+    role_id   UUID PRIMARY KEY,
+    role_name VARCHAR(50) NOT NULL UNIQUE
+);
+
+INSERT INTO role (role_id, role_name) VALUES
+('550e8400-e29b-41d4-a716-446655444001', 'admin'),
+('550e8400-e29b-41d4-a716-446655444002', 'organizer'),
+('550e8400-e29b-41d4-a716-446655444003', 'customer');
+
+
+-- ACCOUNT_ROLE
+CREATE TABLE IF NOT EXISTS account_role (
+    role_id UUID,
+    user_id UUID,
+    PRIMARY KEY (role_id, user_id),
+    FOREIGN KEY (role_id) REFERENCES role(role_id),
+    FOREIGN KEY (user_id) REFERENCES user_account(user_id)
+);
+
+INSERT INTO account_role (role_id, user_id) VALUES
+('550e8400-e29b-41d4-a716-446655444001', '550e8400-e29b-41d4-a716-446655443001'),
+('550e8400-e29b-41d4-a716-446655444002', '550e8400-e29b-41d4-a716-446655443002'),
+('550e8400-e29b-41d4-a716-446655444002', '550e8400-e29b-41d4-a716-446655443003'),
+('550e8400-e29b-41d4-a716-446655444003', '550e8400-e29b-41d4-a716-446655443004');
+
+
+-- CUSTOMER
+CREATE TABLE IF NOT EXISTS customer (
+    customer_id  UUID PRIMARY KEY,
+    full_name    VARCHAR(100) NOT NULL,
+    phone_number VARCHAR(20),
+    user_id      UUID NOT NULL UNIQUE,
+    FOREIGN KEY (user_id) REFERENCES user_account(user_id)
+);
+
+INSERT INTO customer (customer_id, full_name, phone_number, user_id) VALUES
+('550e8400-e29b-41d4-a716-446655445001', 'Customer Satu', '081234567890',
+ '550e8400-e29b-41d4-a716-446655443004');
+
+
+-- ORGANIZER
+CREATE TABLE IF NOT EXISTS organizer (
+    organizer_id   UUID PRIMARY KEY,
+    organizer_name VARCHAR(100) NOT NULL,
+    contact_email  VARCHAR(100),
+    user_id        UUID NOT NULL UNIQUE,
+    FOREIGN KEY (user_id) REFERENCES user_account(user_id)
+);
+
+INSERT INTO organizer (organizer_id, organizer_name, contact_email, user_id) VALUES
+('550e8400-e29b-41d4-a716-446655446001', 'Organizer Satu', 'organizer1@jeans.com',
+ '550e8400-e29b-41d4-a716-446655443002'),
+('550e8400-e29b-41d4-a716-446655446002', 'Organizer Dua',  'organizer2@jeans.com',
+ '550e8400-e29b-41d4-a716-446655443003');
+
+
+-- VENUE
+CREATE TABLE IF NOT EXISTS venue (
+    venue_id   UUID PRIMARY KEY,
+    venue_name VARCHAR(100) NOT NULL,
+    capacity   INTEGER NOT NULL CHECK (capacity > 0),
+    address    TEXT NOT NULL,
+    city       VARCHAR(100) NOT NULL
+);
+
+INSERT INTO venue (venue_id, venue_name, capacity, address, city) VALUES
+('550e8400-e29b-41d4-a716-446655447001', 'Jakarta Convention Center', 500,
+ 'Jl. Gatot Subroto, Senayan', 'Jakarta'),
+('550e8400-e29b-41d4-a716-446655447002', 'Sabuga Bandung', 500,
+ 'Jl. Tamansari No.73', 'Bandung'),
+('550e8400-e29b-41d4-a716-446655447003', 'Grand City Surabaya', 300,
+ 'Jl. Gubeng Pojok No.1', 'Surabaya');
+
+
+-- EVENT
+-- UUID sama persis dengan yang direferensikan oleh event_artist & ticket_category (bagian hijau)
+CREATE TABLE IF NOT EXISTS event (
+    event_id       UUID PRIMARY KEY,
+    event_datetime TIMESTAMP NOT NULL,
+    event_title    VARCHAR(200) NOT NULL,
+    venue_id       UUID NOT NULL,
+    organizer_id   UUID NOT NULL,
+    FOREIGN KEY (venue_id)     REFERENCES venue(venue_id),
+    FOREIGN KEY (organizer_id) REFERENCES organizer(organizer_id)
+);
+
+INSERT INTO event (event_id, event_datetime, event_title, venue_id, organizer_id) VALUES
+('550e8400-e29b-41d4-a716-446655441001', '2025-08-15 19:00:00', 'The Weeknd After Hours Tour',
+ '550e8400-e29b-41d4-a716-446655447001', '550e8400-e29b-41d4-a716-446655446001'),
+('550e8400-e29b-41d4-a716-446655441002', '2025-09-20 18:00:00', 'Justin Bieber World Tour',
+ '550e8400-e29b-41d4-a716-446655447001', '550e8400-e29b-41d4-a716-446655446002'),
+('550e8400-e29b-41d4-a716-446655441003', '2025-10-05 20:00:00', 'Olivia Rodrigo GUTS Tour',
+ '550e8400-e29b-41d4-a716-446655447002', '550e8400-e29b-41d4-a716-446655446001'),
+('550e8400-e29b-41d4-a716-446655441004', '2025-11-12 19:30:00', 'Kanye West Donda Live',
+ '550e8400-e29b-41d4-a716-446655447002', '550e8400-e29b-41d4-a716-446655446002'),
+('550e8400-e29b-41d4-a716-446655441005', '2025-12-01 20:00:00', 'The Weeknd Starboy Festival',
+ '550e8400-e29b-41d4-a716-446655447002', '550e8400-e29b-41d4-a716-446655446001'),
+('550e8400-e29b-41d4-a716-446655441006', '2026-01-10 19:00:00', 'Drake It''s All A Blur Tour',
+ '550e8400-e29b-41d4-a716-446655447003', '550e8400-e29b-41d4-a716-446655446002');
+
+
+-- =====================================================
+-- BAGIAN HIJAU: ARTIST, EVENT_ARTIST, TICKET_CATEGORY
+-- =====================================================
 
 -- EVENT HARUS ADA KODE INI BIAR GA ERROR!
 -- 550e8400-e29b-41d4-a716-446655441001
