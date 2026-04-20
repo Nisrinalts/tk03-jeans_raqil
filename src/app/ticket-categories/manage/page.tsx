@@ -3,10 +3,16 @@
 import { v4 as uuidv4 } from "uuid";
 import { useMemo, useState } from "react";
 import Navbar from "@/components/Navbar";
-import { EventItem } from "@/types/event";
 import { TicketCategory } from "@/types/ticketCategory";
 
-const events: EventItem[] = [
+type EventDisplay = {
+  event_id: string;
+  event_title: string;
+  venue_name: string;
+  venue_capacity: number;
+};
+
+const events: EventDisplay[] = [
   {
     event_id: "550e8400-e29b-41d4-a716-446655441001",
     event_title: "After Hours Tour",
