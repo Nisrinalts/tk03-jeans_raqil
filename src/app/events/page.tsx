@@ -146,6 +146,7 @@ export default function EventsPage() {
                     <th className="px-6 py-4">Tanggal & Waktu</th>
                     <th className="px-6 py-4">Venue</th>
                     <th className="px-6 py-4">Organizer</th>
+                    <th className="px-6 py-4">Aksi</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -163,11 +164,19 @@ export default function EventsPage() {
                       <td className="px-6 py-5">{event.event_datetime}</td>
                       <td className="px-6 py-5 font-medium text-slate-900">{event.venue_name}</td>
                       <td className="px-6 py-5">{event.organizer_name}</td>
+                      <td className="px-6 py-5">
+                        <a
+  href={`/order?event_id=${event.event_id}`}
+  className="inline-flex items-center justify-center whitespace-nowrap bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm font-medium"
+>
+  Beli Tiket
+</a>
+                      </td>
                     </tr>
                   ))}
                   {filtered.length === 0 && (
                     <tr>
-                      <td colSpan={5} className="px-6 py-10 text-center text-sm text-slate-400">
+                      <td colSpan={6} className="px-6 py-10 text-center text-sm text-slate-400">
                         Tidak ada event yang sesuai dengan pencarian.
                       </td>
                     </tr>

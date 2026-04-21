@@ -202,3 +202,37 @@ INSERT INTO ticket_category (category_id, category_name, quota, price, tevent_id
 ('550e8400-e29b-41d4-a716-446655442014', 'Regular', 180, 650000.00, '550e8400-e29b-41d4-a716-446655441006');
 
 
+-- =====================================================
+-- BAGIAN BIRU: ORDER , PROMOTION, ORDER PROMOTION
+-- =====================================================
+
+CREATE TABLE IF NOT EXISTS "order" (
+    order_id UUID PRIMARY KEY,
+    order_date TIMESTAMP NOT NULL,
+    payment_status VARCHAR(20) NOT NULL CHECK (
+        payment_status IN ('Pending', 'Paid', 'Cancelled')
+    ),
+    total_amount NUMERIC(12,2) NOT NULL CHECK (total_amount >= 0),
+    customer_id UUID NOT NULL,
+    FOREIGN KEY (customer_id) REFERENCES customer(customer_id)
+);
+
+CREATE TABLE IF NOT EXISTS promotion (
+    promotion_id UUID PRIMARY KEY,
+    promo_code VARCHAR(50) UNIQUE NOT NULL,
+    discount_type VARCHAR(20) NOT NULL CHECK (
+        discount_type IN ('NOMINAL', 'PERCENTAGE')
+    ),
+    discount_value NUMERIC(12,2) NOT NULL CHECK (discount_value > 0),
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL,
+    usage_limit INTEGER NOT NULL CHECK (usage_limit > 0)
+);
+
+CREATE TABLE IF NOT EXISTS order_promotion (
+    order_promotion_id UUID PRIMARY KEY,
+    promotion_id UUID NOT NULL,
+    order_id UUID NOT NULL,
+    FOREIGN KEY (promotion_id) REFERENCES promotion(promotion_id),
+    FOREIGN KEY (order_id) REFERENCES "order"(order_id)
+);
