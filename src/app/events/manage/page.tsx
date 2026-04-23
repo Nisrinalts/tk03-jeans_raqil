@@ -113,7 +113,7 @@ export default function ManageEventsPage() {
     if (!u || (u.role !== "admin" && u.role !== "organizer")) {
       router.replace("/login");
     } else {
-      setUser(u);
+      setUser(prev => prev?.user_id === u.user_id ? prev : u);
       if (u.role === "organizer" && u.organizer_id) {
         setOrganizerId(u.organizer_id);
       }
