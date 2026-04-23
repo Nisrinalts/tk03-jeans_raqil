@@ -22,8 +22,8 @@ const menuByRole: Record<Role, MenuItem[]> = {
   ],
   admin: [
     { label: "Dashboard", href: "/dashboard" },
-    { label: "Manajemen Venue", href: "/venues/manage" },
-    { label: "Manajemen Event", href: "/events/manage" },
+    { label: "Manajemen Venue", href: "/venues" },
+    { label: "Manajemen Event", href: "/events" },
     { label: "Manajemen Kursi", href: "/seats/manage" },
     { label: "Kategori Tiket", href: "/ticket-categories/manage" },
     { label: "Manajemen Tiket", href: "/tickets/manage" },
@@ -35,8 +35,8 @@ const menuByRole: Record<Role, MenuItem[]> = {
   ],
   organizer: [
     { label: "Dashboard", href: "/dashboard" },
-    { label: "Event Saya", href: "/events/manage" },
-    { label: "Manajemen Venue", href: "/venues/manage" },
+    { label: "Event Saya", href: "/events" },
+    { label: "Manajemen Venue", href: "/venues" },
     { label: "Manajemen Kursi", href: "/seats/manage" },
     { label: "Kategori Tiket", href: "/ticket-categories/manage" },
     { label: "Manajemen Tiket", href: "/tickets/manage" },
