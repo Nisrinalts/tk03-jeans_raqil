@@ -287,7 +287,6 @@ export default function EventsPage() {
                     <th className="px-6 py-4">Tanggal & Waktu</th>
                     <th className="px-6 py-4">Venue</th>
                     <th className="px-6 py-4">Aksi</th>
-                    {!isOrganizer && <th className="px-6 py-4">Organizer</th>}
                     {canManage && <th className="px-6 py-4 text-right">Action</th>}
                   </tr>
                 </thead>
@@ -307,13 +306,12 @@ export default function EventsPage() {
                       <td className="px-6 py-5 font-medium text-slate-900">{event.venue_name}</td>
                       <td className="px-6 py-5">
                         <a
-  href={`/order?event_id=${event.event_id}`}
-  className="inline-flex items-center justify-center whitespace-nowrap bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm font-medium"
->
-  Beli Tiket
-</a>
+                          href={`/checkout?event_id=${event.event_id}`}
+                          className="inline-flex items-center justify-center whitespace-nowrap bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm font-medium"
+                        >
+                          Beli Tiket
+                        </a>
                       </td>
-                      {!isOrganizer && <td className="px-6 py-5">{event.organizer_name}</td>}
                       {canManage && (
                         <td className="px-6 py-5">
                           <div className="flex justify-end">
@@ -329,8 +327,11 @@ export default function EventsPage() {
                   ))}
                   {visibleEvents.length === 0 && (
                     <tr>
-                      <td colSpan={5 + (isOrganizer ? 0 : 1) + (canManage ? 1 : 0)} className="px-6 py-10 text-center text-sm text-slate-400">
-                        Tidak ada event yang sesuai.
+                      <td
+                        colSpan={canManage ? 7 : 6}
+                        className="px-6 py-10 text-center text-sm text-slate-400"
+                      >
+                        Tidak ada event yang sesuai dengan pencarian.
                       </td>
                     </tr>
                   )}
