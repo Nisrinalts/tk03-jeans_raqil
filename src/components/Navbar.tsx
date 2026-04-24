@@ -29,7 +29,7 @@ const menuByRole: Record<Role, MenuItem[]> = {
     { label: "Manajemen Tiket", href: "/tickets/manage" },
     { label: "Semua Order", href: "/orders/all" },
     { label: "Tiket (Aset)", href: "/assets/tickets" },
-    { label: "Order (Aset)", href: "/assets/orders" },
+    { label: "Order (Aset)", href: "/order" },
     { label: "Profile", href: "/profile" },
     { label: "Logout", href: "/logout" },
   ],
@@ -49,7 +49,7 @@ const menuByRole: Record<Role, MenuItem[]> = {
   customer: [
     { label: "Dashboard", href: "/dashboard" },
     { label: "Tiket Saya", href: "/my-tickets" },
-    { label: "Pesanan", href: "/orders" },
+    { label: "Pesanan", href: "/order" },
     { label: "Cari Event", href: "/events" },
     { label: "Promosi", href: "/promotions" },
     { label: "Venue", href: "/venues" },
