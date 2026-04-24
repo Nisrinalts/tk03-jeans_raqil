@@ -1,8 +1,11 @@
 "use client";
 
+import { v4 as uuidv4 } from "uuid";
 import { useMemo, useState } from "react";
 import Navbar from "@/components/Navbar";
 import { TicketCategory } from "@/types/ticketCategory";
+
+type Role = "guest" | "admin" | "organizer" | "customer";
 
 type EventDisplay = {
   event_id: string;
@@ -166,9 +169,40 @@ const initialTicketCategories: TicketCategory[] = [
 ];
 
 export default function TicketCategoryPage() {
-  const [ticketCategories] = useState<TicketCategory[]>(initialTicketCategories);
+  /*
+    Ganti role ini untuk kebutuhan:
+    - "guest" / "customer" => hanya read-only
+    - "admin" / "organizer" => muncul fitur CUD Ticket Category
+  */
+  const role: Role = "admin";
+  const canManage = role === "admin" || role === "organizer";
+
+  const [ticketCategories, setTicketCategories] =
+    useState<TicketCategory[]>(initialTicketCategories);
   const [search, setSearch] = useState("");
+  const [viewMode, setViewMode] = useState<"table" | "list">("table");
   const [selectedFilterEvent, setSelectedFilterEvent] = useState("");
+
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [selectedEventId, setSelectedEventId] = useState("");
+  const [categoryName, setCategoryName] = useState("");
+  const [quota, setQuota] = useState("");
+  const [price, setPrice] = useState("");
+  const [error, setError] = useState("");
+
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [selectedCategoryId, setSelectedCategoryId] = useState("");
+  const [editSelectedEventId, setEditSelectedEventId] = useState("");
+  const [editCategoryName, setEditCategoryName] = useState("");
+  const [editQuota, setEditQuota] = useState("");
+  const [editPrice, setEditPrice] = useState("");
+  const [editError, setEditError] = useState("");
+
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [categoryToDelete, setCategoryToDelete] = useState<TicketCategory | null>(null);
+
+  const [successMessage, setSuccessMessage] = useState("");
+  const [successType, setSuccessType] = useState<"create" | "update" | "delete" | "">("");
 
   const sortedCategories = useMemo(() => {
     return [...ticketCategories].sort((a, b) => {
@@ -201,19 +235,205 @@ export default function TicketCategoryPage() {
       ? Math.max(...ticketCategories.map((item) => item.price))
       : 0;
 
+  const getEventById = (eventId: string) =>
+    events.find((event) => event.event_id === eventId);
+
+  const validateCategoryForm = ({
+    eventId,
+    categoryName,
+    quota,
+    price,
+    excludeCategoryId,
+  }: {
+    eventId: string;
+    categoryName: string;
+    quota: string;
+    price: string;
+    excludeCategoryId?: string;
+  }) => {
+    if (!eventId || !categoryName.trim() || !quota.trim() || !price.trim()) {
+      return "Semua field wajib diisi.";
+    }
+
+    const parsedQuota = Number(quota);
+    const parsedPrice = Number(price);
+
+    if (!Number.isInteger(parsedQuota) || parsedQuota <= 0) {
+      return "Kuota harus berupa bilangan bulat positif (> 0).";
+    }
+
+    if (Number.isNaN(parsedPrice) || parsedPrice < 0) {
+      return "Harga harus berupa bilangan tidak negatif (>= 0).";
+    }
+
+    const selectedEvent = getEventById(eventId);
+    if (!selectedEvent) {
+      return "Event tidak ditemukan.";
+    }
+
+    const totalQuotaOnEvent = ticketCategories
+      .filter((category) => {
+        if (category.event_id !== eventId) return false;
+        if (excludeCategoryId && category.category_id === excludeCategoryId) return false;
+        return true;
+      })
+      .reduce((sum, category) => sum + category.quota, 0);
+
+    if (totalQuotaOnEvent + parsedQuota > selectedEvent.venue_capacity) {
+      return `Total kuota melebihi kapasitas venue (${selectedEvent.venue_capacity}) untuk event ${selectedEvent.event_title}.`;
+    }
+
+    return "";
+  };
+
+  const resetCreateForm = () => {
+    setSelectedEventId("");
+    setCategoryName("");
+    setQuota("");
+    setPrice("");
+    setError("");
+  };
+
+  const resetEditForm = () => {
+    setSelectedCategoryId("");
+    setEditSelectedEventId("");
+    setEditCategoryName("");
+    setEditQuota("");
+    setEditPrice("");
+    setEditError("");
+  };
+
+  const handleCreateCategory = () => {
+    const validationError = validateCategoryForm({
+      eventId: selectedEventId,
+      categoryName,
+      quota,
+      price,
+    });
+
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    const selectedEvent = getEventById(selectedEventId);
+    if (!selectedEvent) return;
+
+    const newCategory: TicketCategory = {
+      category_id: uuidv4(),
+      category_name: categoryName.trim(),
+      quota: Number(quota),
+      price: Number(price),
+      event_id: selectedEvent.event_id,
+      event_title: selectedEvent.event_title,
+    };
+
+    setTicketCategories((prev) => [...prev, newCategory]);
+    setIsCreateOpen(false);
+    resetCreateForm();
+    setSuccessMessage("Kategori tiket berhasil ditambahkan.");
+    setSuccessType("create");
+  };
+
+  const handleOpenEdit = (category: TicketCategory) => {
+    setSelectedCategoryId(category.category_id);
+    setEditSelectedEventId(category.event_id);
+    setEditCategoryName(category.category_name);
+    setEditQuota(String(category.quota));
+    setEditPrice(String(category.price));
+    setEditError("");
+    setSuccessMessage("");
+    setIsEditOpen(true);
+  };
+
+  const handleUpdateCategory = () => {
+    const validationError = validateCategoryForm({
+      eventId: editSelectedEventId,
+      categoryName: editCategoryName,
+      quota: editQuota,
+      price: editPrice,
+      excludeCategoryId: selectedCategoryId,
+    });
+
+    if (validationError) {
+      setEditError(validationError);
+      return;
+    }
+
+    const selectedEvent = getEventById(editSelectedEventId);
+    if (!selectedEvent) return;
+
+    setTicketCategories((prev) =>
+      prev.map((category) =>
+        category.category_id === selectedCategoryId
+          ? {
+            ...category,
+            category_name: editCategoryName.trim(),
+            quota: Number(editQuota),
+            price: Number(editPrice),
+            event_id: selectedEvent.event_id,
+            event_title: selectedEvent.event_title,
+          }
+          : category
+      )
+    );
+
+    setIsEditOpen(false);
+    resetEditForm();
+    setSuccessMessage("Kategori tiket berhasil diperbarui.");
+    setSuccessType("update");
+  };
+
+  const handleOpenDelete = (category: TicketCategory) => {
+    setCategoryToDelete(category);
+    setSuccessMessage("");
+    setIsDeleteOpen(true);
+  };
+
+  const handleDeleteCategory = () => {
+    if (!categoryToDelete) return;
+
+    setTicketCategories((prev) =>
+      prev.filter((category) => category.category_id !== categoryToDelete.category_id)
+    );
+
+    setIsDeleteOpen(false);
+    setCategoryToDelete(null);
+    setSuccessMessage("Kategori tiket berhasil dihapus.");
+    setSuccessType("delete");
+  };
+
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-100 via-slate-50 to-white">
-      <Navbar role="customer" />
+      <Navbar role={role} />
 
       <section className="mx-auto max-w-7xl px-6 py-8">
         <div className="rounded-[28px] border border-slate-200 bg-white/90 p-6 shadow-[0_10px_40px_rgba(15,23,42,0.06)] backdrop-blur">
-          <div className="mb-8">
-            <h1 className="text-4xl font-bold tracking-tight text-slate-900">
-              Kategori Tiket
-            </h1>
-            <p className="mt-2 text-base text-slate-500">
-              Kelola kategori dan harga tiket per acara.
-            </p>
+          <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <h1 className="text-4xl font-bold tracking-tight text-slate-900">
+                {canManage ? "Manajemen Kategori Tiket" : "Kategori Tiket"}
+              </h1>
+              <p className="mt-2 text-base text-slate-500">
+                {canManage
+                  ? "Kelola kategori tiket yang terdaftar pada platform TikTakTuk."
+                  : "Lihat kategori dan harga tiket per acara."}
+              </p>
+            </div>
+
+            {canManage && (
+              <button
+                onClick={() => {
+                  setIsCreateOpen(true);
+                  setError("");
+                  setSuccessMessage("");
+                }}
+                className="inline-flex items-center justify-center rounded-full bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
+              >
+                <span className="mr-2 text-lg leading-none">＋</span>
+                Tambah Kategori Tiket
+              </button>
+            )}
           </div>
 
           <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -243,6 +463,21 @@ export default function TicketCategoryPage() {
             </div>
           </div>
 
+          {successMessage && canManage && (
+            <div
+              className={`mb-6 rounded-2xl border px-4 py-3 text-sm font-medium ${successType === "create"
+                  ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                  : successType === "update"
+                    ? "border-yellow-200 bg-yellow-50 text-yellow-700"
+                    : successType === "delete"
+                      ? "border-red-200 bg-red-50 text-red-700"
+                      : ""
+                }`}
+            >
+              {successMessage}
+            </div>
+          )}
+
           <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
             <div className="border-b border-slate-200 px-6 py-6">
               <div className="mb-6 flex items-start justify-between gap-4">
@@ -257,15 +492,27 @@ export default function TicketCategoryPage() {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <button className="rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700">
+                  <button
+                    onClick={() => setViewMode("table")}
+                    className={`rounded-full px-4 py-2 text-sm font-semibold transition ${viewMode === "table"
+                        ? "bg-slate-100 text-slate-700"
+                        : "border border-slate-200 text-slate-700 hover:bg-slate-50"
+                      }`}
+                  >
                     Tabel
                   </button>
-                  <button className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700">
+
+                  <button
+                    onClick={() => setViewMode("list")}
+                    className={`rounded-full px-4 py-2 text-sm font-semibold transition ${viewMode === "list"
+                        ? "bg-slate-100 text-slate-700"
+                        : "border border-slate-200 text-slate-700 hover:bg-slate-50"
+                      }`}
+                  >
                     Daftar
                   </button>
                 </div>
               </div>
-
               <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div className="flex w-full flex-col gap-4 md:max-w-2xl md:flex-row">
                   <div className="relative w-full md:flex-1">
@@ -301,61 +548,423 @@ export default function TicketCategoryPage() {
               </div>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-left">
-                <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-400">
-                  <tr>
-                    <th className="px-6 py-4">Kategori</th>
-                    <th className="px-6 py-4">Acara</th>
-                    <th className="px-6 py-4">Harga</th>
-                    <th className="px-6 py-4">Kuota</th>
-                  </tr>
-                </thead>
+            {viewMode === "table" ? (
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-left">
+                  <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-400">
+                    <tr>
+                      <th className="px-6 py-4">Kategori</th>
+                      <th className="px-6 py-4">Acara</th>
+                      <th className="px-6 py-4">Harga</th>
+                      <th className="px-6 py-4">Kuota</th>
+                      {canManage && <th className="px-6 py-4 text-right">Aksi</th>}
+                    </tr>
+                  </thead>
 
-                <tbody className="divide-y divide-slate-100">
-                  {filteredCategories.map((category) => (
-                    <tr key={category.category_id} className="text-sm text-slate-700">
-                      <td className="px-6 py-5">
-                        <div>
-                          <p className="font-semibold text-slate-900">
-                            {category.category_name}
+                  <tbody className="divide-y divide-slate-100">
+                    {filteredCategories.map((category) => (
+                      <tr key={category.category_id} className="text-sm text-slate-700">
+                        <td className="px-6 py-5">
+                          <div>
+                            <p className="font-semibold text-slate-900">
+                              {category.category_name}
+                            </p>
+                            <p className="mt-1 text-xs text-slate-400">
+                              Category ID: {category.category_id}
+                            </p>
+                          </div>
+                        </td>
+
+                        <td className="px-6 py-5 font-medium text-slate-500">
+                          {category.event_title}
+                        </td>
+
+                        <td className="px-6 py-5 font-semibold text-blue-600">
+                          Rp {category.price.toLocaleString("id-ID")}
+                        </td>
+
+                        <td className="px-6 py-5 text-slate-700">{category.quota} tiket</td>
+
+                        {canManage && (
+                          <td className="px-6 py-5">
+                            <div className="flex justify-end gap-3">
+                              <button
+                                onClick={() => handleOpenEdit(category)}
+                                className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+                                title="Update Category"
+                              >
+                                ✎
+                              </button>
+
+                              <button
+                                onClick={() => handleOpenDelete(category)}
+                                className="flex h-11 w-11 items-center justify-center rounded-2xl border border-rose-200 bg-white text-rose-600 shadow-sm transition hover:bg-rose-50"
+                                title="Delete Category"
+                              >
+                                🗑
+                              </button>
+                            </div>
+                          </td>
+                        )}
+                      </tr>
+                    ))}
+
+                    {filteredCategories.length === 0 && (
+                      <tr>
+                        <td
+                          colSpan={canManage ? 5 : 4}
+                          className="px-6 py-10 text-center text-sm text-slate-400"
+                        >
+                          Tidak ada kategori tiket yang sesuai dengan pencarian.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-4 p-6 md:grid-cols-2 xl:grid-cols-3">
+                {filteredCategories.map((category) => (
+                  <div
+                    key={category.category_id}
+                    className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-md"
+                  >
+                    <div className="mb-4">
+                      <h3 className="text-lg font-bold text-slate-900">
+                        {category.category_name}
+                      </h3>
+                      <p className="mt-1 text-sm font-medium text-slate-500">
+                        {category.event_title}
+                      </p>
+                    </div>
+
+                    <div className="space-y-3 text-sm">
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                          Category ID
+                        </p>
+                        <p className="mt-1 break-all font-medium text-slate-700">
+                          {category.category_id}
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="rounded-2xl bg-slate-50 p-3">
+                          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                            Harga
                           </p>
-                          <p className="mt-1 text-xs text-slate-400">
-                            Category ID: {category.category_id}
+                          <p className="mt-1 font-bold text-blue-600">
+                            Rp {category.price.toLocaleString("id-ID")}
                           </p>
                         </div>
-                      </td>
 
-                      <td className="px-6 py-5 font-medium text-slate-500">
-                        {category.event_title}
-                      </td>
+                        <div className="rounded-2xl bg-slate-50 p-3">
+                          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                            Kuota
+                          </p>
+                          <p className="mt-1 font-bold text-slate-900">
+                            {category.quota} tiket
+                          </p>
+                        </div>
+                      </div>
+                    </div>
 
-                      <td className="px-6 py-5 font-semibold text-blue-600">
-                        Rp {category.price.toLocaleString("id-ID")}
-                      </td>
+                    {canManage && (
+                      <div className="mt-5 flex gap-3 border-t border-slate-100 pt-4">
+                        <button
+                          onClick={() => handleOpenEdit(category)}
+                          className="flex-1 rounded-2xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+                        >
+                          ✎ Edit
+                        </button>
 
-                      <td className="px-6 py-5 text-slate-700">
-                        {category.quota} tiket
-                      </td>
-                    </tr>
-                  ))}
+                        <button
+                          onClick={() => handleOpenDelete(category)}
+                          className="flex-1 rounded-2xl border border-rose-200 px-4 py-2 text-sm font-semibold text-rose-600 transition hover:bg-rose-50"
+                        >
+                          🗑 Hapus
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
 
-                  {filteredCategories.length === 0 && (
-                    <tr>
-                      <td
-                        colSpan={4}
-                        className="px-6 py-10 text-center text-sm text-slate-400"
-                      >
-                        Tidak ada kategori tiket yang sesuai dengan pencarian.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+                {filteredCategories.length === 0 && (
+                  <div className="col-span-full py-10 text-center text-sm text-slate-400">
+                    Tidak ada kategori tiket yang sesuai dengan pencarian.
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </section>
+
+      {canManage && isCreateOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-xl rounded-[28px] border border-slate-200 bg-white p-7 shadow-2xl">
+            <div className="mb-6 flex items-center justify-between">
+              <h2 className="text-3xl font-bold text-slate-900">
+                Tambah Kategori Baru
+              </h2>
+              <button
+                onClick={() => {
+                  setIsCreateOpen(false);
+                  resetCreateForm();
+                }}
+                className="text-3xl text-slate-300 transition hover:text-slate-500"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="space-y-5">
+              <div>
+                <label className="mb-2 block text-sm font-semibold uppercase tracking-wide text-slate-500">
+                  Acara <span className="text-rose-500">*</span>
+                </label>
+                <select
+                  value={selectedEventId}
+                  onChange={(e) => setSelectedEventId(e.target.value)}
+                  className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-base text-slate-900 outline-none transition focus:border-blue-500"
+                >
+                  <option value="">Pilih acara</option>
+                  {events.map((event) => (
+                    <option key={event.event_id} value={event.event_id}>
+                      {event.event_title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-semibold uppercase tracking-wide text-slate-500">
+                  Nama Kategori <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="cth. WVIP"
+                  value={categoryName}
+                  onChange={(e) => setCategoryName(e.target.value)}
+                  className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-base text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-blue-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                <div>
+                  <label className="mb-2 block text-sm font-semibold uppercase tracking-wide text-slate-500">
+                    Harga (Rp) <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder="750000"
+                    value={price}
+                    onChange={(e) => setPrice(e.target.value)}
+                    className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-base text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-semibold uppercase tracking-wide text-slate-500">
+                    Kuota <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    step="1"
+                    placeholder="100"
+                    value={quota}
+                    onChange={(e) => setQuota(e.target.value)}
+                    className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-base text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-blue-500"
+                  />
+                </div>
+              </div>
+
+              {error && <p className="text-sm font-medium text-rose-500">{error}</p>}
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => {
+                    setIsCreateOpen(false);
+                    resetCreateForm();
+                  }}
+                  className="w-full rounded-2xl border border-slate-200 px-4 py-3 font-semibold text-slate-700 transition hover:bg-slate-50"
+                >
+                  Batal
+                </button>
+
+                <button
+                  onClick={handleCreateCategory}
+                  className="w-full rounded-2xl bg-blue-600 px-4 py-3 font-semibold text-white transition hover:bg-blue-700"
+                >
+                  Tambah Kategori
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {canManage && isEditOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-xl rounded-[28px] border border-slate-200 bg-white p-7 shadow-2xl">
+            <div className="mb-6 flex items-center justify-between">
+              <h2 className="text-3xl font-bold text-slate-900">Edit Kategori</h2>
+              <button
+                onClick={() => {
+                  setIsEditOpen(false);
+                  resetEditForm();
+                }}
+                className="text-3xl text-slate-300 transition hover:text-slate-500"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="space-y-5">
+              <div>
+                <label className="mb-2 block text-sm font-semibold uppercase tracking-wide text-slate-500">
+                  Acara <span className="text-rose-500">*</span>
+                </label>
+                <select
+                  value={editSelectedEventId}
+                  onChange={(e) => setEditSelectedEventId(e.target.value)}
+                  className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-base text-slate-900 outline-none transition focus:border-blue-500"
+                >
+                  <option value="">Pilih acara</option>
+                  {events.map((event) => (
+                    <option key={event.event_id} value={event.event_id}>
+                      {event.event_title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-semibold uppercase tracking-wide text-slate-500">
+                  Nama Kategori <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="cth. VIP"
+                  value={editCategoryName}
+                  onChange={(e) => setEditCategoryName(e.target.value)}
+                  className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-base text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-blue-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                <div>
+                  <label className="mb-2 block text-sm font-semibold uppercase tracking-wide text-slate-500">
+                    Harga (Rp) <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={editPrice}
+                    onChange={(e) => setEditPrice(e.target.value)}
+                    className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-base text-slate-900 outline-none transition focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-semibold uppercase tracking-wide text-slate-500">
+                    Kuota <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={editQuota}
+                    onChange={(e) => setEditQuota(e.target.value)}
+                    className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-base text-slate-900 outline-none transition focus:border-blue-500"
+                  />
+                </div>
+              </div>
+
+              {editError && (
+                <p className="text-sm font-medium text-rose-500">{editError}</p>
+              )}
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => {
+                    setIsEditOpen(false);
+                    resetEditForm();
+                  }}
+                  className="w-full rounded-2xl border border-slate-200 px-4 py-3 font-semibold text-slate-700 transition hover:bg-slate-50"
+                >
+                  Batal
+                </button>
+
+                <button
+                  onClick={handleUpdateCategory}
+                  className="w-full rounded-2xl bg-blue-600 px-4 py-3 font-semibold text-white transition hover:bg-blue-700"
+                >
+                  Simpan Perubahan
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {canManage && isDeleteOpen && categoryToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-xl rounded-[28px] border border-slate-200 bg-white p-7 shadow-2xl">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-3xl font-bold text-rose-600">Hapus Kategori Tiket</h2>
+              <button
+                onClick={() => {
+                  setIsDeleteOpen(false);
+                  setCategoryToDelete(null);
+                }}
+                className="text-3xl text-slate-300 transition hover:text-slate-500"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <p className="text-base text-slate-600">
+                Apakah Anda yakin ingin menghapus kategori tiket ini? Tindakan ini
+                tidak dapat dibatalkan.
+              </p>
+
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <p className="text-sm text-slate-700">
+                  <span className="font-semibold text-slate-900">Category ID:</span>{" "}
+                  {categoryToDelete.category_id}
+                </p>
+                <p className="mt-2 text-sm text-slate-700">
+                  <span className="font-semibold text-slate-900">Category Name:</span>{" "}
+                  {categoryToDelete.category_name}
+                </p>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => {
+                    setIsDeleteOpen(false);
+                    setCategoryToDelete(null);
+                  }}
+                  className="w-full rounded-2xl border border-slate-200 px-4 py-3 font-semibold text-slate-700 transition hover:bg-slate-50"
+                >
+                  Batal
+                </button>
+
+                <button
+                  onClick={handleDeleteCategory}
+                  className="w-full rounded-2xl bg-rose-600 px-4 py-3 font-semibold text-white transition hover:bg-rose-700"
+                >
+                  Hapus
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
