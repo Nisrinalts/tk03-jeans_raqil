@@ -2,17 +2,29 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import { AuthUser, getUser } from "@/lib/auth";
 
 // Re-using the dummy data
-import { DUMMY_TICKETS, DummyTicket, DUMMY_SEATS } from "../../my-tickets/page";
+import {
+  DUMMY_TICKETS,
+  DummyTicket,
+  DUMMY_SEATS,
+  DUMMY_ORDERS,
+  DUMMY_CATEGORIES,
+} from "../../my-tickets/page";
 
 export default function ManageTicketsPage() {
   const router = useRouter();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [tickets, setTickets] = useState<DummyTicket[]>([]);
+
+  // Create Modal State
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [createOrderId, setCreateOrderId] = useState("");
+  const [createCategoryId, setCreateCategoryId] = useState("");
+  const [createSeat, setCreateSeat] = useState<string>("");
+  const [createStatus, setCreateStatus] = useState<"Dipesan" | "Dipakai">("Dipesan");
 
   // Edit Modal State
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -58,16 +70,59 @@ export default function ManageTicketsPage() {
     setTicketToEdit(null);
   };
 
+  const handleCreateTicket = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!createOrderId || !createCategoryId) return;
+
+    const selectedOrder = DUMMY_ORDERS.find((order) => order.id === createOrderId);
+    const selectedCategory = DUMMY_CATEGORIES.find((category) => category.id === createCategoryId);
+    if (!selectedOrder || !selectedCategory) return;
+
+    const now = new Date();
+    const nextNumber = tickets.length + 1;
+
+    const newTicket: DummyTicket = {
+      ticket_id: `TKT-${String(now.getTime())}`,
+      ticker_code: `TKT-JEANS-${String(nextNumber).padStart(3, "0")}`,
+      customer_id: `cust-${selectedOrder.id}`,
+      customer_name: selectedOrder.customer,
+      event_name: selectedOrder.event,
+      venue_name: "Venue Dipilih Admin",
+      category_name: selectedCategory.name,
+      booking_date: now.toLocaleDateString("sv-SE") + " 00:00",
+      status: createStatus,
+      organizer_id: "550e8400-e29b-41d4-a716-446655446001",
+      seat_id: createSeat || undefined,
+    };
+
+    setTickets((prev) => [newTicket, ...prev]);
+    setIsCreateModalOpen(false);
+    setCreateOrderId("");
+    setCreateCategoryId("");
+    setCreateSeat("");
+    setCreateStatus("Dipesan");
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
       <Navbar role={user.role} />
       <main className="flex-1 w-full max-w-5xl mx-auto px-4 py-8">
         
-        <div className="mb-6 border-b border-slate-200 pb-6">
-          <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Daftar Tiket Pelanggan</h1>
-          <p className="text-sm text-slate-500 mt-2">
-            Kelola status dan alokasi kursi untuk tiket yang telah dipesan oleh pelanggan.
-          </p>
+        <div className="mb-6 border-b border-slate-200 pb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Daftar Tiket Pelanggan</h1>
+            <p className="text-sm text-slate-500 mt-2">
+              Kelola status dan alokasi kursi untuk tiket yang telah dipesan oleh pelanggan.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsCreateModalOpen(true)}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition-colors shadow-sm shadow-blue-200"
+          >
+            <span className="text-base leading-none">+</span>
+            Tambah Tiket
+          </button>
         </div>
 
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
@@ -251,6 +306,103 @@ export default function ManageTicketsPage() {
                 className="px-5 py-2.5 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-all shadow-sm shadow-blue-200"
               >
                 Simpan Perubahan
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Create Modal */}
+      {isCreateModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <h2 className="text-xl font-bold text-slate-800">Tambah Tiket Baru</h2>
+              <button
+                onClick={() => setIsCreateModalOpen(false)}
+                className="w-8 h-8 flex items-center justify-center rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+              </button>
+            </div>
+
+            <div className="p-6 overflow-y-auto flex-1">
+              <form id="createTicketForm" onSubmit={handleCreateTicket} className="space-y-5">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-800 mb-2">Order</label>
+                  <select
+                    required
+                    value={createOrderId}
+                    onChange={(e) => setCreateOrderId(e.target.value)}
+                    className="w-full border-2 border-slate-200 text-slate-700 rounded-xl px-4 py-3 text-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50 outline-none cursor-pointer bg-white transition-all font-medium"
+                  >
+                    <option value="">Pilih order</option>
+                    {DUMMY_ORDERS.map((order) => (
+                      <option key={order.id} value={order.id}>{order.id} - {order.customer} ({order.event})</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-slate-800 mb-2">Kategori Tiket</label>
+                  <select
+                    required
+                    value={createCategoryId}
+                    onChange={(e) => setCreateCategoryId(e.target.value)}
+                    className="w-full border-2 border-slate-200 text-slate-700 rounded-xl px-4 py-3 text-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50 outline-none cursor-pointer bg-white transition-all font-medium"
+                  >
+                    <option value="">Pilih kategori</option>
+                    {DUMMY_CATEGORIES.map((category) => (
+                      <option key={category.id} value={category.id}>{category.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-slate-800 mb-2">Status</label>
+                  <select
+                    value={createStatus}
+                    onChange={(e) => setCreateStatus(e.target.value as "Dipesan" | "Dipakai")}
+                    className="w-full border-2 border-slate-200 text-slate-700 rounded-xl px-4 py-3 text-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50 outline-none cursor-pointer bg-white transition-all font-medium"
+                  >
+                    <option value="Dipesan">Dipesan</option>
+                    <option value="Dipakai">Dipakai</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="flex items-center justify-between text-sm font-semibold text-slate-800 mb-2">
+                    Alokasi Kursi
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider bg-slate-100 text-slate-500 border border-slate-200">Opsional</span>
+                  </label>
+                  <select
+                    value={createSeat}
+                    onChange={(e) => setCreateSeat(e.target.value)}
+                    className="w-full border-2 border-slate-200 text-slate-700 rounded-xl px-4 py-3 text-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50 outline-none cursor-pointer bg-white transition-all font-medium"
+                  >
+                    <option value="">Tanpa Kursi (General Admission)</option>
+                    {DUMMY_SEATS.map((seat) => (
+                      <option key={seat.id} value={seat.id}>{seat.display}</option>
+                    ))}
+                  </select>
+                </div>
+              </form>
+            </div>
+
+            <div className="p-5 border-t border-slate-100 bg-slate-50 flex items-center justify-end gap-3 flex-shrink-0">
+              <button
+                type="button"
+                onClick={() => setIsCreateModalOpen(false)}
+                className="px-5 py-2.5 text-sm font-semibold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl transition-all shadow-sm"
+              >
+                Batal
+              </button>
+              <button
+                type="submit"
+                form="createTicketForm"
+                className="px-5 py-2.5 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-all shadow-sm shadow-blue-200"
+              >
+                Simpan Tiket
               </button>
             </div>
           </div>
