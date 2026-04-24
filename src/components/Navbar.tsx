@@ -17,6 +17,8 @@ type NavbarProps = {
 
 const menuByRole: Record<Role, MenuItem[]> = {
   guest: [
+    { label: "Kategori Tiket", href: "/ticket-categories" },
+    { label: "Promosi", href: "/promotions" },
     { label: "Login", href: "/login" },
     { label: "Registrasi", href: "/register" },
   ],
@@ -24,6 +26,7 @@ const menuByRole: Record<Role, MenuItem[]> = {
     { label: "Dashboard", href: "/dashboard" },
     { label: "Manajemen Venue", href: "/venues" },
     { label: "Manajemen Event", href: "/events" },
+    { label: "Manajemen Artis", href: "/artists" },
     { label: "Manajemen Kursi", href: "/seats" },
     { label: "Kategori Tiket", href: "/ticket-categories" },
     { label: "Manajemen Tiket", href: "/tickets" },
@@ -43,6 +46,7 @@ const menuByRole: Record<Role, MenuItem[]> = {
     { label: "Manajemen Tiket", href: "/tickets" },
     { label: "Semua Order", href: "/orders/all" },
     { label: "Tiket (Aset)", href: "/assets/tickets" },
+    { label: "Artis", href: "/artists" },
     { label: "Order ", href: "/order" },
     { label: "Promosi", href: "/promotion" },
     { label: "Profile", href: "/profile" },
@@ -51,6 +55,7 @@ const menuByRole: Record<Role, MenuItem[]> = {
   customer: [
     { label: "Dashboard", href: "/dashboard" },
     { label: "Tiket Saya", href: "/my-tickets" },
+    { label: "Kategori Tiket", href: "/ticket-categories" },
     { label: "Pesanan", href: "/order" },
     { label: "Cari Event", href: "/events" },
     { label: "Promosi", href: "/promotion" },
