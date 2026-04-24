@@ -286,7 +286,6 @@ export default function EventsPage() {
                     <th className="px-6 py-4">Event ID</th>
                     <th className="px-6 py-4">Tanggal & Waktu</th>
                     <th className="px-6 py-4">Venue</th>
-                    <th className="px-6 py-4">Organizer</th>
                     <th className="px-6 py-4">Aksi</th>
                     {canManage && <th className="px-6 py-4 text-right">Action</th>}
                   </tr>
@@ -305,7 +304,6 @@ export default function EventsPage() {
                       <td className="px-6 py-5 font-medium text-slate-700">{event.event_id}</td>
                       <td className="px-6 py-5">{event.event_datetime}</td>
                       <td className="px-6 py-5 font-medium text-slate-900">{event.venue_name}</td>
-                      <td className="px-6 py-5">{event.organizer_name}</td>
                       <td className="px-6 py-5">
                         <a
                           href={`/checkout?event_id=${event.event_id}`}
