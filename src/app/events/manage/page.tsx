@@ -2,6 +2,7 @@
 
 import { v4 as uuidv4 } from "uuid";
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import { getUser, AuthUser } from "@/lib/auth";
 
@@ -83,12 +84,12 @@ const initialEvents: EventDisplay[] = [
   },
 ];
 
-export default function EventsPage() {
-  const [user, setUser] = useState<AuthUser | null | "guest">(null);
+export default function ManageEventsPage() {
+  const router = useRouter();
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [events, setEvents] = useState<EventDisplay[]>(initialEvents);
   const [search, setSearch] = useState("");
 
-  // create
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [datetime, setDatetime] = useState("");
@@ -96,7 +97,6 @@ export default function EventsPage() {
   const [organizerId, setOrganizerId] = useState("");
   const [error, setError] = useState("");
 
-  // edit
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [selectedId, setSelectedId] = useState("");
   const [editTitle, setEditTitle] = useState("");
@@ -110,30 +110,30 @@ export default function EventsPage() {
 
   useEffect(() => {
     const u = getUser();
-    setUser(u ?? "guest");
-    if (u?.role === "organizer" && u.organizer_id) {
-      setOrganizerId(u.organizer_id);
+    if (!u || (u.role !== "admin" && u.role !== "organizer")) {
+      router.replace("/login");
+    } else {
+      setUser(prev => prev?.user_id === u.user_id ? prev : u);
+      if (u.role === "organizer" && u.organizer_id) {
+        setOrganizerId(u.organizer_id);
+      }
     }
-  }, []);
-
-  const currentUser = user === "guest" ? null : user;
-  const canManage = currentUser?.role === "admin" || currentUser?.role === "organizer";
-  const isOrganizer = currentUser?.role === "organizer";
-  const navRole = currentUser?.role ?? "guest";
+  }, [router]);
 
   const visibleEvents = useMemo(() => {
-    const base = isOrganizer
-      ? events.filter((e) => e.organizer_id === currentUser?.organizer_id)
-      : events;
+    if (!user) return [];
+    const base =
+      user.role === "organizer"
+        ? events.filter((e) => e.organizer_id === user.organizer_id)
+        : events;
     const kw = search.trim().toLowerCase();
     if (!kw) return base;
     return base.filter(
       (e) =>
         e.event_title.toLowerCase().includes(kw) ||
-        e.venue_name.toLowerCase().includes(kw) ||
-        e.organizer_name.toLowerCase().includes(kw)
+        e.venue_name.toLowerCase().includes(kw)
     );
-  }, [search, events, isOrganizer, currentUser]);
+  }, [search, events, user]);
 
   const resolveVenue = (id: string) => venueOptions.find((v) => v.venue_id === id);
   const resolveOrganizer = (id: string) => organizerOptions.find((o) => o.organizer_id === id);
@@ -146,12 +146,18 @@ export default function EventsPage() {
 
     const venue = resolveVenue(venueId)!;
     const org = resolveOrganizer(organizerId)!;
-    setEvents((prev) => [
-      ...prev,
-      { event_id: uuidv4(), event_title: title.trim(), event_datetime: datetime, venue_id: venue.venue_id, venue_name: venue.venue_name, organizer_id: org.organizer_id, organizer_name: org.organizer_name },
-    ]);
+    const newEvent: EventDisplay = {
+      event_id: uuidv4(),
+      event_title: title.trim(),
+      event_datetime: datetime,
+      venue_id: venue.venue_id,
+      venue_name: venue.venue_name,
+      organizer_id: org.organizer_id,
+      organizer_name: org.organizer_name,
+    };
+    setEvents((prev) => [...prev, newEvent]);
     setTitle(""); setDatetime(""); setVenueId("");
-    if (!isOrganizer) setOrganizerId("");
+    if (user?.role !== "organizer") setOrganizerId("");
     setError("");
     setIsCreateOpen(false);
     setSuccessMessage("Event berhasil ditambahkan.");
@@ -189,46 +195,42 @@ export default function EventsPage() {
     setSuccessType("update");
   };
 
-  if (user === null) return null;
+  if (!user) return null;
+  const isOrganizer = user.role === "organizer";
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-100 via-slate-50 to-white">
-      <Navbar role={navRole} />
+      <Navbar role={user.role} />
 
       <section className="mx-auto max-w-7xl px-6 py-8">
         <div className="rounded-[28px] border border-slate-200 bg-white/90 p-6 shadow-[0_10px_40px_rgba(15,23,42,0.06)] backdrop-blur">
-
-          {/* Header */}
           <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
               <h1 className="text-4xl font-bold tracking-tight text-slate-900">
-                {isOrganizer ? "Event Saya" : canManage ? "Manajemen Event" : "Semua Event"}
+                {isOrganizer ? "Event Saya" : "Manajemen Event"}
               </h1>
               <p className="mt-2 text-base text-slate-500">
-                {isOrganizer
-                  ? "Kelola event yang Anda miliki."
-                  : canManage
-                  ? "Kelola seluruh event pada platform JEANS RAQIL."
-                  : "Daftar event yang tersedia pada platform JEANS RAQIL."}
+                {isOrganizer ? "Kelola event yang Anda miliki." : "Kelola seluruh event pada platform JEANS RAQIL."}
               </p>
             </div>
-            {canManage && (
-              <button
-                onClick={() => { setIsCreateOpen(true); setError(""); setSuccessMessage(""); }}
-                className="inline-flex items-center justify-center rounded-full bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700"
-              >
-                <span className="mr-2 text-lg leading-none">＋</span>Tambah Event
-              </button>
-            )}
+            <button
+              onClick={() => { setIsCreateOpen(true); setError(""); setSuccessMessage(""); }}
+              className="inline-flex items-center justify-center rounded-full bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700"
+            >
+              <span className="mr-2 text-lg leading-none">＋</span>Tambah Event
+            </button>
           </div>
 
-          {/* Stats */}
-          <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-3">
+          <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
               <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">
                 {isOrganizer ? "Event Saya" : "Total Event"}
               </p>
-              <p className="mt-3 text-5xl font-bold text-slate-900">{visibleEvents.length}</p>
+              <p className="mt-3 text-5xl font-bold text-slate-900">
+                {isOrganizer
+                  ? events.filter((e) => e.organizer_id === user.organizer_id).length
+                  : events.length}
+              </p>
             </div>
             <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
               <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">Total Venue</p>
@@ -236,31 +238,24 @@ export default function EventsPage() {
                 {new Set(events.map((e) => e.venue_id)).size}
               </p>
             </div>
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-              <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">Total Organizer</p>
-              <p className="mt-3 text-5xl font-bold text-slate-900">
-                {new Set(events.map((e) => e.organizer_id)).size}
-              </p>
-            </div>
           </div>
 
-          {/* Success message */}
           {successMessage && (
             <div className={`mb-6 rounded-2xl px-4 py-3 text-sm font-medium border ${
-              successType === "create" ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-              : "border-yellow-200 bg-yellow-50 text-yellow-700"
+              successType === "create"
+                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                : "border-yellow-200 bg-yellow-50 text-yellow-700"
             }`}>
               {successMessage}
             </div>
           )}
 
-          {/* Table */}
           <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
             <div className="border-b border-slate-200 px-6 py-6">
               <div className="mb-4">
                 <h2 className="text-3xl font-bold text-slate-900">Tabel Event</h2>
                 <p className="mt-2 text-sm text-slate-500">
-                  {isOrganizer ? "Menampilkan event milik Anda." : "Menampilkan seluruh event yang terdaftar."}
+                  {isOrganizer ? "Menampilkan event milik Anda." : "Menampilkan seluruh event."}
                 </p>
               </div>
               <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -268,7 +263,7 @@ export default function EventsPage() {
                   <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-lg text-slate-400">⌕</span>
                   <input
                     type="text"
-                    placeholder="Cari judul, venue, atau organizer..."
+                    placeholder="Cari judul atau venue..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     className="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-12 pr-4 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-blue-500"
@@ -286,8 +281,8 @@ export default function EventsPage() {
                     <th className="px-6 py-4">Event ID</th>
                     <th className="px-6 py-4">Tanggal & Waktu</th>
                     <th className="px-6 py-4">Venue</th>
-                    <th className="px-6 py-4">Aksi</th>
-                    {canManage && <th className="px-6 py-4 text-right">Action</th>}
+                    {!isOrganizer && <th className="px-6 py-4">Organizer</th>}
+                    <th className="px-6 py-4 text-right">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -304,34 +299,22 @@ export default function EventsPage() {
                       <td className="px-6 py-5 font-medium text-slate-700">{event.event_id}</td>
                       <td className="px-6 py-5">{event.event_datetime}</td>
                       <td className="px-6 py-5 font-medium text-slate-900">{event.venue_name}</td>
+                      {!isOrganizer && <td className="px-6 py-5">{event.organizer_name}</td>}
                       <td className="px-6 py-5">
-                        <a
-                          href={`/checkout?event_id=${event.event_id}`}
-                          className="inline-flex items-center justify-center whitespace-nowrap bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm font-medium"
-                        >
-                          Beli Tiket
-                        </a>
+                        <div className="flex justify-end">
+                          <button
+                            onClick={() => handleOpenEdit(event)}
+                            className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700"
+                            title="Update Event"
+                          >✎</button>
+                        </div>
                       </td>
-                      {canManage && (
-                        <td className="px-6 py-5">
-                          <div className="flex justify-end">
-                            <button
-                              onClick={() => handleOpenEdit(event)}
-                              className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700"
-                              title="Update Event"
-                            >✎</button>
-                          </div>
-                        </td>
-                      )}
                     </tr>
                   ))}
                   {visibleEvents.length === 0 && (
                     <tr>
-                      <td
-                        colSpan={canManage ? 7 : 6}
-                        className="px-6 py-10 text-center text-sm text-slate-400"
-                      >
-                        Tidak ada event yang sesuai dengan pencarian.
+                      <td colSpan={isOrganizer ? 5 : 6} className="px-6 py-10 text-center text-sm text-slate-400">
+                        Tidak ada event yang sesuai.
                       </td>
                     </tr>
                   )}
@@ -366,7 +349,9 @@ export default function EventsPage() {
                 <select value={venueId} onChange={(e) => setVenueId(e.target.value)}
                   className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-base text-slate-900 outline-none transition focus:border-blue-500">
                   <option value="">-- Pilih Venue --</option>
-                  {venueOptions.map((v) => <option key={v.venue_id} value={v.venue_id}>{v.venue_name}</option>)}
+                  {venueOptions.map((v) => (
+                    <option key={v.venue_id} value={v.venue_id}>{v.venue_name}</option>
+                  ))}
                 </select>
               </div>
               {!isOrganizer && (
@@ -375,7 +360,9 @@ export default function EventsPage() {
                   <select value={organizerId} onChange={(e) => setOrganizerId(e.target.value)}
                     className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-base text-slate-900 outline-none transition focus:border-blue-500">
                     <option value="">-- Pilih Organizer --</option>
-                    {organizerOptions.map((o) => <option key={o.organizer_id} value={o.organizer_id}>{o.organizer_name}</option>)}
+                    {organizerOptions.map((o) => (
+                      <option key={o.organizer_id} value={o.organizer_id}>{o.organizer_name}</option>
+                    ))}
                   </select>
                 </div>
               )}
@@ -415,7 +402,9 @@ export default function EventsPage() {
                 <select value={editVenueId} onChange={(e) => setEditVenueId(e.target.value)}
                   className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-base text-slate-900 outline-none transition focus:border-blue-500">
                   <option value="">-- Pilih Venue --</option>
-                  {venueOptions.map((v) => <option key={v.venue_id} value={v.venue_id}>{v.venue_name}</option>)}
+                  {venueOptions.map((v) => (
+                    <option key={v.venue_id} value={v.venue_id}>{v.venue_name}</option>
+                  ))}
                 </select>
               </div>
               {!isOrganizer && (
@@ -424,7 +413,9 @@ export default function EventsPage() {
                   <select value={editOrganizerId} onChange={(e) => setEditOrganizerId(e.target.value)}
                     className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-base text-slate-900 outline-none transition focus:border-blue-500">
                     <option value="">-- Pilih Organizer --</option>
-                    {organizerOptions.map((o) => <option key={o.organizer_id} value={o.organizer_id}>{o.organizer_name}</option>)}
+                    {organizerOptions.map((o) => (
+                      <option key={o.organizer_id} value={o.organizer_id}>{o.organizer_name}</option>
+                    ))}
                   </select>
                 </div>
               )}
