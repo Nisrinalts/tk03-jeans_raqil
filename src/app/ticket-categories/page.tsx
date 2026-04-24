@@ -170,11 +170,6 @@ const initialTicketCategories: TicketCategory[] = [
 ];
 
 export default function TicketCategoryPage() {
-  /*
-    Ganti role ini untuk kebutuhan:
-    - "guest" / "customer" => hanya read-only
-    - "admin" / "organizer" => muncul fitur CUD Ticket Category
-  */
   const user = getUser();
   const role: Role = user?.role ?? "guest";
   const canManage = role === "admin" || role === "organizer";
