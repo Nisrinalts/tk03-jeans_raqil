@@ -81,11 +81,6 @@ function getGenreBadgeClass(genre: string) {
 }
 
 export default function ArtistsPage() {
-  /*
-    Ganti role ini untuk kebutuhan screenshot/demo:
-    - "guest" / "customer" / "organizer" => hanya read-only
-    - "admin" => muncul fitur CUD Artist
-  */
   const user = getUser();
   const role: Role = user?.role ?? "guest";
   const canManage = role === "admin";
