@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from "uuid";
 import { useMemo, useState } from "react";
 import Navbar from "@/components/Navbar";
 import { Artist } from "@/types/artist";
+import { getUser } from "@/lib/auth";
 
 type Role = "guest" | "admin" | "organizer" | "customer";
 
@@ -85,7 +86,8 @@ export default function ArtistsPage() {
     - "guest" / "customer" / "organizer" => hanya read-only
     - "admin" => muncul fitur CUD Artist
   */
-  const role: Role = "admin";
+  const user = getUser();
+  const role: Role = user?.role ?? "guest";
   const canManage = role === "admin";
 
   const [artists, setArtists] = useState<Artist[]>(initialArtists);
