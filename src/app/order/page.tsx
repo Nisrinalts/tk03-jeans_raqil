@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
 import { getUser, AuthUser } from "@/lib/auth";
 
-// ─── Types ───────────────────────────────────────────────────────────────────
+//Types 
 type PaymentStatus = "Pending" | "Paid" | "Cancelled";
 
 type Order = {
@@ -18,14 +18,14 @@ type Order = {
   organizer_id: string;
 };
 
-// ─── Dummy Data ───────────────────────────────────────────────────────────────
+//Dummy Data
 const dummyOrders: Order[] = [
   {
     order_id: "550e8400-e29b-41d4-a716-446655449001",
     order_date: "2025-08-20 10:30:00",
     payment_status: "Paid",
     total_amount: 1500000,
-    customer_id: "550e8400-e29b-41d4-a716-446655445001",
+    customer_id: "550e8400-e29b-41d4-a716-446655443004",
     customer_name: "Customer Satu",
     event_title: "The Weeknd After Hours Tour",
     organizer_id: "550e8400-e29b-41d4-a716-446655446001",
@@ -142,7 +142,7 @@ const dummyOrders: Order[] = [
   },
 ];
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// helper method 
 function formatRp(n: number) {
   return "Rp " + n.toLocaleString("id-ID");
 }
@@ -163,7 +163,7 @@ const statusLabel: Record<PaymentStatus, string> = {
   Cancelled: "Dibatalkan",
 };
 
-// ─── Update Modal ─────────────────────────────────────────────────────────────
+// Update Modal 
 function UpdateModal({
   order,
   onClose,
@@ -253,7 +253,7 @@ function DeleteModal({
   );
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
+//Main Component 
 export default function OrdersPage() {
   const [user, setUser] = useState<AuthUser | null | "guest">(null);
   const [orders, setOrders] = useState<Order[]>(dummyOrders);
@@ -267,7 +267,7 @@ export default function OrdersPage() {
     setUser(u ?? "guest");
   }, []);
 
-  // Tunggu sampai user terload dari auth
+  // load user 
   if (user === null) return null;
 
   const currentUser = user === "guest" ? null : user;
@@ -280,29 +280,24 @@ export default function OrdersPage() {
   const roleFiltered = orders.filter((o) => {
     if (isAdmin) return true; // admin lihat semua
     if (isOrganizer) return o.organizer_id === currentUser?.organizer_id;
-    return o.customer_id === currentUser?.customer_id; 
+    return o.customer_id === currentUser?.user_id; 
   });
 
-  // Filter by search & status, sort descending by date
-  const displayed = roleFiltered
-    .filter((o) => {
+  // filter berdasarkan status
+  const displayed = roleFiltered.filter((o) => {
       const matchSearch =
         search === "" ||
         shortId(o.order_id).includes(search.toLowerCase()) ||
         o.order_id.toLowerCase().includes(search.toLowerCase());
       const matchStatus = filterStatus === "all" || o.payment_status === filterStatus;
       return matchSearch && matchStatus;
-    })
-    .sort((a, b) => new Date(b.order_date).getTime() - new Date(a.order_date).getTime());
+    }).sort((a, b) => new Date(b.order_date).getTime() - new Date(a.order_date).getTime());
 
   // Stats
   const totalOrders = roleFiltered.length;
   const totalPaid = roleFiltered.filter((o) => o.payment_status === "Paid").length;
   const totalPending = roleFiltered.filter((o) => o.payment_status === "Pending").length;
-  const totalRevenue = roleFiltered
-    .filter((o) => o.payment_status === "Paid")
-    .reduce((s, o) => s + o.total_amount, 0);
-
+  const totalRevenue = roleFiltered.filter((o) => o.payment_status === "Paid").reduce((s, o) => s + o.total_amount, 0);
   const handleUpdate = (id: string, status: PaymentStatus) => {
     setOrders((prev) =>
       prev.map((o) => (o.order_id === id ? { ...o, payment_status: status } : o))
