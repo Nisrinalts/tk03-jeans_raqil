@@ -286,7 +286,6 @@ export default function EventsPage() {
                     <th className="px-6 py-4">Event ID</th>
                     <th className="px-6 py-4">Tanggal & Waktu</th>
                     <th className="px-6 py-4">Venue</th>
-                    <th className="px-6 py-4">Organizer</th>
                     <th className="px-6 py-4">Aksi</th>
                     {!isOrganizer && <th className="px-6 py-4">Organizer</th>}
                     {canManage && <th className="px-6 py-4 text-right">Action</th>}
@@ -306,7 +305,6 @@ export default function EventsPage() {
                       <td className="px-6 py-5 font-medium text-slate-700">{event.event_id}</td>
                       <td className="px-6 py-5">{event.event_datetime}</td>
                       <td className="px-6 py-5 font-medium text-slate-900">{event.venue_name}</td>
-                      <td className="px-6 py-5">{event.organizer_name}</td>
                       <td className="px-6 py-5">
                         <a
   href={`/order?event_id=${event.event_id}`}
@@ -331,9 +329,7 @@ export default function EventsPage() {
                   ))}
                   {visibleEvents.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="px-6 py-10 text-center text-sm text-slate-400">
-                        Tidak ada event yang sesuai dengan pencarian.
-                      <td colSpan={canManage ? (isOrganizer ? 5 : 6) : (isOrganizer ? 4 : 5)} className="px-6 py-10 text-center text-sm text-slate-400">
+                      <td colSpan={5 + (isOrganizer ? 0 : 1) + (canManage ? 1 : 0)} className="px-6 py-10 text-center text-sm text-slate-400">
                         Tidak ada event yang sesuai.
                       </td>
                     </tr>
