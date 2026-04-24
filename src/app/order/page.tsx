@@ -1,453 +1,480 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
+import { getUser, AuthUser } from "@/lib/auth";
 
-type EventDisplay = {
-  event_id: string;
-  event_datetime: string;
+//Types 
+type PaymentStatus = "Pending" | "Paid" | "Cancelled";
+
+type Order = {
+  order_id: string;
+  order_date: string;
+  payment_status: PaymentStatus;
+  total_amount: number;
+  customer_id: string;
+  customer_name: string;
   event_title: string;
-  venue_name: string;
-  organizer_name: string;
-  tags: string[];
+  organizer_id: string;
 };
 
-const eventData: EventDisplay[] = [
+//Dummy Data
+const dummyOrders: Order[] = [
   {
-    event_id: "550e8400-e29b-41d4-a716-446655441001",
+    order_id: "550e8400-e29b-41d4-a716-446655449001",
+    order_date: "2025-08-20 10:30:00",
+    payment_status: "Paid",
+    total_amount: 1500000,
+    customer_id: "550e8400-e29b-41d4-a716-446655443004",
+    customer_name: "Customer Satu",
     event_title: "The Weeknd After Hours Tour",
-    event_datetime: "2025-08-15 19:00",
-    venue_name: "Jakarta Convention Center",
-    organizer_name: "Organizer Satu",
-    tags: ["Pop", "R&B"],
+    organizer_id: "550e8400-e29b-41d4-a716-446655446001",
   },
   {
-    event_id: "550e8400-e29b-41d4-a716-446655441002",
+    order_id: "550e8400-e29b-41d4-a716-446655449002",
+    order_date: "2025-08-22 14:15:00",
+    payment_status: "Pending",
+    total_amount: 750000,
+    customer_id: "550e8400-e29b-41d4-a716-446655445001",
+    customer_name: "Customer Satu",
+    event_title: "The Weeknd After Hours Tour",
+    organizer_id: "550e8400-e29b-41d4-a716-446655446001",
+  },
+  {
+    order_id: "550e8400-e29b-41d4-a716-446655449003",
+    order_date: "2025-09-01 09:00:00",
+    payment_status: "Paid",
+    total_amount: 3000000,
+    customer_id: "550e8400-e29b-41d4-a716-446655445002",
+    customer_name: "Budi Santoso",
     event_title: "Justin Bieber World Tour",
-    event_datetime: "2025-09-20 18:00",
-    venue_name: "Jakarta Convention Center",
-    organizer_name: "Organizer Dua",
-    tags: ["Pop"],
+    organizer_id: "550e8400-e29b-41d4-a716-446655446002",
   },
   {
-    event_id: "550e8400-e29b-41d4-a716-446655441003",
+    order_id: "550e8400-e29b-41d4-a716-446655449004",
+    order_date: "2025-09-05 16:45:00",
+    payment_status: "Cancelled",
+    total_amount: 450000,
+    customer_id: "550e8400-e29b-41d4-a716-446655445003",
+    customer_name: "Siti Rahayu",
+    event_title: "Justin Bieber World Tour",
+    organizer_id: "550e8400-e29b-41d4-a716-446655446002",
+  },
+  {
+    order_id: "550e8400-e29b-41d4-a716-446655449005",
+    order_date: "2025-10-10 11:20:00",
+    payment_status: "Paid",
+    total_amount: 1200000,
+    customer_id: "550e8400-e29b-41d4-a716-446655445002",
+    customer_name: "Budi Santoso",
     event_title: "Olivia Rodrigo GUTS Tour",
-    event_datetime: "2025-10-05 20:00",
-    venue_name: "Sabuga Bandung",
-    organizer_name: "Organizer Satu",
-    tags: ["Pop", "Alt"],
+    organizer_id: "550e8400-e29b-41d4-a716-446655446001",
   },
   {
-    event_id: "550e8400-e29b-41d4-a716-446655441004",
+    order_id: "550e8400-e29b-41d4-a716-446655449006",
+    order_date: "2025-10-12 08:00:00",
+    payment_status: "Pending",
+    total_amount: 600000,
+    customer_id: "550e8400-e29b-41d4-a716-446655445004",
+    customer_name: "Andi Pratama",
+    event_title: "Olivia Rodrigo GUTS Tour",
+    organizer_id: "550e8400-e29b-41d4-a716-446655446001",
+  },
+  {
+    order_id: "550e8400-e29b-41d4-a716-446655449007",
+    order_date: "2025-11-15 20:00:00",
+    payment_status: "Paid",
+    total_amount: 2000000,
+    customer_id: "550e8400-e29b-41d4-a716-446655445003",
+    customer_name: "Siti Rahayu",
     event_title: "Kanye West Donda Live",
-    event_datetime: "2025-11-12 19:30",
-    venue_name: "Sabuga Bandung",
-    organizer_name: "Organizer Dua",
-    tags: ["Hip-Hop"],
+    organizer_id: "550e8400-e29b-41d4-a716-446655446002",
   },
   {
-    event_id: "550e8400-e29b-41d4-a716-446655441005",
+    order_id: "550e8400-e29b-41d4-a716-446655449008",
+    order_date: "2025-11-18 13:30:00",
+    payment_status: "Paid",
+    total_amount: 500000,
+    customer_id: "550e8400-e29b-41d4-a716-446655445005",
+    customer_name: "Rina Wulandari",
+    event_title: "Kanye West Donda Live",
+    organizer_id: "550e8400-e29b-41d4-a716-446655446002",
+  },
+  {
+    order_id: "550e8400-e29b-41d4-a716-446655449009",
+    order_date: "2025-12-05 17:00:00",
+    payment_status: "Pending",
+    total_amount: 1100000,
+    customer_id: "550e8400-e29b-41d4-a716-446655445001",
+    customer_name: "Customer Satu",
     event_title: "The Weeknd Starboy Festival",
-    event_datetime: "2025-12-01 20:00",
-    venue_name: "Sabuga Bandung",
-    organizer_name: "Organizer Satu",
-    tags: ["Pop", "R&B"],
+    organizer_id: "550e8400-e29b-41d4-a716-446655446001",
   },
   {
-    event_id: "550e8400-e29b-41d4-a716-446655441006",
+    order_id: "550e8400-e29b-41d4-a716-446655449010",
+    order_date: "2025-12-07 10:10:00",
+    payment_status: "Cancelled",
+    total_amount: 825000,
+    customer_id: "550e8400-e29b-41d4-a716-446655445004",
+    customer_name: "Andi Pratama",
+    event_title: "The Weeknd Starboy Festival",
+    organizer_id: "550e8400-e29b-41d4-a716-446655446001",
+  },
+  {
+    order_id: "550e8400-e29b-41d4-a716-446655449011",
+    order_date: "2026-01-12 19:30:00",
+    payment_status: "Paid",
+    total_amount: 1800000,
+    customer_id: "550e8400-e29b-41d4-a716-446655445002",
+    customer_name: "Budi Santoso",
     event_title: "Drake It's All A Blur Tour",
-    event_datetime: "2026-01-10 19:00",
-    venue_name: "Grand City Surabaya",
-    organizer_name: "Organizer Dua",
-    tags: ["Hip-Hop", "Rap"],
+    organizer_id: "550e8400-e29b-41d4-a716-446655446002",
+  },
+  {
+    order_id: "550e8400-e29b-41d4-a716-446655449012",
+    order_date: "2026-01-13 09:45:00",
+    payment_status: "Pending",
+    total_amount: 400000,
+    customer_id: "550e8400-e29b-41d4-a716-446655445005",
+    customer_name: "Rina Wulandari",
+    event_title: "Drake It's All A Blur Tour",
+    organizer_id: "550e8400-e29b-41d4-a716-446655446002",
   },
 ];
 
-// ─── Tiket per event (dummy, bisa disesuaikan) ──────────────────────────────
-type TicketCategory = { name: string; price: number; quota: number };
-
-const ticketsByEvent: Record<string, TicketCategory[]> = {
-  "550e8400-e29b-41d4-a716-446655441001": [
-    { name: "WVIP", price: 2500000, quota: 30 },
-    { name: "VIP", price: 1500000, quota: 100 },
-    { name: "Category 1", price: 750000, quota: 250 },
-    { name: "Category 2", price: 350000, quota: 500 },
-  ],
-  "550e8400-e29b-41d4-a716-446655441002": [
-    { name: "WVIP", price: 3000000, quota: 25 },
-    { name: "VIP", price: 1750000, quota: 80 },
-    { name: "Category 1", price: 900000, quota: 300 },
-    { name: "Category 2", price: 450000, quota: 600 },
-  ],
-  "550e8400-e29b-41d4-a716-446655441003": [
-    { name: "VIP", price: 1200000, quota: 100 },
-    { name: "Category 1", price: 600000, quota: 300 },
-    { name: "Category 2", price: 250000, quota: 500 },
-  ],
-  "550e8400-e29b-41d4-a716-446655441004": [
-    { name: "WVIP", price: 2000000, quota: 40 },
-    { name: "VIP", price: 1000000, quota: 120 },
-    { name: "Category 1", price: 500000, quota: 400 },
-  ],
-  "550e8400-e29b-41d4-a716-446655441005": [
-    { name: "WVIP", price: 2200000, quota: 35 },
-    { name: "VIP", price: 1100000, quota: 150 },
-    { name: "Category 1", price: 550000, quota: 350 },
-    { name: "Category 2", price: 275000, quota: 700 },
-  ],
-  "550e8400-e29b-41d4-a716-446655441006": [
-    { name: "VIP", price: 1800000, quota: 60 },
-    { name: "Category 1", price: 800000, quota: 200 },
-    { name: "Category 2", price: 400000, quota: 450 },
-  ],
-};
-
-const SEATS = ["A1","A2","A3","A4","A5","B1","B2","B3","B4","B5","C1","C2"];
-const VALID_PROMOS: Record<string, number> = { TIKTAK20: 0.2, HEMAT10: 0.1 };
-
-// ─── Helpers ────────────────────────────────────────────────────────────────
-function generateOrderId(): string {
-  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
-    const r = (Math.random() * 16) | 0;
-    return (c === "x" ? r : (r & 0x3) | 0x8).toString(16);
-  });
-}
-
+// helper method 
 function formatRp(n: number) {
   return "Rp " + n.toLocaleString("id-ID");
 }
 
-// ─── Component ──────────────────────────────────────────────────────────────
-export default function OrderPage() {
-  const params = useSearchParams();
-  const eventId = params.get("event_id") ?? "";
+function shortId(id: string) {
+  return "ord_" + id.slice(-3);
+}
 
-  const event = useMemo(
-    () => eventData.find((e) => e.event_id === eventId) ?? null,
-    [eventId]
-  );
+const statusStyle: Record<PaymentStatus, string> = {
+  Paid: "bg-green-100 text-green-700 border border-green-200",
+  Pending: "bg-yellow-100 text-yellow-700 border border-yellow-200",
+  Cancelled: "bg-red-100 text-red-700 border border-red-200",
+};
 
-  const categories: TicketCategory[] = useMemo(
-    () => ticketsByEvent[eventId] ?? [],
-    [eventId]
-  );
+const statusLabel: Record<PaymentStatus, string> = {
+  Paid: "Lunas",
+  Pending: "Pending",
+  Cancelled: "Dibatalkan",
+};
 
-  const [selectedCategory, setSelectedCategory] = useState<TicketCategory | null>(
-    categories[0] ?? null
-  );
-  const [quantity, setQuantity] = useState(1);
-  const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
-  const [promo, setPromo] = useState("");
-  const [promoApplied, setPromoApplied] = useState<string | null>(null);
-  const [promoError, setPromoError] = useState("");
-  const [orderSubmitted, setOrderSubmitted] = useState(false);
-  const [orderId] = useState(generateOrderId);
+// Update Modal 
+function UpdateModal({
+  order,
+  onClose,
+  onUpdate,
+}: {
+  order: Order;
+  onClose: () => void;
+  onUpdate: (id: string, status: PaymentStatus) => void;
+}) {
+  const [status, setStatus] = useState<PaymentStatus>(order.payment_status);
 
-  // Kalkulasi
-  const discount = promoApplied ? VALID_PROMOS[promoApplied] ?? 0 : 0;
-  const subtotal = (selectedCategory?.price ?? 0) * quantity;
-  const discountAmount = Math.floor(subtotal * discount);
-  const total = subtotal - discountAmount;
-
-  const handleSelectCategory = (cat: TicketCategory) => {
-    setSelectedCategory(cat);
-    setSelectedSeats([]);
-  };
-
-  const handleQty = (val: number) => {
-    if (val < 1 || val > 10) return;
-    setQuantity(val);
-    if (selectedSeats.length > val) setSelectedSeats(selectedSeats.slice(0, val));
-  };
-
-  const toggleSeat = (seat: string) => {
-    if (selectedSeats.includes(seat)) {
-      setSelectedSeats(selectedSeats.filter((s) => s !== seat));
-    } else if (selectedSeats.length < quantity) {
-      setSelectedSeats([...selectedSeats, seat]);
-    }
-  };
-
-  const handleApplyPromo = () => {
-    const code = promo.trim().toUpperCase();
-    if (VALID_PROMOS[code] !== undefined) {
-      setPromoApplied(code);
-      setPromoError("");
-    } else {
-      setPromoApplied(null);
-      setPromoError("Kode promo tidak valid.");
-    }
-  };
-
-  const handleBayar = () => {
-    if (!selectedCategory) return;
-    
-    setOrderSubmitted(true);
-  };
-
-  // ── Not found ──
-  if (!event) {
-    return (
-      <main className="min-h-screen bg-slate-100">
-        <Navbar role="customer" />
-        <div className="flex flex-col items-center justify-center py-32 text-center">
-          <p className="text-2xl font-bold text-slate-700">Event tidak ditemukan.</p>
-          <a href="/events" className="mt-4 text-blue-600 hover:underline text-sm">
-            ← Kembali ke daftar event
-          </a>
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-bold text-gray-900 text-lg">Update Status Order</h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">✕</button>
         </div>
-      </main>
-    );
-  }
-
-  // ── Order success ──
-  if (orderSubmitted) {
-    return (
-      <main className="min-h-screen bg-slate-100">
-        <Navbar role="customer" />
-        <div className="flex flex-col items-center justify-center py-32 text-center max-w-md mx-auto px-6">
-          <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-4">
-            <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
-          <h2 className="text-2xl font-bold text-slate-900 mb-1">Pesanan Berhasil!</h2>
-          <p className="text-slate-500 text-sm mb-4">
-            Order ID: <span className="font-mono font-semibold text-slate-700">{orderId}</span>
-          </p>
-          <div className="bg-white rounded-2xl border border-slate-200 p-5 w-full text-left text-sm space-y-2 mb-6">
-            <div className="flex justify-between"><span className="text-slate-500">Event</span><span className="font-semibold text-slate-800">{event.event_title}</span></div>
-            <div className="flex justify-between"><span className="text-slate-500">Kategori</span><span>{selectedCategory?.name}</span></div>
-            <div className="flex justify-between"><span className="text-slate-500">Jumlah</span><span>{quantity} tiket</span></div>
-            {selectedSeats.length > 0 && <div className="flex justify-between"><span className="text-slate-500">Kursi</span><span>{selectedSeats.join(", ")}</span></div>}
-            <div className="flex justify-between"><span className="text-slate-500">Status</span><span className="text-yellow-600 font-semibold">Pending</span></div>
-            <hr className="border-slate-100" />
-            <div className="flex justify-between font-bold text-base"><span>Total</span><span className="text-blue-600">{formatRp(total)}</span></div>
-          </div>
-          <a href="/events" className="w-full text-center bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-semibold text-sm transition-colors block">
-            ← Kembali ke Daftar Event
-          </a>
+        <p className="text-xs text-gray-400 mb-1">ORDER ID</p>
+        <p className="text-sm font-mono text-gray-700 mb-4">{shortId(order.order_id)}</p>
+        <p className="text-xs text-gray-400 mb-1">PAYMENT STATUS</p>
+        <select
+          value={status}
+          onChange={(e) => setStatus(e.target.value as PaymentStatus)}
+          className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 mb-5 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400"
+        >
+          <option value="Paid">Lunas</option>
+          <option value="Pending">Pending</option>
+          <option value="Cancelled">Dibatalkan</option>
+        </select>
+        <div className="flex gap-3">
+          <button
+            onClick={onClose}
+            className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+          >
+            Batal
+          </button>
+          <button
+            onClick={() => { onUpdate(order.order_id, status); onClose(); }}
+            className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition-colors"
+          >
+            Update
+          </button>
         </div>
-      </main>
-    );
-  }
+      </div>
+    </div>
+  );
+}
 
-  // ── Main checkout ──
+// Delete Modal
+function DeleteModal({
+  order,
+  onClose,
+  onDelete,
+}: {
+  order: Order;
+  onClose: () => void;
+  onDelete: (id: string) => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-bold text-gray-900 text-lg">Hapus Order</h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">✕</button>
+        </div>
+        <p className="text-sm text-gray-500 mb-6">
+          Apakah Anda yakin ingin menghapus catatan order ini?<br />
+          Tindakan ini tidak dapat dibatalkan.
+        </p>
+        <div className="flex gap-3">
+          <button
+            onClick={onClose}
+            className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+          >
+            Batal
+          </button>
+          <button
+            onClick={() => { onDelete(order.order_id); onClose(); }}
+            className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-semibold transition-colors"
+          >
+            Hapus
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+//Main Component 
+export default function OrdersPage() {
+  const [user, setUser] = useState<AuthUser | null | "guest">(null);
+  const [orders, setOrders] = useState<Order[]>(dummyOrders);
+  const [search, setSearch] = useState("");
+  const [filterStatus, setFilterStatus] = useState<"all" | PaymentStatus>("all");
+  const [updateTarget, setUpdateTarget] = useState<Order | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Order | null>(null);
+
+  useEffect(() => {
+    const u = getUser();
+    setUser(u ?? "guest");
+  }, []);
+
+  // load user 
+  if (user === null) return null;
+
+  const currentUser = user === "guest" ? null : user;
+  const role = currentUser?.role ?? "guest";
+  const isAdmin = role === "admin";
+  const isOrganizer = role === "organizer";
+  const navRole = role;
+
+  // Filter data berdasarkan role
+  const roleFiltered = orders.filter((o) => {
+    if (isAdmin) return true; // admin lihat semua
+    if (isOrganizer) return o.organizer_id === currentUser?.organizer_id;
+    return o.customer_id === currentUser?.user_id; 
+  });
+
+  // filter berdasarkan status
+  const displayed = roleFiltered.filter((o) => {
+      const matchSearch =
+        search === "" ||
+        shortId(o.order_id).includes(search.toLowerCase()) ||
+        o.order_id.toLowerCase().includes(search.toLowerCase());
+      const matchStatus = filterStatus === "all" || o.payment_status === filterStatus;
+      return matchSearch && matchStatus;
+    }).sort((a, b) => new Date(b.order_date).getTime() - new Date(a.order_date).getTime());
+
+  // Stats
+  const totalOrders = roleFiltered.length;
+  const totalPaid = roleFiltered.filter((o) => o.payment_status === "Paid").length;
+  const totalPending = roleFiltered.filter((o) => o.payment_status === "Pending").length;
+  const totalRevenue = roleFiltered.filter((o) => o.payment_status === "Paid").reduce((s, o) => s + o.total_amount, 0);
+  const handleUpdate = (id: string, status: PaymentStatus) => {
+    setOrders((prev) =>
+      prev.map((o) => (o.order_id === id ? { ...o, payment_status: status } : o))
+    );
+  };
+
+  const handleDelete = (id: string) => {
+    setOrders((prev) => prev.filter((o) => o.order_id !== id));
+  };
+
   return (
     <main className="min-h-screen bg-slate-100">
-      <Navbar role="customer" />
+      <Navbar role={navRole} />
 
-      {/* Breadcrumb */}
-      <div className="max-w-7xl mx-auto px-6 pt-5 pb-1 flex justify-end">
-        <nav className="text-sm flex items-center gap-1.5">
-          <span className="text-blue-600 font-medium">Pilih</span>
-          <span className="text-gray-400">&gt;</span>
-          <span className="text-gray-400">Bayar</span>
-          <span className="text-gray-400">&gt;</span>
-          <span className="text-gray-400">Selesai</span>
-        </nav>
-      </div>
+      {/* Modals */}
+      {updateTarget && (
+        <UpdateModal
+          order={updateTarget}
+          onClose={() => setUpdateTarget(null)}
+          onUpdate={handleUpdate}
+        />
+      )}
+      {deleteTarget && (
+        <DeleteModal
+          order={deleteTarget}
+          onClose={() => setDeleteTarget(null)}
+          onDelete={handleDelete}
+        />
+      )}
 
-      <div className="max-w-7xl mx-auto px-6 pb-10 grid md:grid-cols-3 gap-6">
-        {/* ── LEFT ── */}
-        <div className="md:col-span-2 space-y-5">
-
-          {/* Event Info */}
-          <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center flex-shrink-0 text-white text-2xl font-bold shadow-sm">
-                {event.event_title.charAt(0)}
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-2 flex-wrap mb-1">
-                  <h2 className="text-lg font-bold text-gray-900">{event.event_title}</h2>
-                  {event.tags.map((tag) => (
-                    <span key={tag} className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full font-medium">
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-                <div className="flex items-center gap-4 text-sm text-gray-500">
-                  <span className="flex items-center gap-1">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                    </svg>
-                    {event.event_datetime}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-                    </svg>
-                    {event.venue_name}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Kategori Tiket */}
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-            <h3 className="font-semibold text-gray-900 mb-1">Pilih Kategori Tiket</h3>
-            <p className="text-sm text-gray-400 mb-4">Setiap kategori memiliki fasilitas berbeda</p>
-            <div className="space-y-3">
-              {categories.map((cat) => {
-                const isSelected = selectedCategory?.name === cat.name;
-                return (
-                  <div
-                    key={cat.name}
-                    onClick={() => handleSelectCategory(cat)}
-                    className={`flex justify-between items-center p-4 border rounded-xl cursor-pointer transition-all duration-150 ${
-                      isSelected
-                        ? "border-blue-500 bg-blue-50"
-                        : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-                    }`}
-                  >
-                    <div>
-                      <p className={`font-semibold ${isSelected ? "text-blue-700" : "text-gray-800"}`}>
-                        {cat.name}
-                      </p>
-                      <p className="text-sm text-gray-400">Kuota: {cat.quota} tiket</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className={`font-semibold ${isSelected ? "text-blue-600" : "text-gray-700"}`}>
-                        {formatRp(cat.price)}
-                      </span>
-                      {isSelected && (
-                        <span className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center">
-                          <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7"/>
-                          </svg>
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Jumlah Tiket + Pilih Kursi */}
-          <div className="grid grid-cols-2 gap-5">
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-              <h3 className="font-semibold text-gray-900 mb-4">Jumlah Tiket</h3>
-              <div className="flex items-center gap-4 mb-2">
-                <button
-                  onClick={() => handleQty(quantity - 1)}
-                  className="w-8 h-8 rounded-lg border border-gray-300 flex items-center justify-center text-lg font-bold text-gray-600 hover:bg-gray-50 transition-colors"
-                >
-                  −
-                </button>
-                <span className="text-xl font-semibold w-6 text-center text-gray-900">{quantity}</span>
-                <button
-                  onClick={() => handleQty(quantity + 1)}
-                  className="w-8 h-8 rounded-lg border border-gray-300 flex items-center justify-center text-lg font-bold text-gray-600 hover:bg-gray-50 transition-colors"
-                >
-                  +
-                </button>
-              </div>
-              <p className="text-xs text-gray-400">Max 10 tiket per transaksi</p>
-            </div>
-
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-              <h3 className="font-semibold text-gray-900 mb-4">Pilih Kursi</h3>
-              <div className="grid grid-cols-4 gap-2">
-                {SEATS.map((seat) => {
-                  const isSelected = selectedSeats.includes(seat);
-                  return (
-                    <button
-                      key={seat}
-                      onClick={() => toggleSeat(seat)}
-                      className={`text-xs py-1.5 rounded-md border font-medium transition-all duration-150 ${
-                        isSelected
-                          ? "border-blue-500 bg-blue-50 text-blue-700"
-                          : "border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50"
-                      }`}
-                    >
-                      {seat}
-                    </button>
-                  );
-                })}
-              </div>
-              {selectedSeats.length > 0 && (
-                <p className="mt-2 text-xs text-gray-400">
-                  Dipilih: {selectedSeats.join(", ")}
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Kode Promo */}
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-            <h3 className="font-semibold text-gray-900 mb-4">Kode Promo</h3>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={promo}
-                onChange={(e) => {
-                  setPromo(e.target.value);
-                  setPromoError("");
-                  setPromoApplied(null);
-                }}
-                placeholder="CONTOH: TIKTAK20"
-                className="flex-1 border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-colors"
-              />
-              <button
-                onClick={handleApplyPromo}
-                className="px-5 py-2.5 bg-gray-800 hover:bg-gray-700 text-white text-sm font-medium rounded-lg transition-colors"
-              >
-                Terapkan
-              </button>
-            </div>
-            {promoError && <p className="text-sm text-red-500 mt-2">{promoError}</p>}
-            {promoApplied && (
-              <p className="text-sm text-green-600 mt-2">
-                ✓ Promo <strong>{promoApplied}</strong> berhasil diterapkan — diskon {discount * 100}%!
-              </p>
-            )}
-          </div>
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* Header */}
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-900">Daftar Order</h1>
+          <p className="text-sm text-gray-500 mt-0.5">
+            {role === "customer" && "Riwayat pembelian tiket Anda"}
+            {role === "organizer" && "Order dari event yang Anda selenggarakan"}
+            {role === "admin" && "Semua order yang terdaftar pada sistem"}
+          </p>
         </div>
 
-        {/* ── RIGHT SUMMARY ── */}
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 h-fit sticky top-6">
-          <h3 className="font-semibold text-gray-900 mb-6">Ringkasan Pesanan</h3>
+        {/* Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+            <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Total Order</p>
+            <p className="text-3xl font-bold text-gray-900">{totalOrders}</p>
+          </div>
+          <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+            <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Lunas</p>
+            <p className="text-3xl font-bold text-green-600">{totalPaid}</p>
+          </div>
+          <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+            <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Pending</p>
+            <p className="text-3xl font-bold text-yellow-500">{totalPending}</p>
+          </div>
+          {(isAdmin || isOrganizer) && (
+            <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+              <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Total Revenue</p>
+              <p className="text-xl font-bold text-blue-600">{formatRp(totalRevenue)}</p>
+            </div>
+          )}
+        </div>
 
-          <div className="space-y-3 mb-4 text-sm">
-            <div className="flex justify-between text-gray-600">
-              <span>{selectedCategory?.name} × {quantity}</span>
-              <span>{formatRp(subtotal)}</span>
+        {/* Table */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="flex flex-col sm:flex-row gap-3 p-4 border-b border-gray-100">
+            <div className="relative flex-1">
+              <svg
+                className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder={isAdmin || isOrganizer ? "Cari ID atau pelanggan..." : "Cari order ID..."}
+                className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400"
+              />
             </div>
-            {discountAmount > 0 && (
-              <div className="flex justify-between text-green-600">
-                <span>Diskon ({promoApplied})</span>
-                <span>− {formatRp(discountAmount)}</span>
-              </div>
-            )}
-            <div className="flex justify-between text-gray-600">
-              <span>Biaya Layanan</span>
-              <span>Rp 0</span>
-            </div>
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value as "all" | PaymentStatus)}
+              className="border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 min-w-[140px]"
+            >
+              <option value="all">Semua Status</option>
+              <option value="Paid">Lunas</option>
+              <option value="Pending">Pending</option>
+              <option value="Cancelled">Dibatalkan</option>
+            </select>
           </div>
 
-          <hr className="border-gray-100 my-4" />
-
-          <div className="flex justify-between items-center mb-6">
-            <span className="font-semibold text-gray-900">Total</span>
-            <span className="font-bold text-2xl text-gray-900">{formatRp(total)}</span>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-gray-50 text-xs text-gray-400 uppercase tracking-wide">
+                  <th className="text-left px-5 py-3 font-medium">Order ID</th>
+                  {(isAdmin || isOrganizer) && (
+                    <th className="text-left px-5 py-3 font-medium">Pelanggan</th>
+                  )}
+                  <th className="text-left px-5 py-3 font-medium">Tanggal</th>
+                  <th className="text-left px-5 py-3 font-medium">Status</th>
+                  <th className="text-right px-5 py-3 font-medium">Total</th>
+                  {isAdmin && <th className="px-5 py-3 font-medium"></th>}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {displayed.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="text-center py-12 text-sm text-gray-400">
+                      Tidak ada order ditemukan.
+                    </td>
+                  </tr>
+                ) : (
+                  displayed.map((order) => (
+                    <tr key={order.order_id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-5 py-4">
+                        <span className="text-sm font-mono text-gray-600">
+                          {shortId(order.order_id)}
+                        </span>
+                      </td>
+                      {(isAdmin || isOrganizer) && (
+                        <td className="px-5 py-4">
+                          <div className="flex items-center gap-2">
+                            <span className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 text-xs font-bold flex items-center justify-center flex-shrink-0">
+                              {order.customer_name.charAt(0)}
+                            </span>
+                            <span className="text-sm text-gray-700">{order.customer_name}</span>
+                          </div>
+                        </td>
+                      )}
+                      <td className="px-5 py-4 text-sm text-gray-500">
+                        {order.order_date.slice(0, 16)}
+                      </td>
+                      <td className="px-5 py-4">
+                        <span
+                          className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${statusStyle[order.payment_status]}`}
+                        >
+                          {statusLabel[order.payment_status]}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4 text-right text-sm font-semibold text-gray-900">
+                        {formatRp(order.total_amount)}
+                      </td>
+                      {isAdmin && (
+                        <td className="px-5 py-4">
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => setUpdateTarget(order)}
+                              className="p-1.5 rounded-lg hover:bg-blue-50 text-blue-500 hover:text-blue-700 transition-colors"
+                              title="Update"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              </svg>
+                            </button>
+                            <button
+                              onClick={() => setDeleteTarget(order)}
+                              className="p-1.5 rounded-lg hover:bg-red-50 text-red-400 hover:text-red-600 transition-colors"
+                              title="Hapus"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
+                          </div>
+                        </td>
+                      )}
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
-
-          <button
-            onClick={handleBayar}
-            disabled={!selectedCategory}
-            className="w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:opacity-50 text-white font-semibold py-3.5 rounded-xl transition-colors text-base"
-          >
-            Bayar Sekarang
-          </button>
-
-          <p className="text-xs text-gray-400 text-center mt-3">
-            Konfirmasi tiket akan dikirim ke admin@example.com
-          </p>
         </div>
       </div>
     </main>
