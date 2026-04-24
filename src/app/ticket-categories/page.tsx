@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from "uuid";
 import { useMemo, useState } from "react";
 import Navbar from "@/components/Navbar";
 import { TicketCategory } from "@/types/ticketCategory";
+import { getUser } from "@/lib/auth";
 
 type Role = "guest" | "admin" | "organizer" | "customer";
 
@@ -174,7 +175,8 @@ export default function TicketCategoryPage() {
     - "guest" / "customer" => hanya read-only
     - "admin" / "organizer" => muncul fitur CUD Ticket Category
   */
-  const role: Role = "admin";
+  const user = getUser();
+  const role: Role = user?.role ?? "guest";
   const canManage = role === "admin" || role === "organizer";
 
   const [ticketCategories, setTicketCategories] =
