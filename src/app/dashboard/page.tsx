@@ -46,7 +46,7 @@ export default function DashboardPage() {
     if (!u) {
       router.replace("/login");
     } else {
-      setUser(u);
+      setUser(prev => prev?.user_id === u.user_id ? prev : u);
     }
   }, [router]);
 
