@@ -307,6 +307,19 @@ export const DUMMY_SEATS = [
 ];
 
 export default function TicketPage() {
+    // Create Modal State
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [createOrderId, setCreateOrderId] = useState("");
+  const [createCategoryId, setCreateCategoryId] = useState("");
+  const [createSeat, setCreateSeat] = useState<string>("");
+  const [createStatus, setCreateStatus] = useState<"Dipesan" | "Dipakai">("Dipesan");
+
+  // Edit Modal State
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [ticketToEdit, setTicketToEdit] = useState<DummyTicket | null>(null);
+  const [editStatus, setEditStatus] = useState<"Dipesan" | "Dipakai">("Dipesan");
+  const [editSeat, setEditSeat] = useState<string>("");
+
   const router = useRouter();
   const [filterStatus, setFilterStatus] = useState<"Semua" | "Dipesan" | "Dipakai">("Semua");
   const [searchQuery, setSearchQuery] = useState("");
@@ -335,6 +348,7 @@ export default function TicketPage() {
   if (!user) return null;
 
   const role = user.role;
+  console.log("User Role:", role);
   const isStaff = role === "admin" || role === "organizer";
   const isAdmin = role === "admin";
 
@@ -353,6 +367,29 @@ export default function TicketPage() {
     return true;
   });
 
+  const handleOpenEditModal = (ticket: DummyTicket) => {
+    setTicketToEdit(ticket);
+    setEditStatus(ticket.status);
+    setEditSeat(ticket.seat_id || "");
+    setIsEditModalOpen(true);
+  };
+
+  const handleUpdateTicket = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!ticketToEdit) return;
+    
+    const updatedTickets = tickets.map(t => {
+      if (t.ticket_id === ticketToEdit.ticket_id) {
+        return { ...t, status: editStatus, seat_id: editSeat === "" ? undefined : editSeat };
+      }
+      return t;
+    });
+
+    setTickets(updatedTickets);
+    setIsEditModalOpen(false);
+    setTicketToEdit(null);
+  };
+  
   const handleCreateTicket = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formOrder || !formCategory) return;
@@ -387,256 +424,443 @@ export default function TicketPage() {
       setTickets(tickets.filter(t => t.ticket_id !== id));
     }
   };
-
-  return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
-      <Navbar role={role} />
-      <main className="flex-1 w-full max-w-7xl mx-auto px-4 py-8">
-        <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-200 pb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-slate-800 tracking-tight">
-              {isStaff ? "Manajemen Tiket" : "Tiket Saya"}
-            </h1>
-            <p className="text-sm text-slate-500 mt-2">
-              {isStaff 
-                ? "Kelola semua tiket customer dengan mudah dari satu dashboard" 
-                : "Daftar tiket yang telah Anda pesan dan gunakan"}
-            </p>
-          </div>
-          
-          {isStaff && (
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors flex items-center gap-2 shadow-sm shadow-blue-200"
-            >
-              <span>+</span>
-              Tambah Tiket
-            </button>
-          )}
-        </div>
-
-        <div className="mb-8 flex flex-col sm:flex-row gap-4 bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
-          <div className="flex-1 relative">
-            <span className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-            </span>
-            <input
-              type="text"
-              placeholder="Filter by kode atau nama event..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full text-sm border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
-            />
-          </div>
-          <div className="flex gap-2 bg-slate-100 p-1.5 rounded-xl overflow-x-auto">
-            {["Semua", "Dipesan", "Dipakai"].map((f) => (
+  if (!isStaff && !isAdmin) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col">
+        <Navbar role={role} />
+        <main className="flex-1 w-full max-w-7xl mx-auto px-4 py-8">
+          <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-200 pb-6">
+            <div>
+              <h1 className="text-3xl font-bold text-slate-800 tracking-tight">
+                {isStaff ? "Manajemen Tiket" : "Tiket Saya"}
+              </h1>
+              <p className="text-sm text-slate-500 mt-2">
+                {isStaff 
+                  ? "Kelola semua tiket customer dengan mudah dari satu dashboard" 
+                  : "Daftar tiket yang telah Anda pesan dan gunakan"}
+              </p>
+            </div>
+            
+            {isStaff && (
               <button
-                key={f}
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                onClick={() => setFilterStatus(f as any)}
-                className={`px-6 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${
-                  filterStatus === f
-                    ? "bg-white text-blue-600 shadow-sm border border-slate-200/50"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
-                }`}
+                onClick={() => setIsModalOpen(true)}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors flex items-center gap-2 shadow-sm shadow-blue-200"
               >
-                {f}
+                <span>+</span>
+                Tambah Tiket
               </button>
-            ))}
+            )}
           </div>
-        </div>
-
-        {visibleTickets.length > 0 ? (
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-slate-200 text-left text-sm">
-                <thead className="bg-slate-50 text-slate-600 font-semibold uppercase tracking-wider text-xs">
-                  <tr>
-                    <th scope="col" className="px-6 py-4">Kode Tiket</th>
-                    <th scope="col" className="px-6 py-4">Event & Venue</th>
-                    {isStaff && <th scope="col" className="px-6 py-4">Pelanggan</th>}
-                    <th scope="col" className="px-6 py-4">Kategori & Tgl</th>
-                    <th scope="col" className="px-6 py-4">Status</th>
-                    {isAdmin && <th scope="col" className="px-6 py-4 text-right">Aksi</th>}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 bg-white">
-                  {visibleTickets.map((ticket) => (
-                    <tr 
-                      key={ticket.ticket_id} 
-                      className={`hover:bg-slate-50/50 transition-colors ${ticket.status === 'Dipakai' ? 'opacity-70' : ''}`}
-                    >
-                      <td className="px-6 py-5 align-top">
-                        <span className="font-mono font-semibold text-slate-900">{ticket.ticker_code}</span>
-                      </td>
-                      <td className="px-6 py-5 align-top">
-                        <div className="font-bold text-slate-900 mb-1">{ticket.event_name}</div>
-                        <div className="text-slate-500 text-xs">{ticket.venue_name}</div>
-                      </td>
-                      {isStaff && (
+  
+          <div className="mb-8 flex flex-col sm:flex-row gap-4 bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+            <div className="flex-1 relative">
+              <span className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+              </span>
+              <input
+                type="text"
+                placeholder="Filter by kode atau nama event..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full text-sm text-gray-600 border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
+              />
+            </div>
+            <div className="flex gap-2 bg-slate-100 p-1.5 rounded-xl overflow-x-auto">
+              {["Semua", "Dipesan", "Dipakai"].map((f) => (
+                <button
+                  key={f}
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  onClick={() => setFilterStatus(f as any)}
+                  className={`px-6 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${
+                    filterStatus === f
+                      ? "bg-white text-blue-600 shadow-sm border border-slate-200/50"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
+                  }`}
+                >
+                  {f}
+                </button>
+              ))}
+            </div>
+          </div>
+  
+          {visibleTickets.length > 0 ? (
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-slate-200 text-left text-sm">
+                  <thead className="bg-slate-50 text-slate-600 font-semibold uppercase tracking-wider text-xs">
+                    <tr>
+                      <th scope="col" className="px-6 py-4">Kode Tiket</th>
+                      <th scope="col" className="px-6 py-4">Event & Venue</th>
+                      <th scope="col" className="px-6 py-4">Kategori & Tgl</th>
+                      <th scope="col" className="px-6 py-4">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 bg-white">
+                    {visibleTickets.map((ticket) => (
+                      <tr 
+                        key={ticket.ticket_id} 
+                        className={`hover:bg-slate-50/50 transition-colors ${ticket.status === 'Dipakai' ? 'opacity-70' : ''}`}
+                      >
                         <td className="px-6 py-5 align-top">
-                          <div className="flex items-center gap-2">
-                            <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-xs shrink-0">
-                              {ticket.customer_name.charAt(0)}
-                            </div>
-                            <span className="font-medium text-slate-800 break-words line-clamp-1">{ticket.customer_name}</span>
+                          <span className="font-mono font-semibold text-slate-900">{ticket.ticker_code}</span>
+                        </td>
+                        <td className="px-6 py-5 align-top">
+                          <div className="font-bold text-slate-900 mb-1">{ticket.event_name}</div>
+                          <div className="text-slate-500 text-xs">{ticket.venue_name}</div>
+                        </td>
+                        
+                        <td className="px-6 py-5 align-top">
+                          <div className="inline-flex py-1 px-2.5 bg-slate-100 rounded-lg text-slate-700 font-medium mb-2 w-max text-xs">
+                            {ticket.category_name}
+                          </div>
+                          <div className="text-xs text-slate-500 flex items-center gap-1.5 break-words line-clamp-1">
+                            {ticket.booking_date}
                           </div>
                         </td>
-                      )}
-                      <td className="px-6 py-5 align-top">
-                        <div className="inline-flex py-1 px-2.5 bg-slate-100 rounded-lg text-slate-700 font-medium mb-2 w-max text-xs">
-                          {ticket.category_name}
-                        </div>
-                        <div className="text-xs text-slate-500 flex items-center gap-1.5 break-words line-clamp-1">
-                          {ticket.booking_date}
-                        </div>
-                      </td>
-                      <td className="px-6 py-5 align-top">
-                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${
+                        <td className="px-6 py-5 align-top">
+                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${
                             ticket.status === "Dipakai"
-                              ? "bg-slate-100 text-slate-500 border border-slate-200"
-                              : "bg-emerald-50 text-emerald-600 border border-emerald-200"
+                            ? "bg-slate-100 text-slate-500 border border-slate-200"
+                            : "bg-emerald-50 text-emerald-600 border border-emerald-200"
                           }`}
-                        >
-                          {ticket.status === "Dipakai" ? (
-                            <span className="w-1.5 h-1.5 rounded-full bg-slate-400 mr-2" />
-                          ) : (
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-2" />
-                          )}
+                          >
+                            {ticket.status === "Dipakai" ? (
+                              <span className="w-1.5 h-1.5 rounded-full bg-slate-400 mr-2" />
+                            ) : (
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-2" />
+                            )}
+                            {ticket.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-white rounded-2xl border border-slate-200 p-16 text-center shadow-sm">
+              <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100">
+                <svg className="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"></path></svg>
+              </div>
+              <h3 className="text-lg font-bold text-slate-800">Tidak ada tiket</h3>
+              <p className="mt-2 text-sm text-slate-500 max-w-sm mx-auto">
+                Belum ada data tiket yang tersedia untuk ditampilkan.
+              </p>
+            </div>
+          )}
+        </main>
+      </div>
+    );
+  } else {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col">
+        <Navbar role={user.role} />
+        <main className="flex-1 w-full max-w-5xl mx-auto px-4 py-8">
+          
+          <div className="mb-6 border-b border-slate-200 pb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Daftar Tiket Pelanggan</h1>
+              <p className="text-sm text-slate-500 mt-2">
+                Kelola status dan alokasi kursi untuk tiket yang telah dipesan oleh pelanggan.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsCreateModalOpen(true)}
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition-colors shadow-sm shadow-blue-200"
+            >
+              <span className="text-base leading-none">+</span>
+              Tambah Tiket
+            </button>
+          </div>
+  
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm text-slate-600">
+                <thead className="bg-slate-50 text-xs uppercase text-slate-500 border-b border-slate-200 font-bold">
+                  <tr>
+                    <th className="px-6 py-4">Kode Tiket</th>
+                    <th className="px-6 py-4">Pelanggan</th>
+                    <th className="px-6 py-4">Event & Kategori</th>
+                    <th className="px-6 py-4">Status</th>
+                    <th scope="col" className="px-6 py-4">Penyelenggara</th>
+                    <th className="px-6 py-4 text-right">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {visibleTickets.map(ticket => (
+                    <tr key={ticket.ticket_id} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-6 py-4 font-mono font-medium text-slate-800">
+                        {ticket.ticker_code}
+                      </td>
+                      <td className="px-6 py-4 font-medium text-slate-800">
+                        {ticket.customer_name}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="font-semibold text-slate-800">{ticket.event_name}</div>
+                        <div className="text-xs text-slate-500 mt-0.5">{ticket.venue_name} - {ticket.category_name}</div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${
+                          ticket.status === 'Dipesan' 
+                            ? 'bg-emerald-100 text-emerald-700'
+                            : 'bg-slate-200 text-slate-700'
+                        }`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${ticket.status === 'Dipesan' ? 'bg-emerald-500' : 'bg-slate-500'}`}></span>
                           {ticket.status}
                         </span>
                       </td>
-                      {isAdmin && (
-                        <td className="px-6 py-5 align-top text-right whitespace-nowrap">
-                          <button
-                            onClick={() => router.push(`/my-tickets/${ticket.ticket_id}/edit`)}
-                            className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors mr-2 border border-slate-300 shadow-sm"
-                          >
-                            Update
-                          </button>
-                          <button
-                            onClick={() => handleDeleteTicket(ticket.ticket_id)}
-                            className="bg-red-50 hover:bg-red-100 text-red-600 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors border border-red-200 shadow-sm"
-                          >
-                            Hapus
-                          </button>
-                        </td>
-                      )}
+                      <td className="px-6 py-5 align-top"><span>{ticket.organizer_id}</span></td>
+                      <td className="px-6 py-4 text-right">
+                        <button 
+                          onClick={() => handleOpenEditModal(ticket)}
+                          className="inline-flex items-center text-sm font-semibold text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors border border-blue-100"
+                        >
+                          Edit
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-          </div>
-        ) : (
-          <div className="bg-white rounded-2xl border border-slate-200 p-16 text-center shadow-sm">
-            <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100">
-              <svg className="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"></path></svg>
-            </div>
-            <h3 className="text-lg font-bold text-slate-800">Tidak ada tiket</h3>
-            <p className="mt-2 text-sm text-slate-500 max-w-sm mx-auto">
-              Belum ada data tiket yang tersedia untuk ditampilkan.
-            </p>
-          </div>
-        )}
-      </main>
-
-      {/* Modal Tambah Tiket */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setIsModalOpen(false)}></div>
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-full overflow-y-auto relative p-0 animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex justify-between items-center p-6 border-b border-slate-100">
-              <h2 className="text-xl font-bold text-slate-800 tracking-tight">Buat Tiket Baru</h2>
-              <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors p-1 bg-slate-50 rounded-full hover:bg-slate-100">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-              </button>
-            </div>
-            <form onSubmit={handleCreateTicket} className="p-6">
-              <div className="space-y-5">
-                <div>
-                  <label className="flex items-center gap-2 text-sm font-semibold text-slate-800 mb-2">
-                    <span className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-xs text-slate-500">1</span>
-                    Pilih Order
-                  </label>
-                  <select 
-                    value={formOrder}
-                    onChange={(e) => setFormOrder(e.target.value)}
-                    required
-                    className="w-full border border-slate-200 text-slate-700 rounded-xl px-4 py-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all cursor-pointer bg-slate-50"
-                  >
-                    <option value="" disabled>Pilih transaksi customer...</option>
-                    {DUMMY_ORDERS.map(o => (
-                      <option key={o.id} value={o.id}>
-                        {o.id} — {o.customer} — {o.event}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="flex items-center gap-2 text-sm font-semibold text-slate-800 mb-2">
-                    <span className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-xs text-slate-500">2</span>
-                    Kategori Tiket
-                  </label>
-                  <select 
-                    value={formCategory}
-                    onChange={(e) => setFormCategory(e.target.value)}
-                    required
-                    className="w-full border border-slate-200 text-slate-700 rounded-xl px-4 py-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all disabled:bg-slate-50 cursor-pointer bg-slate-50"
-                  >
-                    <option value="" disabled>Pilih kategori & cek kuota...</option>
-                    {DUMMY_CATEGORIES.map(c => {
-                      const isFull = c.used_quota >= c.max_quota;
-                      return (
-                         <option key={c.id} value={c.id} disabled={isFull} className={isFull ? "text-slate-400" : ""}>
-                          {c.name} — Rp {c.price.toLocaleString('id-ID')} — ({c.used_quota}/{c.max_quota}) {isFull ? "[PENUH]" : ""}
-                        </option>
-                      )
-                    })}
-                  </select>
-                </div>
-                <div className="bg-slate-50/50 border border-slate-100 p-4 rounded-xl">
-                  <label className="flex items-center justify-between text-sm font-semibold text-slate-800 mb-2">
-                    <div className="flex items-center gap-2">
-                      <span className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-xs text-slate-500 border border-slate-200">3</span>
-                      Kursi (Reserved Seating)
-                    </div>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider bg-slate-200 text-slate-500">Opsional</span>
-                  </label>
-                  <p className="text-xs text-slate-500 mb-3 pl-7">Abaikan jika venue tidak menggunakan format reserved seating.</p>
-                  <div className="pl-7">
-                    <select 
-                      value={formSeat}
-                      onChange={(e) => setFormSeat(e.target.value)}
-                      className="w-full border border-slate-300 text-slate-700 rounded-lg px-3 py-2.5 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none cursor-pointer bg-white"
-                    >
-                      <option value="">Tidak assign kursi</option>
-                      {DUMMY_SEATS.map(s => (
-                        <option key={s.id} value={s.id}>{s.display}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
+            {tickets.length === 0 && (
+              <div className="p-8 text-center text-slate-500">
+                Belum ada tiket yang terdaftar.
               </div>
-              <div className="mt-8 flex justify-end gap-3 border-t border-slate-100 pt-6">
+            )}
+          </div>
+        </main>
+  
+        {/* Edit Modal */}
+        {isEditModalOpen && ticketToEdit && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-xl overflow-hidden flex flex-col max-h-[90vh]">
+              <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                <h2 className="text-xl font-bold text-slate-800">Update Tiket</h2>
+                <button 
+                  onClick={() => {
+                    setIsEditModalOpen(false);
+                    setTicketToEdit(null);
+                  }}
+                  className="w-8 h-8 flex items-center justify-center rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+              </div>
+              
+              <div className="p-6 overflow-y-auto flex-1">
+                <form id="editTicketForm" onSubmit={handleUpdateTicket} className="space-y-6">
+                  
+                  {/* Read Only Info Section */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Kode Tiket</label>
+                      <p className="font-mono font-bold text-slate-800">{ticketToEdit.ticker_code}</p>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Pelanggan</label>
+                      <p className="font-medium text-slate-800">{ticketToEdit.customer_name}</p>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Event & Kategori</label>
+                      <p className="font-semibold text-slate-800">{ticketToEdit.event_name}</p>
+                      <p className="text-slate-600 text-xs mt-0.5">{ticketToEdit.venue_name} \&mdash; {ticketToEdit.category_name}</p>
+                    </div>
+                  </div>
+  
+                  <div className="h-px bg-slate-100 w-full" />
+  
+                  {/* Editable Fields */}
+                  <div className="space-y-5">
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-800 mb-2">Status Tiket</label>
+                      <div className="grid grid-cols-2 gap-3">
+                        <label className={`
+                          flex items-center justify-center px-4 py-3 rounded-xl border-2 cursor-pointer transition-all
+                          ${editStatus === 'Dipesan' 
+                            ? 'border-emerald-500 bg-emerald-50/50 text-emerald-800' 
+                            : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50'}
+                        `}>
+                          <input 
+                            type="radio" 
+                            name="status" 
+                            value="Dipesan"
+                            checked={editStatus === 'Dipesan'}
+                            onChange={() => setEditStatus('Dipesan')}
+                            className="hidden"
+                          />
+                          <span className="font-bold text-sm flex items-center gap-2">
+                            <span className={`w-2 h-2 rounded-full ${editStatus === 'Dipesan' ? 'bg-emerald-500' : 'bg-slate-300'}`} />
+                            Dipesan
+                          </span>
+                        </label>
+  
+                        <label className={`
+                          flex items-center justify-center px-4 py-3 rounded-xl border-2 cursor-pointer transition-all
+                          ${editStatus === 'Dipakai' 
+                            ? 'border-slate-800 bg-slate-100 text-slate-800' 
+                            : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50'}
+                        `}>
+                          <input 
+                            type="radio" 
+                            name="status" 
+                            value="Dipakai"
+                            checked={editStatus === 'Dipakai'}
+                            onChange={() => setEditStatus('Dipakai')}
+                            className="hidden"
+                          />
+                          <span className="font-bold text-sm flex items-center gap-2">
+                            <span className={`w-2 h-2 rounded-full ${editStatus === 'Dipakai' ? 'bg-slate-700' : 'bg-slate-300'}`} />
+                            Dipakai
+                          </span>
+                        </label>
+                      </div>
+                    </div>
+  
+                    <div>
+                      <label className="flex items-center justify-between text-sm font-semibold text-slate-800 mb-2">
+                        Alokasi Kursi
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider bg-slate-100 text-slate-500 border border-slate-200">Opsional</span>
+                      </label>
+                      <select 
+                        value={editSeat}
+                        onChange={(e) => setEditSeat(e.target.value)}
+                        className="w-full border-2 border-slate-200 text-slate-700 rounded-xl px-4 py-3 text-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50 outline-none cursor-pointer bg-white transition-all font-medium appearance-none"
+                        style={{ backgroundImage: "url(\"data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e\")", backgroundPosition: "right 0.5rem center", backgroundRepeat: "no-repeat", backgroundSize: "1.5em 1.5em", paddingRight: "2.5rem" }}
+                      >
+                        <option value="">Tanpa Kursi (General Admission)</option>
+                        {DUMMY_SEATS.map(s => (
+                          <option key={s.id} value={s.id}>{s.display}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+  
+                </form>
+              </div>
+              
+              <div className="p-5 border-t border-slate-100 bg-slate-50 flex items-center justify-end gap-3 flex-shrink-0">
                 <button
-                   type="button"
-                  onClick={() => setIsModalOpen(false)}
-                   className="px-5 py-2.5 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-100 transition-colors"
+                  type="button"
+                  onClick={() => {
+                    setIsEditModalOpen(false);
+                    setTicketToEdit(null);
+                  }}
+                  className="px-5 py-2.5 text-sm font-semibold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl transition-all shadow-sm"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                   className="px-6 py-2.5 rounded-xl text-sm font-bold bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-sm shadow-blue-200"
+                  form="editTicketForm"
+                  className="px-5 py-2.5 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-all shadow-sm shadow-blue-200"
                 >
-                  Buat Tiket Baru
+                  Simpan Perubahan
                 </button>
               </div>
-            </form>
+            </div>
           </div>
-        </div>
-      )}
-    </div>
-  );
+        )}
+  
+        {/* Create Modal */}
+        {isCreateModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-xl overflow-hidden flex flex-col max-h-[90vh]">
+              <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                <h2 className="text-xl font-bold text-slate-800">Tambah Tiket Baru</h2>
+                <button
+                  onClick={() => setIsCreateModalOpen(false)}
+                  className="w-8 h-8 flex items-center justify-center rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+              </div>
+  
+              <div className="p-6 overflow-y-auto flex-1">
+                <form id="createTicketForm" onSubmit={handleCreateTicket} className="space-y-5">
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-800 mb-2">Order</label>
+                    <select
+                      required
+                      value={createOrderId}
+                      onChange={(e) => setCreateOrderId(e.target.value)}
+                      className="w-full border-2 border-slate-200 text-slate-700 rounded-xl px-4 py-3 text-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50 outline-none cursor-pointer bg-white transition-all font-medium"
+                    >
+                      <option value="">Pilih order</option>
+                      {DUMMY_ORDERS.map((order) => (
+                        <option key={order.id} value={order.id}>{order.id} - {order.customer} ({order.event})</option>
+                      ))}
+                    </select>
+                  </div>
+  
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-800 mb-2">Kategori Tiket</label>
+                    <select
+                      required
+                      value={createCategoryId}
+                      onChange={(e) => setCreateCategoryId(e.target.value)}
+                      className="w-full border-2 border-slate-200 text-slate-700 rounded-xl px-4 py-3 text-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50 outline-none cursor-pointer bg-white transition-all font-medium"
+                    >
+                      <option value="">Pilih kategori</option>
+                      {DUMMY_CATEGORIES.map((category) => (
+                        <option key={category.id} value={category.id}>{category.name}</option>
+                      ))}
+                    </select>
+                  </div>
+  
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-800 mb-2">Status</label>
+                    <select
+                      value={createStatus}
+                      onChange={(e) => setCreateStatus(e.target.value as "Dipesan" | "Dipakai")}
+                      className="w-full border-2 border-slate-200 text-slate-700 rounded-xl px-4 py-3 text-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50 outline-none cursor-pointer bg-white transition-all font-medium"
+                    >
+                      <option value="Dipesan">Dipesan</option>
+                      <option value="Dipakai">Dipakai</option>
+                    </select>
+                  </div>
+  
+                  <div>
+                    <label className="flex items-center justify-between text-sm font-semibold text-slate-800 mb-2">
+                      Alokasi Kursi
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider bg-slate-100 text-slate-500 border border-slate-200">Opsional</span>
+                    </label>
+                    <select
+                      value={createSeat}
+                      onChange={(e) => setCreateSeat(e.target.value)}
+                      className="w-full border-2 border-slate-200 text-slate-700 rounded-xl px-4 py-3 text-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50 outline-none cursor-pointer bg-white transition-all font-medium"
+                    >
+                      <option value="">Tanpa Kursi (General Admission)</option>
+                      {DUMMY_SEATS.map((seat) => (
+                        <option key={seat.id} value={seat.id}>{seat.display}</option>
+                      ))}
+                    </select>
+                  </div>
+                </form>
+              </div>
+  
+              <div className="p-5 border-t border-slate-100 bg-slate-50 flex items-center justify-end gap-3 flex-shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setIsCreateModalOpen(false)}
+                  className="px-5 py-2.5 text-sm font-semibold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl transition-all shadow-sm"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  form="createTicketForm"
+                  className="px-5 py-2.5 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-all shadow-sm shadow-blue-200"
+                >
+                  Simpan Tiket
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
 }
