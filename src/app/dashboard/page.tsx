@@ -6,6 +6,20 @@ import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import { getUser, AuthUser } from "@/lib/auth";
 
+// ─── Types ────────────────────────────────────────────────────────────────────
+type DiscountType = "PERCENTAGE" | "NOMINAL";
+
+type Promotion = {
+  promotion_id: string;
+  promo_code: string;
+  discount_type: DiscountType;
+  discount_value: number;
+  start_date: string;
+  end_date: string;
+  usage_limit: number;
+  usage_count: number;
+};
+
 type EventDisplay = {
   event_id: string;
   event_title: string;
@@ -14,6 +28,7 @@ type EventDisplay = {
   organizer_id: string;
 };
 
+// ─── Dummy Data ───────────────────────────────────────────────────────────────
 const eventData: EventDisplay[] = [
   { event_id: "550e8400-e29b-41d4-a716-446655441001", event_title: "The Weeknd After Hours Tour", event_datetime: "2025-08-15 19:00", venue_name: "Jakarta Convention Center", organizer_id: "550e8400-e29b-41d4-a716-446655446001" },
   { event_id: "550e8400-e29b-41d4-a716-446655441002", event_title: "Justin Bieber World Tour", event_datetime: "2025-09-20 18:00", venue_name: "Jakarta Convention Center", organizer_id: "550e8400-e29b-41d4-a716-446655446002" },
@@ -23,6 +38,70 @@ const eventData: EventDisplay[] = [
   { event_id: "550e8400-e29b-41d4-a716-446655441006", event_title: "Drake It's All A Blur Tour", event_datetime: "2026-01-10 19:00", venue_name: "Grand City Surabaya", organizer_id: "550e8400-e29b-41d4-a716-446655446002" },
 ];
 
+const initialPromotions: Promotion[] = [
+  {
+    promotion_id: "550e8400-e29b-41d4-a716-44665544b001",
+    promo_code: "TIKTAK20",
+    discount_type: "PERCENTAGE",
+    discount_value: 20,
+    start_date: "2025-01-01",
+    end_date: "2025-12-31",
+    usage_limit: 100,
+    usage_count: 45,
+  },
+  {
+    promotion_id: "550e8400-e29b-41d4-a716-44665544b002",
+    promo_code: "HEMAT10",
+    discount_type: "PERCENTAGE",
+    discount_value: 10,
+    start_date: "2025-01-01",
+    end_date: "2025-12-31",
+    usage_limit: 200,
+    usage_count: 87,
+  },
+  {
+    promotion_id: "550e8400-e29b-41d4-a716-44665544b003",
+    promo_code: "HEMAT50K",
+    discount_type: "NOMINAL",
+    discount_value: 50000,
+    start_date: "2025-03-01",
+    end_date: "2025-06-30",
+    usage_limit: 50,
+    usage_count: 12,
+  },
+  {
+    promotion_id: "550e8400-e29b-41d4-a716-44665544b004",
+    promo_code: "NEWUSER30",
+    discount_type: "PERCENTAGE",
+    discount_value: 30,
+    start_date: "2025-06-01",
+    end_date: "2025-09-30",
+    usage_limit: 150,
+    usage_count: 63,
+  },
+  {
+    promotion_id: "550e8400-e29b-41d4-a716-44665544b005",
+    promo_code: "WEEKNDFEST",
+    discount_type: "NOMINAL",
+    discount_value: 100000,
+    start_date: "2025-11-01",
+    end_date: "2025-12-31",
+    usage_limit: 75,
+    usage_count: 20,
+  },
+  {
+    promotion_id: "550e8400-e29b-41d4-a716-44665544b006",
+    promo_code: "FLASH15",
+    discount_type: "PERCENTAGE",
+    discount_value: 15,
+    start_date: "2025-08-01",
+    end_date: "2025-08-31",
+    usage_limit: 80,
+    usage_count: 55,
+  },
+];
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
 export default function DashboardPage() {
   const router = useRouter();
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -65,8 +144,12 @@ export default function DashboardPage() {
   );
 }
 
-/* ===================== ADMIN ===================== */
+// ─── Admin ────────────────────────────────────────────────────────────────────
 function AdminDashboard() {
+  const totalPromo = initialPromotions.length;
+  const totalPenggunaan = initialPromotions.reduce((sum, p) => sum + p.usage_count, 0);
+  const tipePersentase = initialPromotions.filter((p) => p.discount_type === "PERCENTAGE").length;
+
   return (
     <div className="space-y-8">
       {/* top stats */}
@@ -74,7 +157,7 @@ function AdminDashboard() {
         <StatCard label="Total Pengguna" value="4" hint="3 user seed + 1 admin" color="from-blue-500 to-indigo-500" />
         <StatCard label="Total Acara" value={String(eventData.length)} hint="acara terjadwal" color="from-indigo-500 to-purple-500" />
         <StatCard label="Omset Platform" value="—" hint="dalam pengembangan" color="from-emerald-500 to-teal-500" placeholder />
-        <StatCard label="Promosi Aktif" value="—" hint="dalam pengembangan" color="from-amber-500 to-orange-500" placeholder />
+        <StatCard label="Promosi Aktif" value={String(totalPromo)} hint="kode promo terdaftar" color="from-amber-500 to-orange-500" />
       </div>
 
       {/* infrastruktur venue */}
@@ -95,26 +178,35 @@ function AdminDashboard() {
       </Section>
 
       {/* marketing & promosi */}
-      <Section title="Marketing & Promosi" desc="Pantau performa kampanye promo platform.">
-        <div className="grid gap-4 md:grid-cols-3">
-          <MiniStat label="Promo Persentase Aktif" value="—" placeholder />
-          <MiniStat label="Promo Potongan Nominal Aktif" value="—" placeholder />
-          <MiniStat label="Total Penggunaan" value="—" placeholder />
-        </div>
-        <div className="mt-5">
-          <Link
-            href="/promotion"
-            className="inline-flex rounded-full bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700"
-          >
-            Kelola Promosi
-          </Link>
-        </div>
-      </Section>
+<Section title="Marketing & Promosi" desc="Pantau performa kampanye promo platform.">
+  <div className="grid gap-4 md:grid-cols-3">
+    <MiniStat
+      label="Promo Persentase Aktif"
+      value={String(initialPromotions.filter((p) => p.discount_type === "PERCENTAGE").length)}
+    />
+    <MiniStat
+      label="Promo Potongan Nominal Aktif"
+      value={String(initialPromotions.filter((p) => p.discount_type === "NOMINAL").length)}
+    />
+    <MiniStat
+      label="Total Penggunaan"
+      value={`${initialPromotions.reduce((sum, p) => sum + p.usage_count, 0)}×`}
+    />
+  </div>
+  <div className="mt-5">
+    <Link
+      href="/promotion"
+      className="inline-flex rounded-full bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700"
+    >
+      Kelola Promosi
+    </Link>
+  </div>
+</Section>
     </div>
   );
 }
 
-/* ===================== ORGANIZER ===================== */
+// ─── Organizer ────────────────────────────────────────────────────────────────
 function OrganizerDashboard({ user }: { user: AuthUser }) {
   const myEvents = eventData.filter((e) => e.organizer_id === user.organizer_id);
   const venuesUsed = new Set(myEvents.map((e) => e.venue_name)).size;
@@ -172,7 +264,7 @@ function OrganizerDashboard({ user }: { user: AuthUser }) {
   );
 }
 
-/* ===================== CUSTOMER ===================== */
+// ─── Customer ─────────────────────────────────────────────────────────────────
 function CustomerDashboard() {
   return (
     <div className="space-y-8">
@@ -198,7 +290,7 @@ function CustomerDashboard() {
   );
 }
 
-/* ===================== shared bits ===================== */
+// ─── Shared Components ────────────────────────────────────────────────────────
 function StatCard({
   label,
   value,
