@@ -43,6 +43,7 @@ const menuByRole: Record<Role, MenuItem[]> = {
     { label: "Manajemen Tiket", href: "/tickets" },
     { label: "Tiket (Aset)", href: "/assets/tickets" },
     { label: "Order ", href: "/order" },
+    { label: "Promotions", href: "/promotion" },
     { label: "Profile", href: "/profile" },
     { label: "Logout", href: "/logout" },
   ],
