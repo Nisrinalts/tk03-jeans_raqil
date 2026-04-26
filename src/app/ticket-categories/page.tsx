@@ -5,6 +5,8 @@ import { useMemo, useState } from "react";
 import Navbar from "@/components/Navbar";
 import { TicketCategory } from "@/types/ticketCategory";
 import { getUser } from "@/lib/auth";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 type Role = "guest" | "admin" | "organizer" | "customer";
 
@@ -170,8 +172,18 @@ const initialTicketCategories: TicketCategory[] = [
 ];
 
 export default function TicketCategoryPage() {
+  const router = useRouter();
   const user = getUser();
-  const role: Role = user?.role ?? "guest";
+
+  useEffect(() => {
+    if (!user) {
+      router.push("/login");
+    }
+  }, [user, router]);
+
+  if (!user) return null;
+
+  const role = user.role;
   const canManage = role === "admin" || role === "organizer";
 
   const [ticketCategories, setTicketCategories] =
