@@ -584,7 +584,6 @@ export default function TicketPage() {
                     <th className="px-6 py-4">Pelanggan</th>
                     <th className="px-6 py-4">Event & Kategori</th>
                     <th className="px-6 py-4">Status</th>
-                    <th scope="col" className="px-6 py-4">Penyelenggara</th>
                     <th className="px-6 py-4 text-right">Aksi</th>
                   </tr>
                 </thead>
@@ -611,7 +610,6 @@ export default function TicketPage() {
                           {ticket.status}
                         </span>
                       </td>
-                      <td className="px-6 py-5 align-top"><span>{ticket.organizer_id}</span></td>
                       <td className="px-6 py-4 text-right">
                         <button 
                           onClick={() => handleOpenEditModal(ticket)}
