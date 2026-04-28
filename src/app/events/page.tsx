@@ -2,6 +2,7 @@
 
 import { v4 as uuidv4 } from "uuid";
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import { getUser, AuthUser } from "@/lib/auth";
 
@@ -84,7 +85,9 @@ const initialEvents: EventDisplay[] = [
 ];
 
 export default function EventsPage() {
-  const [user, setUser] = useState<AuthUser | null | "guest">(null);
+  const router = useRouter();
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [loading, setLoading] = useState(true);
   const [events, setEvents] = useState<EventDisplay[]>(initialEvents);
   const [search, setSearch] = useState("");
 
@@ -110,20 +113,24 @@ export default function EventsPage() {
 
   useEffect(() => {
     const u = getUser();
-    setUser(u ?? "guest");
-    if (u?.role === "organizer" && u.organizer_id) {
+    if (!u) {
+      router.replace("/login");
+      return;
+    }
+    setUser(u);
+    setLoading(false);
+    if (u.role === "organizer" && u.organizer_id) {
       setOrganizerId(u.organizer_id);
     }
-  }, []);
+  }, [router]);
 
-  const currentUser = user === "guest" ? null : user;
-  const canManage = currentUser?.role === "admin" || currentUser?.role === "organizer";
-  const isOrganizer = currentUser?.role === "organizer";
-  const navRole = currentUser?.role ?? "guest";
+  const canManage = user?.role === "admin" || user?.role === "organizer";
+  const isOrganizer = user?.role === "organizer";
+  const navRole = user?.role ?? "guest";
 
   const visibleEvents = useMemo(() => {
     const base = isOrganizer
-      ? events.filter((e) => e.organizer_id === currentUser?.organizer_id)
+      ? events.filter((e) => e.organizer_id === user?.organizer_id)
       : events;
     const kw = search.trim().toLowerCase();
     if (!kw) return base;
@@ -133,7 +140,7 @@ export default function EventsPage() {
         e.venue_name.toLowerCase().includes(kw) ||
         e.organizer_name.toLowerCase().includes(kw)
     );
-  }, [search, events, isOrganizer, currentUser]);
+  }, [search, events, isOrganizer, user]);
 
   const resolveVenue = (id: string) => venueOptions.find((v) => v.venue_id === id);
   const resolveOrganizer = (id: string) => organizerOptions.find((o) => o.organizer_id === id);
@@ -189,7 +196,7 @@ export default function EventsPage() {
     setSuccessType("update");
   };
 
-  if (user === null) return null;
+  if (loading || !user) return null;
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-100 via-slate-50 to-white">

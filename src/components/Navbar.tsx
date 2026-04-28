@@ -28,11 +28,10 @@ const menuByRole: Record<Role, MenuItem[]> = {
     { label: "Manajemen Artist", href: "/artists" },
     { label: "Manajemen Kursi", href: "/seats" },
     { label: "Kategori Tiket", href: "/ticket-categories" },
-    { label: "Tiket (Aset)", href: "/assets/tickets" },
+    { label: "Tiket", href: "/assets/tickets" },
     { label: "Order", href: "/order" },
     { label: "Promotions", href: "/promotion" },
     { label: "Profile", href: "/profile" },
-    { label: "Logout", href: "/logout" },
   ],
   organizer: [
     { label: "Dashboard", href: "/dashboard" },
@@ -42,11 +41,10 @@ const menuByRole: Record<Role, MenuItem[]> = {
     { label: "Kategori Tiket", href: "/ticket-categories" },
     { label: "Manajemen Tiket", href: "/my-tickets" },
     { label: "Artist", href: "/artists" },
-    { label: "Tiket (Aset)", href: "/assets/tickets" },
-    { label: "Order ", href: "/order" },
+    { label: "Tiket", href: "/assets/tickets" },
+    { label: "Order", href: "/order" },
     { label: "Promotions", href: "/promotion" },
     { label: "Profile", href: "/profile" },
-    { label: "Logout", href: "/logout" },
   ],
   customer: [
     { label: "Dashboard", href: "/dashboard" },
@@ -57,6 +55,7 @@ const menuByRole: Record<Role, MenuItem[]> = {
     { label: "Venue", href: "/venues" },
     { label: "Artis", href: "/artists" },
     { label: "Kategori Tiket", href: "/ticket-categories" },
+    { label: "Profile", href: "/profile" },
     { label: "Logout", href: "/logout" },
   ],
 };
@@ -67,8 +66,7 @@ export default function Navbar({ role }: NavbarProps) {
 
   const handleLogout = () => {
     logout();
-    router.replace("/");
-    router.refresh();
+    router.replace("/login");
   };
 
   return (

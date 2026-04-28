@@ -2,6 +2,7 @@
 
 import { v4 as uuidv4 } from "uuid";
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import { Venue } from "@/types/venue";
 import { getUser, AuthUser } from "@/lib/auth";
@@ -39,7 +40,9 @@ function getCityBadgeClass(city: string) {
 }
 
 export default function VenuesPage() {
-  const [user, setUser] = useState<AuthUser | null | "guest">(null);
+  const router = useRouter();
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [loading, setLoading] = useState(true);
   const [venues, setVenues] = useState<Venue[]>(initialVenues);
   const [search, setSearch] = useState("");
 
@@ -69,8 +72,13 @@ export default function VenuesPage() {
 
   useEffect(() => {
     const u = getUser();
-    setUser(u ?? "guest");
-  }, []);
+    if (!u) {
+      router.replace("/login");
+      return;
+    }
+    setUser(u);
+    setLoading(false);
+  }, [router]);
 
   const filtered = useMemo(() => {
     const kw = search.trim().toLowerCase();
@@ -83,9 +91,8 @@ export default function VenuesPage() {
     );
   }, [search, venues]);
 
-  const currentUser = user === "guest" ? null : user;
-  const canManage = currentUser?.role === "admin" || currentUser?.role === "organizer";
-  const navRole = currentUser?.role ?? "guest";
+  const canManage = user?.role === "admin" || user?.role === "organizer";
+  const navRole = user?.role ?? "guest";
 
   const handleCreate = () => {
     if (!venueName.trim()) { setError("Nama venue wajib diisi."); return; }
@@ -151,7 +158,7 @@ export default function VenuesPage() {
     setSuccessType("delete");
   };
 
-  if (user === null) return null;
+  if (loading || !user) return null;
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-100 via-slate-50 to-white">
