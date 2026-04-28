@@ -33,7 +33,6 @@ const menuByRole: Record<Role, MenuItem[]> = {
     { label: "Order", href: "/order" },
     { label: "Promotions", href: "/promotion" },
     { label: "Profile", href: "/profile" },
-    { label: "Logout", href: "/logout" },
   ],
   organizer: [
     { label: "Dashboard", href: "/dashboard" },
@@ -48,7 +47,6 @@ const menuByRole: Record<Role, MenuItem[]> = {
     { label: "Order ", href: "/order" },
     { label: "Promotions", href: "/promotion" },
     { label: "Profile", href: "/profile" },
-    { label: "Logout", href: "/logout" },
   ],
   customer: [
     { label: "Dashboard", href: "/dashboard" },
