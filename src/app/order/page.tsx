@@ -267,37 +267,38 @@ export default function OrdersPage() {
     setUser(u ?? "guest");
   }, []);
 
-  // load user 
   if (user === null) return null;
 
   const currentUser = user === "guest" ? null : user;
   const role = currentUser?.role ?? "guest";
   const isAdmin = role === "admin";
-  const isOrganizer = role === "organizer";
   const navRole = role;
 
-  // Filter data berdasarkan role
+  // ✅ Semua role (termasuk organizer) lihat semua order
   const roleFiltered = orders.filter((o) => {
-    if (isAdmin) return true; // admin lihat semua
-    if (isOrganizer) return o.organizer_id === currentUser?.organizer_id;
-    return o.customer_id === currentUser?.user_id; 
+    if (isAdmin) return true;
+    return true; // organizer & customer lihat semua
   });
 
-  // filter berdasarkan status
-  const displayed = roleFiltered.filter((o) => {
+  const displayed = roleFiltered
+    .filter((o) => {
       const matchSearch =
         search === "" ||
         shortId(o.order_id).includes(search.toLowerCase()) ||
         o.order_id.toLowerCase().includes(search.toLowerCase());
       const matchStatus = filterStatus === "all" || o.payment_status === filterStatus;
       return matchSearch && matchStatus;
-    }).sort((a, b) => new Date(b.order_date).getTime() - new Date(a.order_date).getTime());
+    })
+    .sort((a, b) => new Date(b.order_date).getTime() - new Date(a.order_date).getTime());
 
   // Stats
   const totalOrders = roleFiltered.length;
   const totalPaid = roleFiltered.filter((o) => o.payment_status === "Paid").length;
   const totalPending = roleFiltered.filter((o) => o.payment_status === "Pending").length;
-  const totalRevenue = roleFiltered.filter((o) => o.payment_status === "Paid").reduce((s, o) => s + o.total_amount, 0);
+  const totalRevenue = roleFiltered
+    .filter((o) => o.payment_status === "Paid")
+    .reduce((s, o) => s + o.total_amount, 0);
+
   const handleUpdate = (id: string, status: PaymentStatus) => {
     setOrders((prev) =>
       prev.map((o) => (o.order_id === id ? { ...o, payment_status: status } : o))
@@ -312,7 +313,6 @@ export default function OrdersPage() {
     <main className="min-h-screen bg-slate-100">
       <Navbar role={navRole} />
 
-      {/* Modals */}
       {updateTarget && (
         <UpdateModal
           order={updateTarget}
@@ -353,7 +353,8 @@ export default function OrdersPage() {
             <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Pending</p>
             <p className="text-3xl font-bold text-yellow-500">{totalPending}</p>
           </div>
-          {(isAdmin || isOrganizer) && (
+      
+          {isAdmin && (
             <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
               <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Total Revenue</p>
               <p className="text-xl font-bold text-blue-600">{formatRp(totalRevenue)}</p>
@@ -377,7 +378,7 @@ export default function OrdersPage() {
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder={isAdmin || isOrganizer ? "Cari ID atau pelanggan..." : "Cari order ID..."}
+                placeholder="Cari order ID..."
                 className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400"
               />
             </div>
@@ -398,7 +399,7 @@ export default function OrdersPage() {
               <thead>
                 <tr className="bg-gray-50 text-xs text-gray-400 uppercase tracking-wide">
                   <th className="text-left px-5 py-3 font-medium">Order ID</th>
-                  {(isAdmin || isOrganizer) && (
+                  {isAdmin && (
                     <th className="text-left px-5 py-3 font-medium">Pelanggan</th>
                   )}
                   <th className="text-left px-5 py-3 font-medium">Tanggal</th>
@@ -422,7 +423,8 @@ export default function OrdersPage() {
                           {shortId(order.order_id)}
                         </span>
                       </td>
-                      {(isAdmin || isOrganizer) && (
+                   
+                      {isAdmin && (
                         <td className="px-5 py-4">
                           <div className="flex items-center gap-2">
                             <span className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 text-xs font-bold flex items-center justify-center flex-shrink-0">
