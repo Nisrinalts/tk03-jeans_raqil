@@ -24,7 +24,7 @@ const menuByRole: Record<Role, MenuItem[]> = {
   admin: [
     { label: "Dashboard", href: "/dashboard" },
     { label: "Manajemen Venue", href: "/venues" },
-    { label: "Manajemen Tiket", href: "/tickets" },
+    { label: "Manajemen Tiket", href: "/my-tickets" },
     { label: "Manajemen Artist", href: "/artists" },
     { label: "Manajemen Kursi", href: "/seats" },
     { label: "Kategori Tiket", href: "/ticket-categories" },
@@ -40,7 +40,7 @@ const menuByRole: Record<Role, MenuItem[]> = {
     { label: "Manajemen Venue", href: "/venues" },
     { label: "Manajemen Kursi", href: "/seats" },
     { label: "Kategori Tiket", href: "/ticket-categories" },
-    { label: "Manajemen Tiket", href: "/tickets" },
+    { label: "Manajemen Tiket", href: "/my-tickets" },
     { label: "Artist", href: "/artists" },
     { label: "Tiket (Aset)", href: "/assets/tickets" },
     { label: "Order ", href: "/order" },
