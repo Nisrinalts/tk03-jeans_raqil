@@ -6,7 +6,6 @@ import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import { getUser, AuthUser } from "@/lib/auth";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
 type DiscountType = "PERCENTAGE" | "NOMINAL";
 
 type Promotion = {
@@ -39,7 +38,6 @@ type Order = {
   organizer_id: string;
 };
 
-// ─── Dummy Data ───────────────────────────────────────────────────────────────
 const eventData: EventDisplay[] = [
   { event_id: "550e8400-e29b-41d4-a716-446655441001", event_title: "The Weeknd After Hours Tour", event_datetime: "2025-08-15 19:00", venue_name: "Jakarta Convention Center", organizer_id: "550e8400-e29b-41d4-a716-446655446001" },
   { event_id: "550e8400-e29b-41d4-a716-446655441002", event_title: "Justin Bieber World Tour", event_datetime: "2025-09-20 18:00", venue_name: "Jakarta Convention Center", organizer_id: "550e8400-e29b-41d4-a716-446655446002" },
@@ -58,8 +56,7 @@ const initialPromotions: Promotion[] = [
   { promotion_id: "550e8400-e29b-41d4-a716-44665544b006", promo_code: "FLASH15", discount_type: "PERCENTAGE", discount_value: 15, start_date: "2025-08-01", end_date: "2025-08-31", usage_limit: 80, usage_count: 55 },
 ];
 
-// Duplikasi dari src/app/my-tickets/page.tsx
-// (tidak bisa import langsung — Next.js melarang non-default export dari page file)
+
 type DummyTicket = {
   ticket_id: string;
   ticker_code: string;
@@ -95,7 +92,6 @@ const DUMMY_TICKETS: DummyTicket[] = [
   { ticket_id: "TKT-020", ticker_code: "TKT-JEANS-020", customer_id: "cust_other_09",                        event_name: "Justin Bieber World Tour",      venue_name: "Jakarta Convention Center", category_name: "Regular",    booking_date: "2025-11-01 08:50", status: "Dipakai", organizer_id: "550e8400-e29b-41d4-a716-446655446002" },
 ];
 
-// Duplikasi dari src/app/order/page.tsx (tidak di-export di sumbernya)
 const dummyOrders: Order[] = [
   { order_id: "550e8400-e29b-41d4-a716-446655449001", order_date: "2025-08-20 10:30:00", payment_status: "Paid",      total_amount: 1500000, customer_id: "550e8400-e29b-41d4-a716-446655443004", customer_name: "Customer Satu",   event_title: "The Weeknd After Hours Tour",   organizer_id: "550e8400-e29b-41d4-a716-446655446001" },
   { order_id: "550e8400-e29b-41d4-a716-446655449002", order_date: "2025-08-22 14:15:00", payment_status: "Pending",   total_amount: 750000,  customer_id: "550e8400-e29b-41d4-a716-446655445001", customer_name: "Customer Satu",   event_title: "The Weeknd After Hours Tour",   organizer_id: "550e8400-e29b-41d4-a716-446655446001" },
@@ -111,7 +107,7 @@ const dummyOrders: Order[] = [
   { order_id: "550e8400-e29b-41d4-a716-446655449012", order_date: "2026-01-13 09:45:00", payment_status: "Pending",   total_amount: 400000,  customer_id: "550e8400-e29b-41d4-a716-446655445005", customer_name: "Rina Wulandari", event_title: "Drake It's All A Blur Tour",   organizer_id: "550e8400-e29b-41d4-a716-446655446002" },
 ];
 
-// Duplikasi dari src/app/seats/page.tsx
+
 const seatData = [
   { status: "Terisi" as const },
   { status: "Tersedia" as const },
@@ -119,15 +115,15 @@ const seatData = [
   { status: "Terisi" as const },
 ];
 
-// Kapasitas venue (dari src/app/venues/page.tsx)
+
 const venueCapacities = [500, 500, 300];
 
-// ─── Helper ───────────────────────────────────────────────────────────────────
+
 function formatRp(n: number) {
   return "Rp " + n.toLocaleString("id-ID");
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
+
 export default function DashboardPage() {
   const router = useRouter();
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -170,7 +166,6 @@ export default function DashboardPage() {
   );
 }
 
-// ─── Admin ────────────────────────────────────────────────────────────────────
 function AdminDashboard() {
   const omset = dummyOrders
     .filter((o) => o.payment_status === "Paid")
@@ -232,7 +227,6 @@ function AdminDashboard() {
   );
 }
 
-// ─── Organizer ────────────────────────────────────────────────────────────────
 function OrganizerDashboard({ user }: { user: AuthUser }) {
   const myEvents = eventData.filter((e) => e.organizer_id === user.organizer_id);
   const venuesUsed = new Set(myEvents.map((e) => e.venue_name)).size;
@@ -306,7 +300,6 @@ function OrganizerDashboard({ user }: { user: AuthUser }) {
   );
 }
 
-// ─── Customer ─────────────────────────────────────────────────────────────────
 function CustomerDashboard({ user }: { user: AuthUser }) {
   const myTickets = DUMMY_TICKETS.filter((t) => t.customer_id === user.user_id);
   const tiketAktif = myTickets.filter((t) => t.status === "Dipesan");
@@ -374,7 +367,6 @@ function CustomerDashboard({ user }: { user: AuthUser }) {
   );
 }
 
-// ─── Shared Components ────────────────────────────────────────────────────────
 function StatCard({
   label,
   value,
