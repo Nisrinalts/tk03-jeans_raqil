@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { login } from "@/lib/auth";
@@ -78,7 +79,14 @@ export default function LoginPage() {
           </button>
         </div>
 
-        <div className="mt-6 rounded-2xl border border-slate-100 bg-slate-50 p-4">
+        <div className="mt-6 text-center text-sm text-slate-500">
+          Belum punya akun?{" "}
+          <Link href="/register" className="font-semibold text-blue-600 hover:underline">
+            Daftar sekarang
+          </Link>
+        </div>
+
+        <div className="mt-4 rounded-2xl border border-slate-100 bg-slate-50 p-4">
           <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
             Akun tersedia
           </p>

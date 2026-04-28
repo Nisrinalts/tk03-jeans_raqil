@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-type Role = "customer" | "organizer";
+type Role = "customer" | "organizer" | "admin";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -51,6 +51,7 @@ export default function RegisterPage() {
       setError("Nama organizer wajib diisi.");
       return;
     }
+    // admin: tidak ada field tambahan
 
     // Placeholder: simpan ke localStorage agar konsisten dengan sistem auth
     // saat ini (tugas basis data — bukan tugas backend autentikasi).
@@ -91,7 +92,7 @@ export default function RegisterPage() {
             <p className="mb-5 text-center text-sm text-slate-600">
               Pilih tipe akun yang ingin kamu daftarkan.
             </p>
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-4 md:grid-cols-3">
               <RoleCard
                 title="Customer"
                 desc="Beli tiket, pilih kursi, dan nikmati promo eksklusif."
@@ -103,6 +104,12 @@ export default function RegisterPage() {
                 desc="Kelola event, venue mitra, dan pantau penjualan tiket."
                 onClick={() => handleSelectRole("organizer")}
                 accent="from-amber-500 to-orange-500"
+              />
+              <RoleCard
+                title="Admin"
+                desc="Akses penuh ke seluruh manajemen platform."
+                onClick={() => handleSelectRole("admin")}
+                accent="from-rose-500 to-pink-500"
               />
             </div>
           </>
@@ -138,6 +145,12 @@ export default function RegisterPage() {
                 <Field label="Nama Organizer" value={organizerName} onChange={setOrganizerName} placeholder="cth. Mega Promotions" />
                 <Field label="Email Kontak" value={contactEmail} onChange={setContactEmail} type="email" placeholder="cth. info@mega.com" />
               </>
+            )}
+
+            {role === "admin" && (
+              <div className="rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+                Akun admin tidak memerlukan data tambahan. Hanya username dan password yang diperlukan.
+              </div>
             )}
 
             {error && (

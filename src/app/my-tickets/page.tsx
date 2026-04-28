@@ -54,7 +54,7 @@ export const DUMMY_TICKETS: DummyTicket[] = [
     venue_name: "Sabuga Bandung",
     category_name: "Festival",
     booking_date: "2025-09-12 09:00",
-    status: "Dipesan",
+    status: "Dipakai",
     organizer_id: "550e8400-e29b-41d4-a716-446655446001",
   },
   {
@@ -78,7 +78,7 @@ export const DUMMY_TICKETS: DummyTicket[] = [
     venue_name: "Sabuga Bandung",
     category_name: "Festival",
     booking_date: "2025-09-20 09:45",
-    status: "Dipesan",
+    status: "Dipakai",
     organizer_id: "550e8400-e29b-41d4-a716-446655446001",
   },
   {
@@ -584,6 +584,7 @@ export default function TicketPage() {
                     <th className="px-6 py-4">Pelanggan</th>
                     <th className="px-6 py-4">Event & Kategori</th>
                     <th className="px-6 py-4">Status</th>
+                    {isAdmin && <th className="px-6 py-4 text-right">Organizer</th>}
                     <th className="px-6 py-4 text-right">Aksi</th>
                   </tr>
                 </thead>
@@ -610,6 +611,11 @@ export default function TicketPage() {
                           {ticket.status}
                         </span>
                       </td>
+                      {isAdmin && (
+                        <td className="px-6 py-4 text-right text-sm text-slate-600">
+                          {ticket.organizer_id === "550e8400-e29b-41d4-a716-446655446001" ? "Organizer A" : "Organizer B"}
+                        </td>
+                      )}
                       <td className="px-6 py-4 text-right">
                         <button 
                           onClick={() => handleOpenEditModal(ticket)}
