@@ -202,3 +202,173 @@ INSERT INTO ticket_category (category_id, category_name, quota, price, tevent_id
 ('550e8400-e29b-41d4-a716-446655442014', 'Regular', 180, 650000.00, '550e8400-e29b-41d4-a716-446655441006');
 
 
+-- =====================================================
+-- BAGIAN BIRU: ORDER , PROMOTION, ORDER PROMOTION
+-- =====================================================
+
+CREATE TABLE IF NOT EXISTS "order" (
+    order_id UUID PRIMARY KEY,
+    order_date TIMESTAMP NOT NULL,
+    payment_status VARCHAR(20) NOT NULL CHECK (
+        payment_status IN ('Pending', 'Paid', 'Cancelled')
+    ),
+    total_amount NUMERIC(12,2) NOT NULL CHECK (total_amount >= 0),
+    customer_id UUID NOT NULL,
+    FOREIGN KEY (customer_id) REFERENCES customer(customer_id)
+);
+
+CREATE TABLE IF NOT EXISTS promotion (
+    promotion_id UUID PRIMARY KEY,
+    promo_code VARCHAR(50) UNIQUE NOT NULL,
+    discount_type VARCHAR(20) NOT NULL CHECK (
+        discount_type IN ('NOMINAL', 'PERCENTAGE')
+    ),
+    discount_value NUMERIC(12,2) NOT NULL CHECK (discount_value > 0),
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL,
+    usage_limit INTEGER NOT NULL CHECK (usage_limit > 0)
+);
+
+CREATE TABLE IF NOT EXISTS order_promotion (
+    order_promotion_id UUID PRIMARY KEY,
+    promotion_id UUID NOT NULL,
+    order_id UUID NOT NULL,
+    FOREIGN KEY (promotion_id) REFERENCES promotion(promotion_id),
+    FOREIGN KEY (order_id) REFERENCES "order"(order_id)
+);
+-- BAGIAN MERAH: SEAT, TICKET, HAS_RELATIONSHIP
+-- =====================================================
+
+CREATE TABLE SEAT (
+    seat_id UUID PRIMARY KEY,
+    section VARCHAR(50) NOT NULL,
+    seat_number VARCHAR(10) NOT NULL,
+    row_number VARCHAR(10) NOT NULL,
+    venue_id UUID NOT NULL,
+    CONSTRAINT fk_venue
+        FOREIGN KEY (venue_id) 
+        REFERENCES VENUE(venue_id)
+);
+
+
+CREATE TABLE TICKET (
+    ticket_id UUID PRIMARY KEY,
+    ticket_code VARCHAR(100) UNIQUE NOT NULL,
+    tcategory_id UUID NOT NULL,
+    torder_id UUID NOT NULL,
+    CONSTRAINT fk_ticket_category
+        FOREIGN KEY (tcategory_id) 
+        REFERENCES TICKET_CATEGORY(category_id),
+    CONSTRAINT fk_order
+        FOREIGN KEY (torder_id) 
+        REFERENCES "ORDER"(order_id)
+);
+
+
+CREATE TABLE HAS_RELATIONSHIP (
+    seat_id UUID,
+    ticket_id UUID,
+    PRIMARY KEY (seat_id, ticket_id),
+    CONSTRAINT fk_seat
+        FOREIGN KEY (seat_id) 
+        REFERENCES SEAT(seat_id),
+    CONSTRAINT fk_ticket
+        FOREIGN KEY (ticket_id) 
+        REFERENCES TICKET(ticket_id)
+);
+
+-- =====================================================
+-- DUMMY DATA FOR SEAT
+-- UUID venue diambil dari data INSERT INTO venue 
+-- =====================================================
+INSERT INTO SEAT (seat_id, section, seat_number, row_number, venue_id) VALUES
+('550e8400-e29b-41d4-a716-446655448001', 'VIP', '1', 'A', '550e8400-e29b-41d4-a716-446655447001'), -- Jakarta Convention Center
+('550e8400-e29b-41d4-a716-446655448002', 'VIP', '2', 'A', '550e8400-e29b-41d4-a716-446655447001'), -- Jakarta Convention Center
+('550e8400-e29b-41d4-a716-446655448003', 'VIP', '3', 'A', '550e8400-e29b-41d4-a716-446655447001'), -- Jakarta Convention Center
+('550e8400-e29b-41d4-a716-446655448004', 'VIP', '1', 'B', '550e8400-e29b-41d4-a716-446655447001'), -- Jakarta Convention Center
+('550e8400-e29b-41d4-a716-446655448005', 'VIP', '2', 'B', '550e8400-e29b-41d4-a716-446655447001'), -- Jakarta Convention Center
+('550e8400-e29b-41d4-a716-446655448006', 'VIP', '3', 'B', '550e8400-e29b-41d4-a716-446655447001'), -- Jakarta Convention Center
+('550e8400-e29b-41d4-a716-446655448007', 'Regular', '1', 'C', '550e8400-e29b-41d4-a716-446655447001'), -- Jakarta Convention Center
+('550e8400-e29b-41d4-a716-446655448008', 'Regular', '2', 'C', '550e8400-e29b-41d4-a716-446655447001'), -- Jakarta Convention Center
+('550e8400-e29b-41d4-a716-446655448009', 'Regular', '3', 'C', '550e8400-e29b-41d4-a716-446655447001'), -- Jakarta Convention Center
+('550e8400-e29b-41d4-a716-446655448010', 'Regular', '1', 'D', '550e8400-e29b-41d4-a716-446655447001'), -- Jakarta Convention Center
+('550e8400-e29b-41d4-a716-446655448011', 'Tribune West', '11', '1', '550e8400-e29b-41d4-a716-446655447002'), -- Sabuga Bandung
+('550e8400-e29b-41d4-a716-446655448012', 'Tribune West', '12', '1', '550e8400-e29b-41d4-a716-446655447002'), -- Sabuga Bandung
+('550e8400-e29b-41d4-a716-446655448013', 'Tribune West', '13', '2', '550e8400-e29b-41d4-a716-446655447002'), -- Sabuga Bandung
+('550e8400-e29b-41d4-a716-446655448014', 'Tribune East', '14', '2', '550e8400-e29b-41d4-a716-446655447002'), -- Sabuga Bandung
+('550e8400-e29b-41d4-a716-446655448015', 'Tribune East', '15', '3', '550e8400-e29b-41d4-a716-446655447002'), -- Sabuga Bandung
+('550e8400-e29b-41d4-a716-446655448016', 'Tribune East', '16', '3', '550e8400-e29b-41d4-a716-446655447002'), -- Sabuga Bandung
+('550e8400-e29b-41d4-a716-446655448017', 'Festival', '1', '-', '550e8400-e29b-41d4-a716-446655447002'), -- Sabuga Bandung
+('550e8400-e29b-41d4-a716-446655448018', 'Festival', '2', '-', '550e8400-e29b-41d4-a716-446655447002'), -- Sabuga Bandung
+('550e8400-e29b-41d4-a716-446655448019', 'Festival', '3', '-', '550e8400-e29b-41d4-a716-446655447002'), -- Sabuga Bandung
+('550e8400-e29b-41d4-a716-446655448020', 'Festival', '4', '-', '550e8400-e29b-41d4-a716-446655447002'), -- Sabuga Bandung
+('550e8400-e29b-41d4-a716-446655448021', 'Gold', '1', 'A', '550e8400-e29b-41d4-a716-446655447003'), -- Grand City Surabaya
+('550e8400-e29b-41d4-a716-446655448022', 'Gold', '2', 'A', '550e8400-e29b-41d4-a716-446655447003'), -- Grand City Surabaya
+('550e8400-e29b-41d4-a716-446655448023', 'Gold', '3', 'A', '550e8400-e29b-41d4-a716-446655447003'), -- Grand City Surabaya
+('550e8400-e29b-41d4-a716-446655448024', 'Gold', '1', 'B', '550e8400-e29b-41d4-a716-446655447003'), -- Grand City Surabaya
+('550e8400-e29b-41d4-a716-446655448025', 'Gold', '2', 'B', '550e8400-e29b-41d4-a716-446655447003'), -- Grand City Surabaya
+('550e8400-e29b-41d4-a716-446655448026', 'Gold', '3', 'B', '550e8400-e29b-41d4-a716-446655447003'), -- Grand City Surabaya
+('550e8400-e29b-41d4-a716-446655448027', 'Silver', '1', 'C', '550e8400-e29b-41d4-a716-446655447003'), -- Grand City Surabaya
+('550e8400-e29b-41d4-a716-446655448028', 'Silver', '2', 'C', '550e8400-e29b-41d4-a716-446655447003'), -- Grand City Surabaya
+('550e8400-e29b-41d4-a716-446655448029', 'Silver', '3', 'C', '550e8400-e29b-41d4-a716-446655447003'), -- Grand City Surabaya
+('550e8400-e29b-41d4-a716-446655448030', 'Silver', '1', 'D', '550e8400-e29b-41d4-a716-446655447003'); -- Grand City Surabaya
+
+-- =====================================================
+-- DUMMY DATA FOR TICKET & RELATIONSHIP
+-- =====================================================
+
+-- Asumsi tabel "ORDER" sudah ada atau kita buat minimalnya untuk menampung Foreign Key Ticket
+CREATE TABLE IF NOT EXISTS "ORDER" (
+    order_id UUID PRIMARY KEY,
+    customer_id UUID NOT NULL,
+    order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (customer_id) REFERENCES customer(customer_id)
+);
+
+INSERT INTO "ORDER" (order_id, customer_id) VALUES
+('550e8400-e29b-41d4-a716-446655449001', '550e8400-e29b-41d4-a716-446655445001');
+
+INSERT INTO TICKET (ticket_id, ticket_code, tcategory_id, torder_id) VALUES
+('550e8400-e29b-41d4-a716-44665544a001', 'TKT-JEANS-001', '550e8400-e29b-41d4-a716-446655442001', '550e8400-e29b-41d4-a716-446655449001'), -- WVIP
+('550e8400-e29b-41d4-a716-44665544a002', 'TKT-JEANS-002', '550e8400-e29b-41d4-a716-446655442002', '550e8400-e29b-41d4-a716-446655449001'), -- VIP
+('550e8400-e29b-41d4-a716-44665544a003', 'TKT-JEANS-003', '550e8400-e29b-41d4-a716-446655442003', '550e8400-e29b-41d4-a716-446655449001'), -- Category 1
+('550e8400-e29b-41d4-a716-44665544a004', 'TKT-JEANS-004', '550e8400-e29b-41d4-a716-446655442004', '550e8400-e29b-41d4-a716-446655449001'), -- VIP
+('550e8400-e29b-41d4-a716-44665544a005', 'TKT-JEANS-005', '550e8400-e29b-41d4-a716-446655442005', '550e8400-e29b-41d4-a716-446655449001'), -- Regular
+('550e8400-e29b-41d4-a716-44665544a006', 'TKT-JEANS-006', '550e8400-e29b-41d4-a716-446655442006', '550e8400-e29b-41d4-a716-446655449001'), -- CAT 1
+('550e8400-e29b-41d4-a716-44665544a007', 'TKT-JEANS-007', '550e8400-e29b-41d4-a716-446655442007', '550e8400-e29b-41d4-a716-446655449001'), -- CAT 2
+('550e8400-e29b-41d4-a716-44665544a008', 'TKT-JEANS-008', '550e8400-e29b-41d4-a716-446655442008', '550e8400-e29b-41d4-a716-446655449001'), -- Platinum
+('550e8400-e29b-41d4-a716-44665544a009', 'TKT-JEANS-009', '550e8400-e29b-41d4-a716-446655442009', '550e8400-e29b-41d4-a716-446655449001'), -- Gold
+('550e8400-e29b-41d4-a716-44665544a010', 'TKT-JEANS-010', '550e8400-e29b-41d4-a716-446655442010', '550e8400-e29b-41d4-a716-446655449001'), -- Silver
+('550e8400-e29b-41d4-a716-44665544a011', 'TKT-JEANS-011', '550e8400-e29b-41d4-a716-446655442011', '550e8400-e29b-41d4-a716-446655449001'), -- Front Row
+('550e8400-e29b-41d4-a716-44665544a012', 'TKT-JEANS-012', '550e8400-e29b-41d4-a716-446655442012', '550e8400-e29b-41d4-a716-446655449001'), -- Festival
+('550e8400-e29b-41d4-a716-44665544a013', 'TKT-JEANS-013', '550e8400-e29b-41d4-a716-446655442013', '550e8400-e29b-41d4-a716-446655449001'), -- VIP
+('550e8400-e29b-41d4-a716-44665544a014', 'TKT-JEANS-014', '550e8400-e29b-41d4-a716-446655442014', '550e8400-e29b-41d4-a716-446655449001'), -- Regular
+('550e8400-e29b-41d4-a716-44665544a015', 'TKT-JEANS-015', '550e8400-e29b-41d4-a716-446655442001', '550e8400-e29b-41d4-a716-446655449001'), -- WVIP
+('550e8400-e29b-41d4-a716-44665544a016', 'TKT-JEANS-016', '550e8400-e29b-41d4-a716-446655442002', '550e8400-e29b-41d4-a716-446655449001'), -- VIP
+('550e8400-e29b-41d4-a716-44665544a017', 'TKT-JEANS-017', '550e8400-e29b-41d4-a716-446655442003', '550e8400-e29b-41d4-a716-446655449001'), -- Category 1
+('550e8400-e29b-41d4-a716-44665544a018', 'TKT-JEANS-018', '550e8400-e29b-41d4-a716-446655442004', '550e8400-e29b-41d4-a716-446655449001'), -- VIP
+('550e8400-e29b-41d4-a716-44665544a019', 'TKT-JEANS-019', '550e8400-e29b-41d4-a716-446655442005', '550e8400-e29b-41d4-a716-446655449001'), -- Regular
+('550e8400-e29b-41d4-a716-44665544a020', 'TKT-JEANS-020', '550e8400-e29b-41d4-a716-446655442006', '550e8400-e29b-41d4-a716-446655449001'); -- CAT 1
+
+-- Hubungkan TICKET pertama dengan SEAT pertama (Terisi)
+INSERT INTO HAS_RELATIONSHIP (seat_id, ticket_id) VALUES
+('550e8400-e29b-41d4-a716-446655448001', '550e8400-e29b-41d4-a716-44665544a001'),
+('550e8400-e29b-41d4-a716-446655448002', '550e8400-e29b-41d4-a716-44665544a002'),
+('550e8400-e29b-41d4-a716-446655448003', '550e8400-e29b-41d4-a716-44665544a003'),
+('550e8400-e29b-41d4-a716-446655448004', '550e8400-e29b-41d4-a716-44665544a004'),
+('550e8400-e29b-41d4-a716-446655448005', '550e8400-e29b-41d4-a716-44665544a005'),
+('550e8400-e29b-41d4-a716-446655448006', '550e8400-e29b-41d4-a716-44665544a006'),
+('550e8400-e29b-41d4-a716-446655448007', '550e8400-e29b-41d4-a716-44665544a007'),
+('550e8400-e29b-41d4-a716-446655448008', '550e8400-e29b-41d4-a716-44665544a008'),
+('550e8400-e29b-41d4-a716-446655448009', '550e8400-e29b-41d4-a716-44665544a009'),
+('550e8400-e29b-41d4-a716-446655448010', '550e8400-e29b-41d4-a716-44665544a010'),
+('550e8400-e29b-41d4-a716-446655448011', '550e8400-e29b-41d4-a716-44665544a011'),
+('550e8400-e29b-41d4-a716-446655448012', '550e8400-e29b-41d4-a716-44665544a012'),
+('550e8400-e29b-41d4-a716-446655448013', '550e8400-e29b-41d4-a716-44665544a013'),
+('550e8400-e29b-41d4-a716-446655448014', '550e8400-e29b-41d4-a716-44665544a014'),
+('550e8400-e29b-41d4-a716-446655448015', '550e8400-e29b-41d4-a716-44665544a015'),
+('550e8400-e29b-41d4-a716-446655448016', '550e8400-e29b-41d4-a716-44665544a016'),
+('550e8400-e29b-41d4-a716-446655448017', '550e8400-e29b-41d4-a716-44665544a017'),
+('550e8400-e29b-41d4-a716-446655448018', '550e8400-e29b-41d4-a716-44665544a018'),
+('550e8400-e29b-41d4-a716-446655448019', '550e8400-e29b-41d4-a716-44665544a019'),
+('550e8400-e29b-41d4-a716-446655448020', '550e8400-e29b-41d4-a716-44665544a020');

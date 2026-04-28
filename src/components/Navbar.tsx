@@ -17,41 +17,39 @@ type NavbarProps = {
 
 const menuByRole: Record<Role, MenuItem[]> = {
   guest: [
+    { label: "Beranda", href: "/" },
     { label: "Login", href: "/login" },
     { label: "Registrasi", href: "/register" },
   ],
   admin: [
     { label: "Dashboard", href: "/dashboard" },
     { label: "Manajemen Venue", href: "/venues" },
-    { label: "Manajemen Event", href: "/events" },
-    { label: "Manajemen Kursi", href: "/seats/manage" },
-    { label: "Kategori Tiket", href: "/ticket-categories/manage" },
-    { label: "Manajemen Tiket", href: "/tickets/manage" },
+    { label: "Manajemen Tiket", href: "/tickets" },
+    { label: "Manajemen Kursi", href: "/seats" },
+    { label: "Kategori Tiket", href: "/ticket-categories" },
     { label: "Semua Order", href: "/orders/all" },
     { label: "Tiket (Aset)", href: "/assets/tickets" },
     { label: "Order (Aset)", href: "/assets/orders" },
     { label: "Profile", href: "/profile" },
-    { label: "Logout", href: "/logout" },
   ],
   organizer: [
     { label: "Dashboard", href: "/dashboard" },
     { label: "Event Saya", href: "/events" },
     { label: "Manajemen Venue", href: "/venues" },
-    { label: "Manajemen Kursi", href: "/seats/manage" },
-    { label: "Kategori Tiket", href: "/ticket-categories/manage" },
-    { label: "Manajemen Tiket", href: "/tickets/manage" },
+    { label: "Manajemen Kursi", href: "/seats" },
+    { label: "Kategori Tiket", href: "/ticket-categories" },
+    { label: "Manajemen Tiket", href: "/tickets" },
     { label: "Semua Order", href: "/orders/all" },
     { label: "Tiket (Aset)", href: "/assets/tickets" },
     { label: "Order (Aset)", href: "/assets/orders" },
     { label: "Profile", href: "/profile" },
-    { label: "Logout", href: "/logout" },
   ],
   customer: [
     { label: "Dashboard", href: "/dashboard" },
     { label: "Tiket Saya", href: "/my-tickets" },
-    { label: "Pesanan", href: "/orders" },
+    { label: "Pesanan", href: "/order" },
     { label: "Cari Event", href: "/events" },
-    { label: "Promosi", href: "/promotions" },
+    { label: "Promosi", href: "/promotion" },
     { label: "Venue", href: "/venues" },
     { label: "Artis", href: "/artists" },
     { label: "Logout", href: "/logout" },
@@ -69,18 +67,21 @@ export default function Navbar({ role }: NavbarProps) {
 
   return (
     <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/95 backdrop-blur">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-        <Link href="/" className="text-xl font-bold tracking-tight text-gray-900">
+      <div className="mx-auto flex max-w-7xl items-center gap-4 px-6 py-3">
+        <Link
+          href="/"
+          className="shrink-0 text-lg font-bold tracking-tight text-gray-900"
+        >
           JEANS RAQIL
         </Link>
 
-        <nav className="flex flex-wrap items-center justify-end gap-2">
+        <nav className="flex flex-1 items-center justify-end gap-1 overflow-x-auto whitespace-nowrap">
           {menus.map((menu) =>
             menu.href === "/logout" ? (
               <button
                 key="logout"
                 onClick={handleLogout}
-                className="rounded-full px-4 py-2 text-sm font-medium text-rose-600 transition hover:bg-rose-50 hover:text-rose-700"
+                className="shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold text-rose-600 transition hover:bg-rose-50 hover:text-rose-700"
               >
                 {menu.label}
               </button>
@@ -88,7 +89,7 @@ export default function Navbar({ role }: NavbarProps) {
               <Link
                 key={menu.label}
                 href={menu.href}
-                className="rounded-full px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100 hover:text-black"
+                className="shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:bg-gray-100 hover:text-black"
               >
                 {menu.label}
               </Link>
