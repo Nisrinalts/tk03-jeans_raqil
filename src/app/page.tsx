@@ -26,7 +26,7 @@ export default function LandingPage() {
       <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <Link href="/" className="text-xl font-bold tracking-tight text-slate-900">
-            JEANS RAQIL
+            TikTakTuk
           </Link>
           <nav className="flex items-center gap-2">
             <Link
@@ -56,7 +56,7 @@ export default function LandingPage() {
               Pesan tiket konser favoritmu dengan mudah.
             </h1>
             <p className="mt-5 text-lg text-slate-600">
-              JEANS RAQIL menghubungkan customer, organizer, dan venue dalam
+              TikTakTuk menghubungkan customer, organizer, dan venue dalam
               satu platform tiket terpadu. Kelola event, pilih kursi, dan
               nikmati promo spesial — semua dalam satu tempat.
             </p>
@@ -90,7 +90,7 @@ export default function LandingPage() {
       {/* Why us */}
       <section className="mx-auto max-w-7xl px-6 pb-20">
         <h2 className="text-3xl font-bold tracking-tight text-slate-900">
-          Kenapa JEANS RAQIL?
+          Kenapa TikTakTuk?
         </h2>
         <div className="mt-8 grid gap-5 md:grid-cols-3">
           <BenefitCard
