@@ -84,17 +84,20 @@ function getGenreBadgeClass(genre: string) {
 
 export default function ArtistsPage() {
   const router = useRouter();
-  const user = getUser();
+
+  const [role, setRole] = useState<Role | null>(null);
 
   useEffect(() => {
+    const user = getUser();
+
     if (!user) {
       router.push("/login");
+      return;
     }
-  }, [user, router]);
 
-  if (!user) return null;
+    setRole(user.role);
+  }, [router]);
 
-  const role = user.role;
   const canManage = role === "admin";
 
   const [artists, setArtists] = useState<Artist[]>(initialArtists);
@@ -224,6 +227,8 @@ export default function ArtistsPage() {
     setSuccessMessage("Artist berhasil dihapus.");
     setSuccessType("delete");
   };
+  
+  if (!role) return null;
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-100 via-slate-50 to-white">
