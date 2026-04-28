@@ -5,11 +5,6 @@ import { useMemo, useState } from "react";
 import Navbar from "@/components/Navbar";
 import { Artist } from "@/types/artist";
 import { getUser } from "@/lib/auth";
-<<<<<<< HEAD
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
-=======
->>>>>>> e2a3102c35e30cff2d50d5cb8cd8ca73394e222a
 
 type Role = "guest" | "admin" | "organizer" | "customer";
 
@@ -86,23 +81,8 @@ function getGenreBadgeClass(genre: string) {
 }
 
 export default function ArtistsPage() {
-<<<<<<< HEAD
-  const router = useRouter();
-  const user = getUser();
-
-  useEffect(() => {
-    if (!user) {
-      router.push("/login");
-    }
-  }, [user, router]);
-
-  if (!user) return null;
-
-  const role = user.role;
-=======
   const user = getUser();
   const role: Role = user?.role ?? "guest";
->>>>>>> e2a3102c35e30cff2d50d5cb8cd8ca73394e222a
   const canManage = role === "admin";
 
   const [artists, setArtists] = useState<Artist[]>(initialArtists);

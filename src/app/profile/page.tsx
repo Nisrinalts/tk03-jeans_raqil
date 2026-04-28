@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
-import { getUser, getProfile, saveProfile, AuthUser, ProfileData } from "@/lib/auth";
+import { getUser, getProfile, saveProfile, logout, AuthUser, ProfileData } from "@/lib/auth";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -220,6 +220,20 @@ export default function ProfilePage() {
               className="rounded-full border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
             >
               Kembali ke Dashboard
+            </button>
+          </div>
+
+          {/* Logout */}
+          <div className="mt-10 border-t border-slate-200 pt-8">
+            <h2 className="mb-2 text-lg font-bold text-slate-900">Keluar Akun</h2>
+            <p className="mb-5 text-sm text-slate-500">
+              Anda akan keluar dari sesi ini dan diarahkan ke halaman login.
+            </p>
+            <button
+              onClick={() => { logout(); router.push("/login"); }}
+              className="rounded-full border border-rose-300 bg-white px-6 py-3 text-sm font-semibold text-rose-600 transition hover:bg-rose-50"
+            >
+              Logout
             </button>
           </div>
         </div>
