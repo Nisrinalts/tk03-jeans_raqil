@@ -5,6 +5,17 @@ export type AuthUser = {
   organizer_id?: string;
 };
 
+export type ProfileData = {
+  // photo as data URL (uploaded via input type=file)
+  avatar?: string;
+  // customer
+  full_name?: string;
+  phone_number?: string;
+  // organizer
+  organizer_name?: string;
+  contact_email?: string;
+};
+
 type StoredUser = AuthUser & { password: string };
 
 const USERS: StoredUser[] = [
@@ -61,4 +72,33 @@ export function getUser(): AuthUser | null {
   } catch {
     return null;
   }
+}
+
+const PROFILE_KEY = "jeans_raqil_profile";
+
+export function getProfile(userId: string): ProfileData {
+  if (typeof window === "undefined") return {};
+  const raw = localStorage.getItem(PROFILE_KEY);
+  if (!raw) return {};
+  try {
+    const all = JSON.parse(raw) as Record<string, ProfileData>;
+    return all[userId] ?? {};
+  } catch {
+    return {};
+  }
+}
+
+export function saveProfile(userId: string, data: ProfileData): void {
+  if (typeof window === "undefined") return;
+  const raw = localStorage.getItem(PROFILE_KEY);
+  let all: Record<string, ProfileData> = {};
+  if (raw) {
+    try {
+      all = JSON.parse(raw);
+    } catch {
+      all = {};
+    }
+  }
+  all[userId] = { ...all[userId], ...data };
+  localStorage.setItem(PROFILE_KEY, JSON.stringify(all));
 }
