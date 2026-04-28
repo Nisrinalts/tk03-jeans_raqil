@@ -173,17 +173,20 @@ const initialTicketCategories: TicketCategory[] = [
 
 export default function TicketCategoryPage() {
   const router = useRouter();
-  const user = getUser();
+
+  const [role, setRole] = useState<Role | null>(null);
 
   useEffect(() => {
+    const user = getUser();
+
     if (!user) {
       router.push("/login");
+      return;
     }
-  }, [user, router]);
 
-  if (!user) return null;
+    setRole(user.role);
+  }, [router]);
 
-  const role = user.role;
   const canManage = role === "admin" || role === "organizer";
 
   const [ticketCategories, setTicketCategories] =
@@ -411,6 +414,8 @@ export default function TicketCategoryPage() {
     setSuccessMessage("Kategori tiket berhasil dihapus.");
     setSuccessType("delete");
   };
+
+  if (!role) return null;
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-100 via-slate-50 to-white">
