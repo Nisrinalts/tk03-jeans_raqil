@@ -10,10 +10,15 @@ type EventDisplay = {
   event_id: string;
   event_datetime: string;
   event_title: string;
+  description: string;
   venue_id: string;
   venue_name: string;
   organizer_id: string;
   organizer_name: string;
+  artist_id: string;
+  artist_name: string;
+  category_ids: string[];
+  category_names: string[];
 };
 
 const venueOptions = [
@@ -27,60 +32,113 @@ const organizerOptions = [
   { organizer_id: "550e8400-e29b-41d4-a716-446655446002", organizer_name: "Organizer Dua" },
 ];
 
+const artistOptions = [
+  { artist_id: "550e8400-e29b-41d4-a716-446655440001", artist_name: "Drake" },
+  { artist_id: "550e8400-e29b-41d4-a716-446655440002", artist_name: "Justin Bieber" },
+  { artist_id: "550e8400-e29b-41d4-a716-446655440003", artist_name: "Kanye West" },
+  { artist_id: "550e8400-e29b-41d4-a716-446655440004", artist_name: "Olivia Rodrigo" },
+  { artist_id: "550e8400-e29b-41d4-a716-446655440005", artist_name: "Selena Gomez" },
+  { artist_id: "550e8400-e29b-41d4-a716-446655440006", artist_name: "SZA" },
+  { artist_id: "550e8400-e29b-41d4-a716-446655440007", artist_name: "The Weeknd" },
+  { artist_id: "550e8400-e29b-41d4-a716-446655440008", artist_name: "Travis Scott" },
+];
+
+const categoryOptions = [
+  { category_id: "550e8400-e29b-41d4-a716-446655442001", category_name: "WVIP" },
+  { category_id: "550e8400-e29b-41d4-a716-446655442002", category_name: "VIP" },
+  { category_id: "550e8400-e29b-41d4-a716-446655442003", category_name: "Category 1" },
+  { category_id: "550e8400-e29b-41d4-a716-446655442004", category_name: "Platinum" },
+  { category_id: "550e8400-e29b-41d4-a716-446655442005", category_name: "Gold" },
+  { category_id: "550e8400-e29b-41d4-a716-446655442006", category_name: "Silver" },
+  { category_id: "550e8400-e29b-41d4-a716-446655442007", category_name: "CAT 1" },
+  { category_id: "550e8400-e29b-41d4-a716-446655442008", category_name: "CAT 2" },
+  { category_id: "550e8400-e29b-41d4-a716-446655442009", category_name: "Regular" },
+];
+
 const initialEvents: EventDisplay[] = [
   {
     event_id: "550e8400-e29b-41d4-a716-446655441001",
     event_title: "The Weeknd After Hours Tour",
+    description: "Konser spektakuler The Weeknd membawakan album After Hours dengan panggung megah dan efek visual memukau.",
     event_datetime: "2025-08-15T19:00",
     venue_id: "550e8400-e29b-41d4-a716-446655447001",
     venue_name: "Jakarta Convention Center",
     organizer_id: "550e8400-e29b-41d4-a716-446655446001",
     organizer_name: "Organizer Satu",
+    artist_id: "550e8400-e29b-41d4-a716-446655440007",
+    artist_name: "The Weeknd",
+    category_ids: ["550e8400-e29b-41d4-a716-446655442001", "550e8400-e29b-41d4-a716-446655442002", "550e8400-e29b-41d4-a716-446655442009"],
+    category_names: ["WVIP", "VIP", "Regular"],
   },
   {
     event_id: "550e8400-e29b-41d4-a716-446655441002",
     event_title: "Justin Bieber World Tour",
+    description: "Justin Bieber hadir di Indonesia membawakan hits terbaiknya dalam tur dunia yang ditunggu-tunggu.",
     event_datetime: "2025-09-20T18:00",
     venue_id: "550e8400-e29b-41d4-a716-446655447001",
     venue_name: "Jakarta Convention Center",
     organizer_id: "550e8400-e29b-41d4-a716-446655446002",
     organizer_name: "Organizer Dua",
+    artist_id: "550e8400-e29b-41d4-a716-446655440002",
+    artist_name: "Justin Bieber",
+    category_ids: ["550e8400-e29b-41d4-a716-446655442002", "550e8400-e29b-41d4-a716-446655442007", "550e8400-e29b-41d4-a716-446655442009"],
+    category_names: ["VIP", "CAT 1", "Regular"],
   },
   {
     event_id: "550e8400-e29b-41d4-a716-446655441003",
     event_title: "Olivia Rodrigo GUTS Tour",
+    description: "Olivia Rodrigo membawa tur GUTS ke Indonesia dengan setlist lengkap dari album terbaru.",
     event_datetime: "2025-10-05T20:00",
     venue_id: "550e8400-e29b-41d4-a716-446655447002",
     venue_name: "Sabuga Bandung",
     organizer_id: "550e8400-e29b-41d4-a716-446655446001",
     organizer_name: "Organizer Satu",
+    artist_id: "550e8400-e29b-41d4-a716-446655440004",
+    artist_name: "Olivia Rodrigo",
+    category_ids: ["550e8400-e29b-41d4-a716-446655442002", "550e8400-e29b-41d4-a716-446655442003", "550e8400-e29b-41d4-a716-446655442009"],
+    category_names: ["VIP", "Category 1", "Regular"],
   },
   {
     event_id: "550e8400-e29b-41d4-a716-446655441004",
     event_title: "Kanye West Donda Live",
+    description: "Pengalaman konser imersif Kanye West dengan instalasi seni dan produksi audio-visual terdepan.",
     event_datetime: "2025-11-12T19:30",
     venue_id: "550e8400-e29b-41d4-a716-446655447002",
     venue_name: "Sabuga Bandung",
     organizer_id: "550e8400-e29b-41d4-a716-446655446002",
     organizer_name: "Organizer Dua",
+    artist_id: "550e8400-e29b-41d4-a716-446655440003",
+    artist_name: "Kanye West",
+    category_ids: ["550e8400-e29b-41d4-a716-446655442001", "550e8400-e29b-41d4-a716-446655442004", "550e8400-e29b-41d4-a716-446655442008"],
+    category_names: ["WVIP", "Platinum", "CAT 2"],
   },
   {
     event_id: "550e8400-e29b-41d4-a716-446655441005",
     event_title: "The Weeknd Starboy Festival",
+    description: "Festival musik The Weeknd bertema Starboy dengan kolaborasi artis kejutan dan penampilan spesial.",
     event_datetime: "2025-12-01T20:00",
     venue_id: "550e8400-e29b-41d4-a716-446655447002",
     venue_name: "Sabuga Bandung",
     organizer_id: "550e8400-e29b-41d4-a716-446655446001",
     organizer_name: "Organizer Satu",
+    artist_id: "550e8400-e29b-41d4-a716-446655440007",
+    artist_name: "The Weeknd",
+    category_ids: ["550e8400-e29b-41d4-a716-446655442001", "550e8400-e29b-41d4-a716-446655442002", "550e8400-e29b-41d4-a716-446655442005", "550e8400-e29b-41d4-a716-446655442006"],
+    category_names: ["WVIP", "VIP", "Gold", "Silver"],
   },
   {
     event_id: "550e8400-e29b-41d4-a716-446655441006",
     event_title: "Drake It's All A Blur Tour",
+    description: "Drake tampil live membawakan lagu-lagu ikoniknya dalam tur It's All A Blur yang memukau.",
     event_datetime: "2026-01-10T19:00",
     venue_id: "550e8400-e29b-41d4-a716-446655447003",
     venue_name: "Grand City Surabaya",
     organizer_id: "550e8400-e29b-41d4-a716-446655446002",
     organizer_name: "Organizer Dua",
+    artist_id: "550e8400-e29b-41d4-a716-446655440001",
+    artist_name: "Drake",
+    category_ids: ["550e8400-e29b-41d4-a716-446655442002", "550e8400-e29b-41d4-a716-446655442007", "550e8400-e29b-41d4-a716-446655442009"],
+    category_names: ["VIP", "CAT 1", "Regular"],
   },
 ];
 
@@ -94,22 +152,32 @@ export default function EventsPage() {
   // create
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
   const [datetime, setDatetime] = useState("");
   const [venueId, setVenueId] = useState("");
   const [organizerId, setOrganizerId] = useState("");
+  const [artistId, setArtistId] = useState("");
+  const [categoryIds, setCategoryIds] = useState<string[]>([]);
   const [error, setError] = useState("");
 
   // edit
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [selectedId, setSelectedId] = useState("");
   const [editTitle, setEditTitle] = useState("");
+  const [editDescription, setEditDescription] = useState("");
   const [editDatetime, setEditDatetime] = useState("");
   const [editVenueId, setEditVenueId] = useState("");
   const [editOrganizerId, setEditOrganizerId] = useState("");
+  const [editArtistId, setEditArtistId] = useState("");
+  const [editCategoryIds, setEditCategoryIds] = useState<string[]>([]);
   const [editError, setEditError] = useState("");
 
+  // delete
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [eventToDelete, setEventToDelete] = useState<EventDisplay | null>(null);
+
   const [successMessage, setSuccessMessage] = useState("");
-  const [successType, setSuccessType] = useState<"create" | "update" | "">("");
+  const [successType, setSuccessType] = useState<"create" | "update" | "delete" | "">("");
 
   useEffect(() => {
     const u = getUser();
@@ -138,28 +206,56 @@ export default function EventsPage() {
       (e) =>
         e.event_title.toLowerCase().includes(kw) ||
         e.venue_name.toLowerCase().includes(kw) ||
-        e.organizer_name.toLowerCase().includes(kw)
+        e.organizer_name.toLowerCase().includes(kw) ||
+        e.artist_name.toLowerCase().includes(kw)
     );
   }, [search, events, isOrganizer, user]);
 
   const resolveVenue = (id: string) => venueOptions.find((v) => v.venue_id === id);
   const resolveOrganizer = (id: string) => organizerOptions.find((o) => o.organizer_id === id);
+  const resolveArtist = (id: string) => artistOptions.find((a) => a.artist_id === id);
+
+  const toggleCategory = (id: string, current: string[], setter: (v: string[]) => void) => {
+    setter(current.includes(id) ? current.filter((c) => c !== id) : [...current, id]);
+  };
+
+  const resetCreate = () => {
+    setTitle(""); setDescription(""); setDatetime(""); setVenueId("");
+    if (!isOrganizer) setOrganizerId("");
+    setArtistId(""); setCategoryIds([]); setError("");
+  };
 
   const handleCreate = () => {
     if (!title.trim()) { setError("Judul event wajib diisi."); return; }
     if (!datetime) { setError("Tanggal & waktu wajib diisi."); return; }
     if (!venueId) { setError("Venue wajib dipilih."); return; }
     if (!organizerId) { setError("Organizer wajib dipilih."); return; }
+    if (!artistId) { setError("Artis wajib dipilih."); return; }
+    if (categoryIds.length === 0) { setError("Pilih minimal satu kategori tiket."); return; }
 
     const venue = resolveVenue(venueId)!;
     const org = resolveOrganizer(organizerId)!;
+    const artist = resolveArtist(artistId)!;
+    const cats = categoryOptions.filter((c) => categoryIds.includes(c.category_id));
+
     setEvents((prev) => [
       ...prev,
-      { event_id: uuidv4(), event_title: title.trim(), event_datetime: datetime, venue_id: venue.venue_id, venue_name: venue.venue_name, organizer_id: org.organizer_id, organizer_name: org.organizer_name },
+      {
+        event_id: uuidv4(),
+        event_title: title.trim(),
+        description: description.trim(),
+        event_datetime: datetime,
+        venue_id: venue.venue_id,
+        venue_name: venue.venue_name,
+        organizer_id: org.organizer_id,
+        organizer_name: org.organizer_name,
+        artist_id: artist.artist_id,
+        artist_name: artist.artist_name,
+        category_ids: cats.map((c) => c.category_id),
+        category_names: cats.map((c) => c.category_name),
+      },
     ]);
-    setTitle(""); setDatetime(""); setVenueId("");
-    if (!isOrganizer) setOrganizerId("");
-    setError("");
+    resetCreate();
     setIsCreateOpen(false);
     setSuccessMessage("Event berhasil ditambahkan.");
     setSuccessType("create");
@@ -168,9 +264,12 @@ export default function EventsPage() {
   const handleOpenEdit = (event: EventDisplay) => {
     setSelectedId(event.event_id);
     setEditTitle(event.event_title);
+    setEditDescription(event.description);
     setEditDatetime(event.event_datetime);
     setEditVenueId(event.venue_id);
     setEditOrganizerId(event.organizer_id);
+    setEditArtistId(event.artist_id);
+    setEditCategoryIds(event.category_ids);
     setEditError("");
     setSuccessMessage("");
     setIsEditOpen(true);
@@ -181,19 +280,52 @@ export default function EventsPage() {
     if (!editDatetime) { setEditError("Tanggal & waktu wajib diisi."); return; }
     if (!editVenueId) { setEditError("Venue wajib dipilih."); return; }
     if (!editOrganizerId) { setEditError("Organizer wajib dipilih."); return; }
+    if (!editArtistId) { setEditError("Artis wajib dipilih."); return; }
+    if (editCategoryIds.length === 0) { setEditError("Pilih minimal satu kategori tiket."); return; }
 
     const venue = resolveVenue(editVenueId)!;
     const org = resolveOrganizer(editOrganizerId)!;
+    const artist = resolveArtist(editArtistId)!;
+    const cats = categoryOptions.filter((c) => editCategoryIds.includes(c.category_id));
+
     setEvents((prev) =>
       prev.map((e) =>
         e.event_id === selectedId
-          ? { ...e, event_title: editTitle.trim(), event_datetime: editDatetime, venue_id: venue.venue_id, venue_name: venue.venue_name, organizer_id: org.organizer_id, organizer_name: org.organizer_name }
+          ? {
+              ...e,
+              event_title: editTitle.trim(),
+              description: editDescription.trim(),
+              event_datetime: editDatetime,
+              venue_id: venue.venue_id,
+              venue_name: venue.venue_name,
+              organizer_id: org.organizer_id,
+              organizer_name: org.organizer_name,
+              artist_id: artist.artist_id,
+              artist_name: artist.artist_name,
+              category_ids: cats.map((c) => c.category_id),
+              category_names: cats.map((c) => c.category_name),
+            }
           : e
       )
     );
     setIsEditOpen(false);
     setSuccessMessage("Event berhasil diperbarui.");
     setSuccessType("update");
+  };
+
+  const handleOpenDelete = (event: EventDisplay) => {
+    setEventToDelete(event);
+    setSuccessMessage("");
+    setIsDeleteOpen(true);
+  };
+
+  const handleDelete = () => {
+    if (!eventToDelete) return;
+    setEvents((prev) => prev.filter((e) => e.event_id !== eventToDelete.event_id));
+    setIsDeleteOpen(false);
+    setEventToDelete(null);
+    setSuccessMessage("Event berhasil dihapus.");
+    setSuccessType("delete");
   };
 
   if (loading || !user) return null;
@@ -215,13 +347,13 @@ export default function EventsPage() {
                 {isOrganizer
                   ? "Kelola event yang Anda miliki."
                   : canManage
-                  ? "Kelola seluruh event pada platform JEANS RAQIL."
-                  : "Daftar event yang tersedia pada platform JEANS RAQIL."}
+                  ? "Kelola seluruh event pada platform."
+                  : "Daftar event yang tersedia."}
               </p>
             </div>
             {canManage && (
               <button
-                onClick={() => { setIsCreateOpen(true); setError(""); setSuccessMessage(""); }}
+                onClick={() => { resetCreate(); setIsCreateOpen(true); setSuccessMessage(""); }}
                 className="inline-flex items-center justify-center rounded-full bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700"
               >
                 <span className="mr-2 text-lg leading-none">＋</span>Tambah Event
@@ -240,21 +372,22 @@ export default function EventsPage() {
             <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
               <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">Total Venue</p>
               <p className="mt-3 text-5xl font-bold text-slate-900">
-                {new Set(events.map((e) => e.venue_id)).size}
+                {new Set(visibleEvents.map((e) => e.venue_id)).size}
               </p>
             </div>
             <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-              <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">Total Organizer</p>
+              <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">Total Artis</p>
               <p className="mt-3 text-5xl font-bold text-slate-900">
-                {new Set(events.map((e) => e.organizer_id)).size}
+                {new Set(visibleEvents.map((e) => e.artist_id)).size}
               </p>
             </div>
           </div>
 
-          {/* Success message */}
+          {/* Success / error banner */}
           {successMessage && (
             <div className={`mb-6 rounded-2xl px-4 py-3 text-sm font-medium border ${
               successType === "create" ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+              : successType === "delete" ? "border-rose-200 bg-rose-50 text-rose-700"
               : "border-yellow-200 bg-yellow-50 text-yellow-700"
             }`}>
               {successMessage}
@@ -275,7 +408,7 @@ export default function EventsPage() {
                   <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-lg text-slate-400">⌕</span>
                   <input
                     type="text"
-                    placeholder="Cari judul, venue, atau organizer..."
+                    placeholder="Cari judul, venue, artis, atau organizer..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     className="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-12 pr-4 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-blue-500"
@@ -290,11 +423,12 @@ export default function EventsPage() {
                 <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-400">
                   <tr>
                     <th className="px-6 py-4">Event</th>
-                    <th className="px-6 py-4">Event ID</th>
                     <th className="px-6 py-4">Tanggal & Waktu</th>
+                    <th className="px-6 py-4">Artis</th>
                     <th className="px-6 py-4">Venue</th>
-                    <th className="px-6 py-4">Aksi</th>
-                    {canManage && <th className="px-6 py-4 text-right">Action</th>}
+                    <th className="px-6 py-4">Kategori</th>
+                    {!isOrganizer && <th className="px-6 py-4">Organizer</th>}
+                    <th className="px-6 py-4 text-right">Aksi</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -302,43 +436,64 @@ export default function EventsPage() {
                     <tr key={event.event_id} className="text-sm text-slate-700">
                       <td className="px-6 py-5">
                         <div className="flex items-center gap-4">
-                          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 text-lg font-bold text-white shadow-sm">
+                          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 text-lg font-bold text-white shadow-sm">
                             {event.event_title.charAt(0)}
                           </div>
-                          <p className="font-semibold text-slate-900">{event.event_title}</p>
+                          <div>
+                            <p className="font-semibold text-slate-900">{event.event_title}</p>
+                            {event.description && (
+                              <p className="mt-0.5 max-w-xs truncate text-xs text-slate-400">{event.description}</p>
+                            )}
+                          </div>
                         </div>
                       </td>
-                      <td className="px-6 py-5 font-medium text-slate-700">{event.event_id}</td>
-                      <td className="px-6 py-5">{event.event_datetime}</td>
+                      <td className="px-6 py-5 whitespace-nowrap">{event.event_datetime.replace("T", " ")}</td>
+                      <td className="px-6 py-5">
+                        <span className="inline-flex rounded-full bg-purple-50 border border-purple-100 px-3 py-1 text-xs font-semibold text-purple-700">
+                          {event.artist_name}
+                        </span>
+                      </td>
                       <td className="px-6 py-5 font-medium text-slate-900">{event.venue_name}</td>
                       <td className="px-6 py-5">
-                        <a
-                          href={`/checkout?event_id=${event.event_id}`}
-                          className="inline-flex items-center justify-center whitespace-nowrap bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm font-medium"
-                        >
-                          Beli Tiket
-                        </a>
+                        <div className="flex flex-wrap gap-1">
+                          {event.category_names.map((cat) => (
+                            <span key={cat} className="inline-flex rounded-full bg-slate-100 border border-slate-200 px-2 py-0.5 text-xs font-medium text-slate-600">
+                              {cat}
+                            </span>
+                          ))}
+                        </div>
                       </td>
-                      {canManage && (
-                        <td className="px-6 py-5">
-                          <div className="flex justify-end">
-                            <button
-                              onClick={() => handleOpenEdit(event)}
-                              className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700"
-                              title="Update Event"
-                            >✎</button>
-                          </div>
-                        </td>
-                      )}
+                      {!isOrganizer && <td className="px-6 py-5 text-slate-600">{event.organizer_name}</td>}
+                      <td className="px-6 py-5">
+                        <div className="flex justify-end gap-2">
+                          <a
+                            href={`/checkout?event_id=${event.event_id}`}
+                            className="flex h-9 items-center justify-center rounded-xl bg-blue-600 px-3 text-xs font-semibold text-white transition hover:bg-blue-700"
+                          >
+                            Beli
+                          </a>
+                          {canManage && (
+                            <>
+                              <button
+                                onClick={() => handleOpenEdit(event)}
+                                className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700"
+                                title="Edit Event"
+                              >✎</button>
+                              <button
+                                onClick={() => handleOpenDelete(event)}
+                                className="flex h-9 w-9 items-center justify-center rounded-xl border border-rose-200 bg-white text-rose-500 shadow-sm transition hover:bg-rose-50"
+                                title="Hapus Event"
+                              >🗑</button>
+                            </>
+                          )}
+                        </div>
+                      </td>
                     </tr>
                   ))}
                   {visibleEvents.length === 0 && (
                     <tr>
-                      <td
-                        colSpan={canManage ? 7 : 6}
-                        className="px-6 py-10 text-center text-sm text-slate-400"
-                      >
-                        Tidak ada event yang sesuai dengan pencarian.
+                      <td colSpan={isOrganizer ? 6 : 7} className="px-6 py-10 text-center text-sm text-slate-400">
+                        Tidak ada event yang sesuai.
                       </td>
                     </tr>
                   )}
@@ -352,47 +507,68 @@ export default function EventsPage() {
       {/* CREATE MODAL */}
       {isCreateOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 px-4 backdrop-blur-sm">
-          <div className="w-full max-w-xl rounded-[28px] border border-slate-200 bg-white p-7 shadow-2xl">
-            <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-3xl font-bold text-slate-900">Tambah Event Baru</h2>
-              <button onClick={() => { setIsCreateOpen(false); setError(""); }} className="text-3xl text-slate-300 transition hover:text-slate-500">×</button>
+          <div className="w-full max-w-xl rounded-[28px] border border-slate-200 bg-white shadow-2xl flex flex-col max-h-[90vh]">
+            <div className="flex items-center justify-between px-7 pt-7 pb-4 border-b border-slate-100">
+              <h2 className="text-2xl font-bold text-slate-900">Tambah Event Baru</h2>
+              <button onClick={() => { setIsCreateOpen(false); resetCreate(); }} className="text-3xl text-slate-300 transition hover:text-slate-500">×</button>
             </div>
-            <div className="space-y-5">
-              <div>
-                <label className="mb-2 block text-sm font-semibold uppercase tracking-wide text-slate-500">Judul Event <span className="text-rose-500">*</span></label>
+            <div className="overflow-y-auto px-7 py-5 space-y-5">
+              <FormField label="Judul Event" required>
                 <input type="text" placeholder="cth. The Weeknd After Hours Tour" value={title} onChange={(e) => setTitle(e.target.value)}
-                  className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-base text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-blue-500" />
-              </div>
-              <div>
-                <label className="mb-2 block text-sm font-semibold uppercase tracking-wide text-slate-500">Tanggal & Waktu <span className="text-rose-500">*</span></label>
-                <input type="datetime-local" value={datetime} onChange={(e) => setDatetime(e.target.value)}
-                  className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-base text-slate-900 outline-none transition focus:border-blue-500" />
-              </div>
-              <div>
-                <label className="mb-2 block text-sm font-semibold uppercase tracking-wide text-slate-500">Venue <span className="text-rose-500">*</span></label>
-                <select value={venueId} onChange={(e) => setVenueId(e.target.value)}
-                  className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-base text-slate-900 outline-none transition focus:border-blue-500">
+                  className={inputCls} />
+              </FormField>
+              <FormField label="Deskripsi">
+                <textarea rows={3} placeholder="Deskripsi singkat tentang event..." value={description} onChange={(e) => setDescription(e.target.value)}
+                  className={inputCls + " resize-none"} />
+              </FormField>
+              <FormField label="Tanggal & Waktu" required>
+                <input type="datetime-local" value={datetime} onChange={(e) => setDatetime(e.target.value)} className={inputCls} />
+              </FormField>
+              <FormField label="Venue" required>
+                <select value={venueId} onChange={(e) => setVenueId(e.target.value)} className={inputCls}>
                   <option value="">-- Pilih Venue --</option>
                   {venueOptions.map((v) => <option key={v.venue_id} value={v.venue_id}>{v.venue_name}</option>)}
                 </select>
-              </div>
+              </FormField>
               {!isOrganizer && (
-                <div>
-                  <label className="mb-2 block text-sm font-semibold uppercase tracking-wide text-slate-500">Organizer <span className="text-rose-500">*</span></label>
-                  <select value={organizerId} onChange={(e) => setOrganizerId(e.target.value)}
-                    className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-base text-slate-900 outline-none transition focus:border-blue-500">
+                <FormField label="Organizer" required>
+                  <select value={organizerId} onChange={(e) => setOrganizerId(e.target.value)} className={inputCls}>
                     <option value="">-- Pilih Organizer --</option>
                     {organizerOptions.map((o) => <option key={o.organizer_id} value={o.organizer_id}>{o.organizer_name}</option>)}
                   </select>
-                </div>
+                </FormField>
               )}
+              <FormField label="Artis" required>
+                <select value={artistId} onChange={(e) => setArtistId(e.target.value)} className={inputCls}>
+                  <option value="">-- Pilih Artis --</option>
+                  {artistOptions.map((a) => <option key={a.artist_id} value={a.artist_id}>{a.artist_name}</option>)}
+                </select>
+              </FormField>
+              <FormField label="Kategori Tiket" required>
+                <div className="flex flex-wrap gap-2">
+                  {categoryOptions.map((c) => (
+                    <button
+                      key={c.category_id}
+                      type="button"
+                      onClick={() => toggleCategory(c.category_id, categoryIds, setCategoryIds)}
+                      className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                        categoryIds.includes(c.category_id)
+                          ? "border-indigo-500 bg-indigo-600 text-white"
+                          : "border-slate-200 bg-white text-slate-600 hover:border-indigo-300 hover:bg-indigo-50"
+                      }`}
+                    >
+                      {c.category_name}
+                    </button>
+                  ))}
+                </div>
+              </FormField>
               {error && <p className="text-sm font-medium text-rose-500">{error}</p>}
-              <div className="flex gap-3 pt-2">
-                <button onClick={() => { setIsCreateOpen(false); setError(""); }}
-                  className="w-full rounded-2xl border border-slate-200 px-4 py-3 font-semibold text-slate-700 transition hover:bg-slate-50">Batal</button>
-                <button onClick={handleCreate}
-                  className="w-full rounded-2xl bg-indigo-600 px-4 py-3 font-semibold text-white transition hover:bg-indigo-700">Tambah Event</button>
-              </div>
+            </div>
+            <div className="flex gap-3 px-7 py-5 border-t border-slate-100">
+              <button onClick={() => { setIsCreateOpen(false); resetCreate(); }}
+                className="w-full rounded-2xl border border-slate-200 px-4 py-3 font-semibold text-slate-700 transition hover:bg-slate-50">Batal</button>
+              <button onClick={handleCreate}
+                className="w-full rounded-2xl bg-indigo-600 px-4 py-3 font-semibold text-white transition hover:bg-indigo-700">Tambah Event</button>
             </div>
           </div>
         </div>
@@ -401,51 +577,110 @@ export default function EventsPage() {
       {/* EDIT MODAL */}
       {isEditOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 px-4 backdrop-blur-sm">
-          <div className="w-full max-w-xl rounded-[28px] border border-slate-200 bg-white p-7 shadow-2xl">
-            <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-3xl font-bold text-slate-900">Edit Event</h2>
+          <div className="w-full max-w-xl rounded-[28px] border border-slate-200 bg-white shadow-2xl flex flex-col max-h-[90vh]">
+            <div className="flex items-center justify-between px-7 pt-7 pb-4 border-b border-slate-100">
+              <h2 className="text-2xl font-bold text-slate-900">Edit Event</h2>
               <button onClick={() => setIsEditOpen(false)} className="text-3xl text-slate-300 transition hover:text-slate-500">×</button>
             </div>
-            <div className="space-y-5">
-              <div>
-                <label className="mb-2 block text-sm font-semibold uppercase tracking-wide text-slate-500">Judul Event <span className="text-rose-500">*</span></label>
+            <div className="overflow-y-auto px-7 py-5 space-y-5">
+              <FormField label="Judul Event" required>
                 <input type="text" placeholder="cth. The Weeknd After Hours Tour" value={editTitle} onChange={(e) => setEditTitle(e.target.value)}
-                  className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-base text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-blue-500" />
-              </div>
-              <div>
-                <label className="mb-2 block text-sm font-semibold uppercase tracking-wide text-slate-500">Tanggal & Waktu <span className="text-rose-500">*</span></label>
-                <input type="datetime-local" value={editDatetime} onChange={(e) => setEditDatetime(e.target.value)}
-                  className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-base text-slate-900 outline-none transition focus:border-blue-500" />
-              </div>
-              <div>
-                <label className="mb-2 block text-sm font-semibold uppercase tracking-wide text-slate-500">Venue <span className="text-rose-500">*</span></label>
-                <select value={editVenueId} onChange={(e) => setEditVenueId(e.target.value)}
-                  className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-base text-slate-900 outline-none transition focus:border-blue-500">
+                  className={inputCls} />
+              </FormField>
+              <FormField label="Deskripsi">
+                <textarea rows={3} placeholder="Deskripsi singkat tentang event..." value={editDescription} onChange={(e) => setEditDescription(e.target.value)}
+                  className={inputCls + " resize-none"} />
+              </FormField>
+              <FormField label="Tanggal & Waktu" required>
+                <input type="datetime-local" value={editDatetime} onChange={(e) => setEditDatetime(e.target.value)} className={inputCls} />
+              </FormField>
+              <FormField label="Venue" required>
+                <select value={editVenueId} onChange={(e) => setEditVenueId(e.target.value)} className={inputCls}>
                   <option value="">-- Pilih Venue --</option>
                   {venueOptions.map((v) => <option key={v.venue_id} value={v.venue_id}>{v.venue_name}</option>)}
                 </select>
-              </div>
+              </FormField>
               {!isOrganizer && (
-                <div>
-                  <label className="mb-2 block text-sm font-semibold uppercase tracking-wide text-slate-500">Organizer <span className="text-rose-500">*</span></label>
-                  <select value={editOrganizerId} onChange={(e) => setEditOrganizerId(e.target.value)}
-                    className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-base text-slate-900 outline-none transition focus:border-blue-500">
+                <FormField label="Organizer" required>
+                  <select value={editOrganizerId} onChange={(e) => setEditOrganizerId(e.target.value)} className={inputCls}>
                     <option value="">-- Pilih Organizer --</option>
                     {organizerOptions.map((o) => <option key={o.organizer_id} value={o.organizer_id}>{o.organizer_name}</option>)}
                   </select>
-                </div>
+                </FormField>
               )}
+              <FormField label="Artis" required>
+                <select value={editArtistId} onChange={(e) => setEditArtistId(e.target.value)} className={inputCls}>
+                  <option value="">-- Pilih Artis --</option>
+                  {artistOptions.map((a) => <option key={a.artist_id} value={a.artist_id}>{a.artist_name}</option>)}
+                </select>
+              </FormField>
+              <FormField label="Kategori Tiket" required>
+                <div className="flex flex-wrap gap-2">
+                  {categoryOptions.map((c) => (
+                    <button
+                      key={c.category_id}
+                      type="button"
+                      onClick={() => toggleCategory(c.category_id, editCategoryIds, setEditCategoryIds)}
+                      className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                        editCategoryIds.includes(c.category_id)
+                          ? "border-indigo-500 bg-indigo-600 text-white"
+                          : "border-slate-200 bg-white text-slate-600 hover:border-indigo-300 hover:bg-indigo-50"
+                      }`}
+                    >
+                      {c.category_name}
+                    </button>
+                  ))}
+                </div>
+              </FormField>
               {editError && <p className="text-sm font-medium text-rose-500">{editError}</p>}
-              <div className="flex gap-3 pt-2">
-                <button onClick={() => setIsEditOpen(false)}
-                  className="w-full rounded-2xl border border-slate-200 px-4 py-3 font-semibold text-slate-700 transition hover:bg-slate-50">Batal</button>
-                <button onClick={handleUpdate}
-                  className="w-full rounded-2xl bg-indigo-600 px-4 py-3 font-semibold text-white transition hover:bg-indigo-700">Simpan Perubahan</button>
-              </div>
+            </div>
+            <div className="flex gap-3 px-7 py-5 border-t border-slate-100">
+              <button onClick={() => setIsEditOpen(false)}
+                className="w-full rounded-2xl border border-slate-200 px-4 py-3 font-semibold text-slate-700 transition hover:bg-slate-50">Batal</button>
+              <button onClick={handleUpdate}
+                className="w-full rounded-2xl bg-indigo-600 px-4 py-3 font-semibold text-white transition hover:bg-indigo-700">Simpan Perubahan</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DELETE MODAL */}
+      {isDeleteOpen && eventToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-[28px] border border-slate-200 bg-white p-7 shadow-2xl">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-rose-600">Hapus Event</h2>
+              <button onClick={() => { setIsDeleteOpen(false); setEventToDelete(null); }} className="text-3xl text-slate-300 transition hover:text-slate-500">×</button>
+            </div>
+            <p className="mb-4 text-sm text-slate-600">Apakah Anda yakin ingin menghapus event ini? Tindakan ini tidak dapat dibatalkan.</p>
+            <div className="mb-6 rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-1">
+              <p className="text-sm text-slate-700"><span className="font-semibold">Judul:</span> {eventToDelete.event_title}</p>
+              <p className="text-sm text-slate-700"><span className="font-semibold">Artis:</span> {eventToDelete.artist_name}</p>
+              <p className="text-sm text-slate-700"><span className="font-semibold">Venue:</span> {eventToDelete.venue_name}</p>
+              <p className="text-sm text-slate-700"><span className="font-semibold">Tanggal:</span> {eventToDelete.event_datetime.replace("T", " ")}</p>
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => { setIsDeleteOpen(false); setEventToDelete(null); }}
+                className="w-full rounded-2xl border border-slate-200 px-4 py-3 font-semibold text-slate-700 transition hover:bg-slate-50">Batal</button>
+              <button onClick={handleDelete}
+                className="w-full rounded-2xl bg-rose-600 px-4 py-3 font-semibold text-white transition hover:bg-rose-700">Hapus</button>
             </div>
           </div>
         </div>
       )}
     </main>
+  );
+}
+
+const inputCls = "w-full rounded-2xl border border-slate-200 px-4 py-3 text-base text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-blue-500";
+
+function FormField({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
+  return (
+    <div>
+      <label className="mb-2 block text-sm font-semibold uppercase tracking-wide text-slate-500">
+        {label} {required && <span className="text-rose-500">*</span>}
+      </label>
+      {children}
+    </div>
   );
 }
