@@ -48,9 +48,47 @@ const USERS: StoredUser[] = [
 ];
 
 const KEY = "jeans_raqil_user";
+const REGISTERED_KEY = "jeans_raqil_registered";
+
+function getRegisteredUsers(): StoredUser[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(REGISTERED_KEY);
+    return raw ? (JSON.parse(raw) as StoredUser[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function register(
+  username: string,
+  password: string,
+  role: "admin" | "organizer" | "customer",
+  profile?: Pick<ProfileData, "full_name" | "phone_number" | "organizer_name" | "contact_email">
+): { success: boolean; error?: string } {
+  const allUsers: StoredUser[] = [...USERS, ...getRegisteredUsers()];
+  if (allUsers.find((u) => u.username === username)) {
+    return { success: false, error: "Username sudah digunakan, coba yang lain." };
+  }
+  const newUser: StoredUser = {
+    user_id: crypto.randomUUID(),
+    username,
+    password,
+    role,
+    ...(role === "organizer" ? { organizer_id: crypto.randomUUID() } : {}),
+  };
+  const registered = getRegisteredUsers();
+  registered.push(newUser);
+  localStorage.setItem(REGISTERED_KEY, JSON.stringify(registered));
+  if (profile && Object.values(profile).some(Boolean)) {
+    saveProfile(newUser.user_id, profile);
+  }
+  return { success: true };
+}
 
 export function login(username: string, password: string): AuthUser | null {
-  const found = USERS.find(
+  const allUsers: StoredUser[] = [...USERS, ...getRegisteredUsers()];
+  const found = allUsers.find(
     (u) => u.username === username && u.password === password
   );
   if (!found) return null;

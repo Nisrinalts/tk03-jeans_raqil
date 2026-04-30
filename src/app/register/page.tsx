@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { register } from "@/lib/auth";
 
 type Role = "customer" | "organizer" | "admin";
 
@@ -53,8 +54,23 @@ export default function RegisterPage() {
     }
     // admin: tidak ada field tambahan
 
-    // Placeholder: simpan ke localStorage agar konsisten dengan sistem auth
-    // saat ini (tugas basis data — bukan tugas backend autentikasi).
+    const result = register(
+      username.trim(),
+      password.trim(),
+      role!,
+      {
+        full_name: fullName.trim() || undefined,
+        phone_number: phoneNumber.trim() || undefined,
+        organizer_name: organizerName.trim() || undefined,
+        contact_email: contactEmail.trim() || undefined,
+      }
+    );
+
+    if (!result.success) {
+      setError(result.error ?? "Pendaftaran gagal.");
+      return;
+    }
+
     setSuccess(true);
     setTimeout(() => router.push("/login"), 1500);
   };
@@ -167,11 +183,6 @@ export default function RegisterPage() {
               Daftar
             </button>
 
-            <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">
-              <span className="font-bold">Catatan:</span> Form registrasi belum
-              terhubung ke database. Untuk login gunakan akun seed yang sudah
-              tersedia di halaman login.
-            </p>
           </div>
         )}
 
