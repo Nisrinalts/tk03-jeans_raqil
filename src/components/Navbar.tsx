@@ -23,6 +23,7 @@ const menuByRole: Record<Role, MenuItem[]> = {
   ],
   admin: [
     { label: "Dashboard", href: "/dashboard" },
+    { label: "Manajemen Event", href: "/events" },
     { label: "Manajemen Venue", href: "/venues" },
     { label: "Manajemen Tiket", href: "/my-tickets" },
     { label: "Manajemen Artist", href: "/artists" },
