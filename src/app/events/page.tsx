@@ -172,12 +172,8 @@ export default function EventsPage() {
   const [editCategoryIds, setEditCategoryIds] = useState<string[]>([]);
   const [editError, setEditError] = useState("");
 
-  // delete
-  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const [eventToDelete, setEventToDelete] = useState<EventDisplay | null>(null);
-
   const [successMessage, setSuccessMessage] = useState("");
-  const [successType, setSuccessType] = useState<"create" | "update" | "delete" | "">("");
+  const [successType, setSuccessType] = useState<"create" | "update" | "">("");
 
   useEffect(() => {
     const u = getUser();
@@ -313,21 +309,6 @@ export default function EventsPage() {
     setSuccessType("update");
   };
 
-  const handleOpenDelete = (event: EventDisplay) => {
-    setEventToDelete(event);
-    setSuccessMessage("");
-    setIsDeleteOpen(true);
-  };
-
-  const handleDelete = () => {
-    if (!eventToDelete) return;
-    setEvents((prev) => prev.filter((e) => e.event_id !== eventToDelete.event_id));
-    setIsDeleteOpen(false);
-    setEventToDelete(null);
-    setSuccessMessage("Event berhasil dihapus.");
-    setSuccessType("delete");
-  };
-
   if (loading || !user) return null;
 
   return (
@@ -387,7 +368,6 @@ export default function EventsPage() {
           {successMessage && (
             <div className={`mb-6 rounded-2xl px-4 py-3 text-sm font-medium border ${
               successType === "create" ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-              : successType === "delete" ? "border-rose-200 bg-rose-50 text-rose-700"
               : "border-yellow-200 bg-yellow-50 text-yellow-700"
             }`}>
               {successMessage}
@@ -466,25 +446,20 @@ export default function EventsPage() {
                       {!isOrganizer && <td className="px-6 py-5 text-slate-600">{event.organizer_name}</td>}
                       <td className="px-6 py-5">
                         <div className="flex justify-end gap-2">
-                          <a
-                            href={`/checkout?event_id=${event.event_id}`}
-                            className="flex h-9 items-center justify-center rounded-xl bg-blue-600 px-3 text-xs font-semibold text-white transition hover:bg-blue-700"
-                          >
-                            Beli
-                          </a>
+                          {user?.role === "customer" && (
+                            <a
+                              href={`/checkout?event_id=${event.event_id}`}
+                              className="flex h-9 items-center justify-center rounded-xl bg-blue-600 px-3 text-xs font-semibold text-white transition hover:bg-blue-700"
+                            >
+                              Beli
+                            </a>
+                          )}
                           {canManage && (
-                            <>
-                              <button
-                                onClick={() => handleOpenEdit(event)}
-                                className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700"
-                                title="Edit Event"
-                              >✎</button>
-                              <button
-                                onClick={() => handleOpenDelete(event)}
-                                className="flex h-9 w-9 items-center justify-center rounded-xl border border-rose-200 bg-white text-rose-500 shadow-sm transition hover:bg-rose-50"
-                                title="Hapus Event"
-                              >🗑</button>
-                            </>
+                            <button
+                              onClick={() => handleOpenEdit(event)}
+                              className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700"
+                              title="Edit Event"
+                            >✎</button>
                           )}
                         </div>
                       </td>
@@ -644,30 +619,6 @@ export default function EventsPage() {
         </div>
       )}
 
-      {/* DELETE MODAL */}
-      {isDeleteOpen && eventToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 px-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-[28px] border border-slate-200 bg-white p-7 shadow-2xl">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-rose-600">Hapus Event</h2>
-              <button onClick={() => { setIsDeleteOpen(false); setEventToDelete(null); }} className="text-3xl text-slate-300 transition hover:text-slate-500">×</button>
-            </div>
-            <p className="mb-4 text-sm text-slate-600">Apakah Anda yakin ingin menghapus event ini? Tindakan ini tidak dapat dibatalkan.</p>
-            <div className="mb-6 rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-1">
-              <p className="text-sm text-slate-700"><span className="font-semibold">Judul:</span> {eventToDelete.event_title}</p>
-              <p className="text-sm text-slate-700"><span className="font-semibold">Artis:</span> {eventToDelete.artist_name}</p>
-              <p className="text-sm text-slate-700"><span className="font-semibold">Venue:</span> {eventToDelete.venue_name}</p>
-              <p className="text-sm text-slate-700"><span className="font-semibold">Tanggal:</span> {eventToDelete.event_datetime.replace("T", " ")}</p>
-            </div>
-            <div className="flex gap-3">
-              <button onClick={() => { setIsDeleteOpen(false); setEventToDelete(null); }}
-                className="w-full rounded-2xl border border-slate-200 px-4 py-3 font-semibold text-slate-700 transition hover:bg-slate-50">Batal</button>
-              <button onClick={handleDelete}
-                className="w-full rounded-2xl bg-rose-600 px-4 py-3 font-semibold text-white transition hover:bg-rose-700">Hapus</button>
-            </div>
-          </div>
-        </div>
-      )}
     </main>
   );
 }
