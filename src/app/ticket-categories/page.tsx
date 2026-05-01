@@ -1,12 +1,10 @@
 "use client";
-
-import { v4 as uuidv4 } from "uuid";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Navbar from "@/components/Navbar";
 import { TicketCategory } from "@/types/ticketCategory";
 import { getUser } from "@/lib/auth";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+
 
 type Role = "guest" | "admin" | "organizer" | "customer";
 
@@ -15,6 +13,16 @@ type EventDisplay = {
   event_title: string;
   venue_name: string;
   venue_capacity: number;
+};
+type RemainingQuota = {
+  category_id: string;
+  category_name: string;
+  event_id: string;
+  event_title: string;
+  quota: number;
+  sold_quantity: number;
+  remaining_quota: number;
+  price: number;
 };
 
 const events: EventDisplay[] = [
@@ -187,10 +195,38 @@ export default function TicketCategoryPage() {
     setRole(user.role);
   }, [router]);
 
+  useEffect(() => {
+    if (!role) return;
+
+    async function fetchTicketCategories() {
+      try {
+        const res = await fetch("/api/ticket-categories");
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.message || "Gagal mengambil data kategori tiket.");
+        }
+
+        setTicketCategories(data);
+      } catch (error) {
+        console.error(error);
+        showToast("Gagal mengambil data kategori tiket.", "error");
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchTicketCategories();
+  }, [role]);
+
   const canManage = role === "admin" || role === "organizer";
 
-  const [ticketCategories, setTicketCategories] =
-    useState<TicketCategory[]>(initialTicketCategories);
+  const [ticketCategories, setTicketCategories] = useState<TicketCategory[]>([]);
+  const [quotaEventId, setQuotaEventId] = useState("");
+  const [remainingQuotas, setRemainingQuotas] = useState<RemainingQuota[]>([]);
+  const [isQuotaLoading, setIsQuotaLoading] = useState(false);
+  const [quotaError, setQuotaError] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState<"table" | "list">("table");
   const [selectedFilterEvent, setSelectedFilterEvent] = useState("");
@@ -215,6 +251,15 @@ export default function TicketCategoryPage() {
 
   const [successMessage, setSuccessMessage] = useState("");
   const [successType, setSuccessType] = useState<"create" | "update" | "delete" | "">("");
+  const [toast, setToast] = useState<{
+  message: string;
+  type: "success" | "error";
+} | null>(null);
+
+const showToast = (message: string, type: "success" | "error") => {
+  setToast({ message, type });
+  setTimeout(() => setToast(null), 3000);
+};
 
   const sortedCategories = useMemo(() => {
     return [...ticketCategories].sort((a, b) => {
@@ -315,37 +360,54 @@ export default function TicketCategoryPage() {
     setEditError("");
   };
 
-  const handleCreateCategory = () => {
-    const validationError = validateCategoryForm({
-      eventId: selectedEventId,
-      categoryName,
-      quota,
-      price,
+  const handleCreateCategory = async () => {
+  const validationError = validateCategoryForm({
+    eventId: selectedEventId,
+    categoryName,
+    quota,
+    price,
+  });
+
+  if (validationError) {
+    setError(validationError);
+    showToast(validationError, "error");
+    return;
+  }
+
+  try {
+    const res = await fetch("/api/ticket-categories", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        category_name: categoryName.trim(),
+        quota: Number(quota),
+        price: Number(price),
+        event_id: selectedEventId,
+      }),
     });
 
-    if (validationError) {
-      setError(validationError);
+    const data = await res.json();
+
+    if (!res.ok) {
+      setError(data.message || "Gagal menambahkan kategori tiket.");
+      showToast(data.message || "Gagal menambahkan kategori tiket.", "error");
       return;
     }
 
-    const selectedEvent = getEventById(selectedEventId);
-    if (!selectedEvent) return;
-
-    const newCategory: TicketCategory = {
-      category_id: uuidv4(),
-      category_name: categoryName.trim(),
-      quota: Number(quota),
-      price: Number(price),
-      event_id: selectedEvent.event_id,
-      event_title: selectedEvent.event_title,
-    };
-
-    setTicketCategories((prev) => [...prev, newCategory]);
+    setTicketCategories((prev) => [...prev, data]);
     setIsCreateOpen(false);
     resetCreateForm();
     setSuccessMessage("Kategori tiket berhasil ditambahkan.");
     setSuccessType("create");
-  };
+    showToast("Kategori tiket berhasil ditambahkan.", "success");
+  } catch (error) {
+    console.error(error);
+    setError("Gagal menambahkan kategori tiket.");
+    showToast("Gagal menambahkan kategori tiket.", "error");
+  }
+};
 
   const handleOpenEdit = (category: TicketCategory) => {
     setSelectedCategoryId(category.category_id);
@@ -358,35 +420,47 @@ export default function TicketCategoryPage() {
     setIsEditOpen(true);
   };
 
-  const handleUpdateCategory = () => {
-    const validationError = validateCategoryForm({
-      eventId: editSelectedEventId,
-      categoryName: editCategoryName,
-      quota: editQuota,
-      price: editPrice,
-      excludeCategoryId: selectedCategoryId,
+  const handleUpdateCategory = async () => {
+  const validationError = validateCategoryForm({
+    eventId: editSelectedEventId,
+    categoryName: editCategoryName,
+    quota: editQuota,
+    price: editPrice,
+    excludeCategoryId: selectedCategoryId,
+  });
+
+  if (validationError) {
+    setEditError(validationError);
+    showToast(validationError, "error");
+    return;
+  }
+
+  try {
+    const res = await fetch("/api/ticket-categories", {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        category_id: selectedCategoryId,
+        category_name: editCategoryName.trim(),
+        quota: Number(editQuota),
+        price: Number(editPrice),
+        event_id: editSelectedEventId,
+      }),
     });
 
-    if (validationError) {
-      setEditError(validationError);
+    const data = await res.json();
+
+    if (!res.ok) {
+      setEditError(data.message || "Gagal memperbarui kategori tiket.");
+      showToast(data.message || "Gagal memperbarui kategori tiket.", "error");
       return;
     }
 
-    const selectedEvent = getEventById(editSelectedEventId);
-    if (!selectedEvent) return;
-
     setTicketCategories((prev) =>
       prev.map((category) =>
-        category.category_id === selectedCategoryId
-          ? {
-            ...category,
-            category_name: editCategoryName.trim(),
-            quota: Number(editQuota),
-            price: Number(editPrice),
-            event_id: selectedEvent.event_id,
-            event_title: selectedEvent.event_title,
-          }
-          : category
+        category.category_id === selectedCategoryId ? data : category
       )
     );
 
@@ -394,7 +468,13 @@ export default function TicketCategoryPage() {
     resetEditForm();
     setSuccessMessage("Kategori tiket berhasil diperbarui.");
     setSuccessType("update");
-  };
+    showToast("Kategori tiket berhasil diperbarui.", "success");
+  } catch (error) {
+    console.error(error);
+    setEditError("Gagal memperbarui kategori tiket.");
+    showToast("Gagal memperbarui kategori tiket.", "error");
+  }
+};
 
   const handleOpenDelete = (category: TicketCategory) => {
     setCategoryToDelete(category);
@@ -402,20 +482,109 @@ export default function TicketCategoryPage() {
     setIsDeleteOpen(true);
   };
 
-  const handleDeleteCategory = () => {
-    if (!categoryToDelete) return;
+  const handleDeleteCategory = async () => {
+  if (!categoryToDelete) return;
+
+  try {
+    const res = await fetch("/api/ticket-categories", {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        category_id: categoryToDelete.category_id,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      setSuccessMessage(data.message || "Gagal menghapus kategori tiket.");
+      setSuccessType("");
+      showToast(data.message || "Gagal menghapus kategori tiket.", "error");
+      return;
+    }
 
     setTicketCategories((prev) =>
-      prev.filter((category) => category.category_id !== categoryToDelete.category_id)
+      prev.filter((category) => category.category_id !== data.category_id)
     );
 
     setIsDeleteOpen(false);
     setCategoryToDelete(null);
     setSuccessMessage("Kategori tiket berhasil dihapus.");
     setSuccessType("delete");
-  };
+    showToast("Kategori tiket berhasil dihapus.", "success");
+  } catch (error) {
+    console.error(error);
+    setSuccessMessage("Gagal menghapus kategori tiket.");
+    setSuccessType("");
+    showToast("Gagal menghapus kategori tiket.", "error");
+  }
+};
 
+const handleCheckRemainingQuota = async () => {
+  if (!quotaEventId) {
+    setQuotaError("Event wajib dipilih.");
+    showToast("Event wajib dipilih.", "error");
+    return;
+  }
+
+  try {
+    setIsQuotaLoading(true);
+    setQuotaError("");
+    setRemainingQuotas([]);
+
+    const res = await fetch("/api/ticket-categories/remaining-quota", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        event_id: quotaEventId,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      setQuotaError(data.message || "Gagal mengambil sisa kuota.");
+      showToast(data.message || "Gagal mengambil sisa kuota.", "error");
+      return;
+    }
+
+    setRemainingQuotas(data);
+    showToast("Sisa kuota berhasil ditampilkan.", "success");
+  } catch (error) {
+    console.error(error);
+    setQuotaError("Gagal mengambil sisa kuota.");
+    showToast("Gagal mengambil sisa kuota.", "error");
+  } finally {
+    setIsQuotaLoading(false);
+  }
+};
   if (!role) return null;
+  if (isLoading) {
+  return (
+    <main className="min-h-screen bg-gradient-to-b from-slate-100 via-slate-50 to-white">
+      <Navbar role={role} />
+      {toast && (
+  <div
+    className={`fixed right-6 top-20 z-[60] rounded-2xl border px-5 py-4 text-sm font-semibold shadow-lg ${
+      toast.type === "success"
+        ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+        : "border-rose-200 bg-rose-50 text-rose-700"
+    }`}
+  >
+    {toast.type === "success" ? "✅ " : "⚠️ "}
+    {toast.message}
+  </div>
+)}
+      <section className="mx-auto max-w-7xl px-6 py-8 text-slate-500">
+        Memuat data kategori tiket...
+      </section>
+    </main>
+  );
+}
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-100 via-slate-50 to-white">
@@ -451,31 +620,109 @@ export default function TicketCategoryPage() {
           </div>
 
           <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-3">
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-              <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">
-                Total Kategori
-              </p>
-              <p className="mt-3 text-5xl font-bold text-slate-900">{totalCategories}</p>
-            </div>
+  <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+    <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">
+      Total Kategori
+    </p>
+    <p className="mt-3 text-5xl font-bold text-slate-900">{totalCategories}</p>
+  </div>
 
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-              <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">
-                Total Kuota
-              </p>
-              <p className="mt-3 text-5xl font-bold text-slate-900">
-                {totalQuota.toLocaleString("id-ID")}
-              </p>
-            </div>
+  <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+    <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">
+      Total Kuota
+    </p>
+    <p className="mt-3 text-5xl font-bold text-slate-900">
+      {totalQuota.toLocaleString("id-ID")}
+    </p>
+  </div>
 
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-              <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">
-                Harga Tertinggi
-              </p>
-              <p className="mt-3 text-5xl font-bold text-slate-900">
-                Rp {highestPrice.toLocaleString("id-ID")}
-              </p>
-            </div>
-          </div>
+  <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+    <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">
+      Harga Tertinggi
+    </p>
+    <p className="mt-3 text-4xl font-bold text-slate-900">
+      Rp {highestPrice.toLocaleString("id-ID")}
+    </p>
+  </div>
+</div>
+
+<div className="mb-8 rounded-[28px] border border-blue-100 bg-white p-6 shadow-sm">
+  <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+    <div>
+      <p className="text-sm font-semibold uppercase tracking-wide text-blue-500">
+        Stored Procedure
+      </p>
+      <h2 className="mt-1 text-2xl font-bold text-slate-900">
+        Cek Sisa Kuota Ticket Category
+      </h2>
+    </div>
+
+    <div className="flex flex-col gap-3 md:flex-row">
+      <select
+        value={quotaEventId}
+        onChange={(e) => setQuotaEventId(e.target.value)}
+        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 outline-none focus:border-blue-500 md:w-80"
+      >
+        <option value="">Pilih event</option>
+        {events.map((event) => (
+          <option key={event.event_id} value={event.event_id}>
+            {event.event_title}
+          </option>
+        ))}
+      </select>
+
+      <button
+        onClick={handleCheckRemainingQuota}
+        disabled={isQuotaLoading}
+        className="rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700 disabled:bg-slate-300"
+      >
+        {isQuotaLoading ? "Mengecek..." : "Cek Sisa Kuota"}
+      </button>
+    </div>
+  </div>
+
+  {quotaError && (
+    <div className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
+      ⚠️ {quotaError}
+    </div>
+  )}
+
+  {remainingQuotas.length > 0 && (
+    <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200">
+      <table className="min-w-full text-left text-sm">
+        <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-400">
+          <tr>
+            <th className="px-5 py-4">Kategori</th>
+            <th className="px-5 py-4">Event</th>
+            <th className="px-5 py-4">Kuota Awal</th>
+            <th className="px-5 py-4">Terjual</th>
+            <th className="px-5 py-4">Sisa</th>
+            <th className="px-5 py-4">Harga</th>
+          </tr>
+        </thead>
+
+        <tbody className="divide-y divide-slate-100 bg-white">
+          {remainingQuotas.map((item) => (
+            <tr key={item.category_id}>
+              <td className="px-5 py-4 font-semibold text-slate-900">
+                {item.category_name}
+              </td>
+              <td className="px-5 py-4 text-slate-600">{item.event_title}</td>
+              <td className="px-5 py-4 text-slate-600">{item.quota}</td>
+              <td className="px-5 py-4 text-slate-600">{item.sold_quantity}</td>
+              <td className="px-5 py-4 font-bold text-emerald-600">
+                {item.remaining_quota}
+              </td>
+              <td className="px-5 py-4 font-semibold text-blue-600">
+                Rp {Number(item.price).toLocaleString("id-ID")}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )}
+</div>
 
           {successMessage && canManage && (
             <div
