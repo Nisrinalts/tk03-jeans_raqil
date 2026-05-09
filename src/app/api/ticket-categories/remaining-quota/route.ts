@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 
+function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -19,13 +23,15 @@ export async function POST(request: Request) {
 );
 
     return NextResponse.json(result.rows);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(error);
 
     return NextResponse.json(
       {
-        message:
-          error.message || "Gagal mengambil sisa kuota ticket category.",
+        message: getErrorMessage(
+          error,
+          "Gagal mengambil sisa kuota ticket category."
+        ),
       },
       { status: 500 }
     );

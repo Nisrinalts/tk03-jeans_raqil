@@ -7,7 +7,7 @@ RETURNS TABLE (
     event_id UUID,
     event_title VARCHAR,
     quota INTEGER,
-    sold_tickets BIGINT,
+    sold_quantity BIGINT,
     remaining_quota BIGINT,
     price NUMERIC
 ) AS $$
@@ -25,7 +25,7 @@ BEGIN
         e.event_id,
         e.event_title,
         tc.quota,
-        COUNT(t.ticket_id) AS sold_tickets,
+        COUNT(t.ticket_id) AS sold_quantity,
         tc.quota - COUNT(t.ticket_id) AS remaining_quota,
         tc.price
     FROM ticket_category tc

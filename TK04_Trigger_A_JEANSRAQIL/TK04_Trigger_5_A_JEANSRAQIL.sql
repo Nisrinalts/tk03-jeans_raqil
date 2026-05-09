@@ -28,7 +28,7 @@ BEGIN
         WHERE ea.artist_id = NEW.artist_id
           AND ea.event_id = NEW.event_id
     ) THEN
-        RAISE EXCEPTION 'ERROR: Artist "%" sudah terdaftar pada event "%"', artist_name, event_title;
+        RAISE EXCEPTION 'ERROR: Artist "%" sudah terdaftar pada event "%".', artist_name, event_title;
     END IF;
 
     RETURN NEW;

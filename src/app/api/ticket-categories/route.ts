@@ -1,6 +1,16 @@
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 
+function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
+}
+
+function getPgErrorCode(error: unknown) {
+  return typeof error === "object" && error !== null && "code" in error
+    ? String((error as { code: unknown }).code)
+    : "";
+}
+
 async function validateTotalQuota(
   eventId: string,
   quota: number,
@@ -55,7 +65,8 @@ async function validateTotalQuota(
 
 export async function GET() {
   try {
-    const result = await pool.query(`
+    const [categoriesResult, eventsResult] = await Promise.all([
+      pool.query(`
       SELECT
         tc.category_id,
         tc.category_name,
@@ -66,9 +77,23 @@ export async function GET() {
       FROM tiktaktuk.ticket_category tc
       JOIN tiktaktuk.event e ON e.event_id = tc.event_id
       ORDER BY e.event_title ASC, tc.category_name ASC;
-    `);
+    `),
+      pool.query(`
+      SELECT
+        e.event_id,
+        e.event_title,
+        v.venue_name,
+        v.capacity AS venue_capacity
+      FROM tiktaktuk.event e
+      JOIN tiktaktuk.venue v ON v.venue_id = e.venue_id
+      ORDER BY e.event_title ASC;
+    `),
+    ]);
 
-    return NextResponse.json(result.rows);
+    return NextResponse.json({
+      ticketCategories: categoriesResult.rows,
+      events: eventsResult.rows,
+    });
   } catch (error) {
     console.error(error);
     return NextResponse.json(
@@ -83,7 +108,16 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { category_name, quota, price, event_id } = body;
 
-    if (!category_name || !String(category_name).trim() || !quota || price === "" || !event_id) {
+    if (
+      !category_name ||
+      !String(category_name).trim() ||
+      quota === undefined ||
+      quota === null ||
+      price === undefined ||
+      price === null ||
+      price === "" ||
+      !event_id
+    ) {
       return NextResponse.json(
         { message: "Semua field wajib diisi." },
         { status: 400 }
@@ -157,10 +191,10 @@ export async function POST(request: Request) {
     );
 
     return NextResponse.json(joinedResult.rows[0]);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(error);
     return NextResponse.json(
-      { message: error.message || "Gagal menambahkan kategori tiket." },
+      { message: getErrorMessage(error, "Gagal menambahkan kategori tiket.") },
       { status: 500 }
     );
   }
@@ -169,9 +203,18 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
   try {
     const body = await request.json();
-    const { category_id, category_name, quota, price, event_id } = body;
+    const { category_id, category_name, quota, price } = body;
 
-    if (!category_id || !category_name || !String(category_name).trim() || !quota || price === "" || !event_id) {
+    if (
+      !category_id ||
+      !category_name ||
+      !String(category_name).trim() ||
+      quota === undefined ||
+      quota === null ||
+      price === undefined ||
+      price === null ||
+      price === ""
+    ) {
       return NextResponse.json(
         { message: "Semua field wajib diisi." },
         { status: 400 }
@@ -195,8 +238,26 @@ export async function PUT(request: Request) {
       );
     }
 
+    const categoryResult = await pool.query(
+      `
+      SELECT category_id, event_id
+      FROM tiktaktuk.ticket_category
+      WHERE category_id = $1;
+      `,
+      [category_id]
+    );
+
+    if (categoryResult.rows.length === 0) {
+      return NextResponse.json(
+        { message: "Kategori tiket tidak ditemukan." },
+        { status: 404 }
+      );
+    }
+
+    const eventId = categoryResult.rows[0].event_id;
+
     const validation = await validateTotalQuota(
-      event_id,
+      eventId,
       parsedQuota,
       category_id
     );
@@ -214,8 +275,7 @@ export async function PUT(request: Request) {
       SET
         category_name = $2,
         quota = $3,
-        price = $4,
-        event_id = $5
+        price = $4
       WHERE category_id = $1
       RETURNING
         category_id,
@@ -229,7 +289,6 @@ export async function PUT(request: Request) {
         String(category_name).trim(),
         parsedQuota,
         parsedPrice,
-        event_id,
       ]
     );
 
@@ -257,10 +316,10 @@ export async function PUT(request: Request) {
     );
 
     return NextResponse.json(joinedResult.rows[0]);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(error);
     return NextResponse.json(
-      { message: error.message || "Gagal memperbarui kategori tiket." },
+      { message: getErrorMessage(error, "Gagal memperbarui kategori tiket.") },
       { status: 500 }
     );
   }
@@ -288,15 +347,15 @@ export async function DELETE(request: Request) {
     }
 
     return NextResponse.json(result.rows[0]);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(error);
 
     return NextResponse.json(
       {
         message:
-          error.code === "23503"
+          getPgErrorCode(error) === "23503"
             ? "Kategori tiket tidak dapat dihapus karena sudah memiliki tiket terkait."
-            : error.message || "Gagal menghapus kategori tiket.",
+            : getErrorMessage(error, "Gagal menghapus kategori tiket."),
       },
       { status: 500 }
     );

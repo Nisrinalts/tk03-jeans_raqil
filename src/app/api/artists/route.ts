@@ -24,13 +24,24 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { name, genre } = body;
 
+    if (!name || !String(name).trim()) {
+      return NextResponse.json(
+        { message: "Name wajib diisi." },
+        { status: 400 }
+      );
+    }
+
     const result = await pool.query(
       `
       INSERT INTO tiktaktuk.artist (artist_id, name, genre)
       VALUES ($1, $2, $3)
       RETURNING artist_id, name, genre;
       `,
-      [crypto.randomUUID(), name, genre || null]
+      [
+        crypto.randomUUID(),
+        String(name).trim(),
+        typeof genre === "string" && genre.trim() ? genre.trim() : null,
+      ]
     );
 
     return NextResponse.json(result.rows[0]);
@@ -48,6 +59,20 @@ export async function PUT(request: Request) {
     const body = await request.json();
     const { artist_id, name, genre } = body;
 
+    if (!artist_id) {
+      return NextResponse.json(
+        { message: "Artist tidak ditemukan." },
+        { status: 404 }
+      );
+    }
+
+    if (!name || !String(name).trim()) {
+      return NextResponse.json(
+        { message: "Name wajib diisi." },
+        { status: 400 }
+      );
+    }
+
     const result = await pool.query(
       `
       UPDATE tiktaktuk.artist
@@ -56,7 +81,11 @@ export async function PUT(request: Request) {
       WHERE artist_id = $1
       RETURNING artist_id, name, genre;
       `,
-      [artist_id, name, genre || null]
+      [
+        artist_id,
+        String(name).trim(),
+        typeof genre === "string" && genre.trim() ? genre.trim() : null,
+      ]
     );
 
     if (result.rows.length === 0) {

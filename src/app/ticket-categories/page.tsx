@@ -25,203 +25,17 @@ type RemainingQuota = {
   price: number;
 };
 
-const events: EventDisplay[] = [
-  {
-    event_id: "550e8400-e29b-41d4-a716-446655441001",
-    event_title: "After Hours Tour",
-    venue_name: "Gelora Hall Jakarta",
-    venue_capacity: 500,
-  },
-  {
-    event_id: "550e8400-e29b-41d4-a716-446655441002",
-    event_title: "Justice World Tour",
-    venue_name: "Bandung Convention Center",
-    venue_capacity: 400,
-  },
-  {
-    event_id: "550e8400-e29b-41d4-a716-446655441003",
-    event_title: "SOUR Live in Jakarta",
-    venue_name: "Tennis Indoor Senayan",
-    venue_capacity: 350,
-  },
-  {
-    event_id: "550e8400-e29b-41d4-a716-446655441004",
-    event_title: "SOS Tour",
-    venue_name: "ICE BSD Hall 3",
-    venue_capacity: 600,
-  },
-  {
-    event_id: "550e8400-e29b-41d4-a716-446655441005",
-    event_title: "Utopia Stadium Show",
-    venue_name: "Istora Arena Surabaya",
-    venue_capacity: 450,
-  },
-  {
-    event_id: "550e8400-e29b-41d4-a716-446655441006",
-    event_title: "Starboy Night",
-    venue_name: "Makassar Grand Hall",
-    venue_capacity: 300,
-  },
-];
-
-const initialTicketCategories: TicketCategory[] = [
-  {
-    category_id: "550e8400-e29b-41d4-a716-446655442001",
-    category_name: "WVIP",
-    quota: 50,
-    price: 2500000,
-    event_id: "550e8400-e29b-41d4-a716-446655441001",
-    event_title: "After Hours Tour",
-  },
-  {
-    category_id: "550e8400-e29b-41d4-a716-446655442002",
-    category_name: "VIP",
-    quota: 100,
-    price: 1750000,
-    event_id: "550e8400-e29b-41d4-a716-446655441001",
-    event_title: "After Hours Tour",
-  },
-  {
-    category_id: "550e8400-e29b-41d4-a716-446655442003",
-    category_name: "Category 1",
-    quota: 150,
-    price: 900000,
-    event_id: "550e8400-e29b-41d4-a716-446655441001",
-    event_title: "After Hours Tour",
-  },
-  {
-    category_id: "550e8400-e29b-41d4-a716-446655442004",
-    category_name: "VIP",
-    quota: 80,
-    price: 1500000,
-    event_id: "550e8400-e29b-41d4-a716-446655441002",
-    event_title: "Justice World Tour",
-  },
-  {
-    category_id: "550e8400-e29b-41d4-a716-446655442005",
-    category_name: "Regular",
-    quota: 200,
-    price: 700000,
-    event_id: "550e8400-e29b-41d4-a716-446655441002",
-    event_title: "Justice World Tour",
-  },
-  {
-    category_id: "550e8400-e29b-41d4-a716-446655442006",
-    category_name: "CAT 1",
-    quota: 120,
-    price: 850000,
-    event_id: "550e8400-e29b-41d4-a716-446655441003",
-    event_title: "SOUR Live in Jakarta",
-  },
-  {
-    category_id: "550e8400-e29b-41d4-a716-446655442007",
-    category_name: "CAT 2",
-    quota: 180,
-    price: 550000,
-    event_id: "550e8400-e29b-41d4-a716-446655441003",
-    event_title: "SOUR Live in Jakarta",
-  },
-  {
-    category_id: "550e8400-e29b-41d4-a716-446655442008",
-    category_name: "Platinum",
-    quota: 100,
-    price: 1800000,
-    event_id: "550e8400-e29b-41d4-a716-446655441004",
-    event_title: "SOS Tour",
-  },
-  {
-    category_id: "550e8400-e29b-41d4-a716-446655442009",
-    category_name: "Gold",
-    quota: 150,
-    price: 1200000,
-    event_id: "550e8400-e29b-41d4-a716-446655441004",
-    event_title: "SOS Tour",
-  },
-  {
-    category_id: "550e8400-e29b-41d4-a716-446655442010",
-    category_name: "Silver",
-    quota: 200,
-    price: 750000,
-    event_id: "550e8400-e29b-41d4-a716-446655441004",
-    event_title: "SOS Tour",
-  },
-  {
-    category_id: "550e8400-e29b-41d4-a716-446655442011",
-    category_name: "Front Row",
-    quota: 70,
-    price: 1600000,
-    event_id: "550e8400-e29b-41d4-a716-446655441005",
-    event_title: "Utopia Stadium Show",
-  },
-  {
-    category_id: "550e8400-e29b-41d4-a716-446655442012",
-    category_name: "Festival",
-    quota: 250,
-    price: 800000,
-    event_id: "550e8400-e29b-41d4-a716-446655441005",
-    event_title: "Utopia Stadium Show",
-  },
-  {
-    category_id: "550e8400-e29b-41d4-a716-446655442013",
-    category_name: "VIP",
-    quota: 60,
-    price: 1400000,
-    event_id: "550e8400-e29b-41d4-a716-446655441006",
-    event_title: "Starboy Night",
-  },
-  {
-    category_id: "550e8400-e29b-41d4-a716-446655442014",
-    category_name: "Regular",
-    quota: 180,
-    price: 650000,
-    event_id: "550e8400-e29b-41d4-a716-446655441006",
-    event_title: "Starboy Night",
-  },
-];
+type TicketCategoriesPayload = {
+  ticketCategories: TicketCategory[];
+  events: EventDisplay[];
+};
 
 export default function TicketCategoryPage() {
   const router = useRouter();
-
   const [role, setRole] = useState<Role | null>(null);
 
-  useEffect(() => {
-    const user = getUser();
-
-    if (!user) {
-      router.push("/login");
-      return;
-    }
-
-    setRole(user.role);
-  }, [router]);
-
-  useEffect(() => {
-    if (!role) return;
-
-    async function fetchTicketCategories() {
-      try {
-        const res = await fetch("/api/ticket-categories");
-        const data = await res.json();
-
-        if (!res.ok) {
-          throw new Error(data.message || "Gagal mengambil data kategori tiket.");
-        }
-
-        setTicketCategories(data);
-      } catch (error) {
-        console.error(error);
-        showToast("Gagal mengambil data kategori tiket.", "error");
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    fetchTicketCategories();
-  }, [role]);
-
-  const canManage = role === "admin" || role === "organizer";
-
   const [ticketCategories, setTicketCategories] = useState<TicketCategory[]>([]);
+  const [events, setEvents] = useState<EventDisplay[]>([]);
   const [quotaEventId, setQuotaEventId] = useState("");
   const [remainingQuotas, setRemainingQuotas] = useState<RemainingQuota[]>([]);
   const [isQuotaLoading, setIsQuotaLoading] = useState(false);
@@ -260,6 +74,50 @@ const showToast = (message: string, type: "success" | "error") => {
   setToast({ message, type });
   setTimeout(() => setToast(null), 3000);
 };
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      const user = getUser();
+      if (!user) {
+        router.push("/login");
+        return;
+      }
+
+      setRole(user.role);
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [router]);
+
+  useEffect(() => {
+    if (!role) return;
+
+    async function fetchTicketCategories() {
+      try {
+        const res = await fetch("/api/ticket-categories");
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.message || "Gagal mengambil data kategori tiket.");
+        }
+
+        const payload = data as TicketCategoriesPayload | TicketCategory[];
+        setTicketCategories(
+          Array.isArray(payload) ? payload : payload.ticketCategories
+        );
+        setEvents(Array.isArray(payload) ? [] : payload.events);
+      } catch (error) {
+        console.error(error);
+        showToast("Gagal mengambil data kategori tiket.", "error");
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchTicketCategories();
+  }, [role]);
+
+  const canManage = role === "admin" || role === "organizer";
 
   const sortedCategories = useMemo(() => {
     return [...ticketCategories].sort((a, b) => {
@@ -446,7 +304,6 @@ const showToast = (message: string, type: "success" | "error") => {
         category_name: editCategoryName.trim(),
         quota: Number(editQuota),
         price: Number(editPrice),
-        event_id: editSelectedEventId,
       }),
     });
 
@@ -1086,20 +943,11 @@ const handleCheckRemainingQuota = async () => {
             <div className="space-y-5">
               <div>
                 <label className="mb-2 block text-sm font-semibold uppercase tracking-wide text-slate-500">
-                  Acara <span className="text-rose-500">*</span>
+                  Acara
                 </label>
-                <select
-                  value={editSelectedEventId}
-                  onChange={(e) => setEditSelectedEventId(e.target.value)}
-                  className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-base text-slate-900 outline-none transition focus:border-blue-500"
-                >
-                  <option value="">Pilih acara</option>
-                  {events.map((event) => (
-                    <option key={event.event_id} value={event.event_id}>
-                      {event.event_title}
-                    </option>
-                  ))}
-                </select>
+                <div className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-base font-medium text-slate-700">
+                  {getEventById(editSelectedEventId)?.event_title ?? "-"}
+                </div>
               </div>
 
               <div>

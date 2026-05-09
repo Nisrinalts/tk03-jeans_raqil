@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 
+function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
+}
+
 export async function GET() {
   try {
     const [eventArtistsResult, artistsResult, eventsResult] = await Promise.all([
@@ -33,10 +37,10 @@ export async function GET() {
       artists: artistsResult.rows,
       events: eventsResult.rows,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(error);
     return NextResponse.json(
-      { message: error.message || "Gagal mengambil data artist event." },
+      { message: getErrorMessage(error, "Gagal mengambil data artist event.") },
       { status: 500 }
     );
   }
@@ -82,11 +86,11 @@ export async function POST(request: Request) {
     );
 
     return NextResponse.json(joinedResult.rows[0]);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(error);
 
     return NextResponse.json(
-      { message: error.message || "Gagal menambahkan artist ke event." },
+      { message: getErrorMessage(error, "Gagal menambahkan artist ke event.") },
       { status: 500 }
     );
   }

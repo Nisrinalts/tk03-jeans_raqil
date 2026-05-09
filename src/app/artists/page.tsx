@@ -8,6 +8,19 @@ import { useRouter } from "next/navigation";
 
 type Role = "guest" | "admin" | "organizer" | "customer";
 
+type EventArtist = {
+  event_id: string;
+  event_title: string;
+  artist_id: string;
+  artist_name: string;
+  role: string;
+};
+
+type EventOption = {
+  event_id: string;
+  event_title: string;
+};
+
 
 function getInitial(name: string) {
   return name.trim().charAt(0).toUpperCase();
@@ -40,18 +53,61 @@ function getGenreBadgeClass(genre: string) {
 
 export default function ArtistsPage() {
   const router = useRouter();
-
   const [role, setRole] = useState<Role | null>(null);
 
+  const [artists, setArtists] = useState<Artist[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [viewMode, setViewMode] = useState<"table" | "list">("table");
+
+  const [eventArtists, setEventArtists] = useState<EventArtist[]>([]);
+  const [artistsList, setArtistsList] = useState<Artist[]>([]);
+  const [eventsList, setEventsList] = useState<EventOption[]>([]);
+
+  const [selectedEventIdEA, setSelectedEventIdEA] = useState("");
+  const [selectedArtistIdEA, setSelectedArtistIdEA] = useState("");
+  const [roleEA, setRoleEA] = useState("");
+
+  const [eaError, setEaError] = useState("");
+
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [genre, setGenre] = useState("");
+  const [error, setError] = useState("");
+
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [selectedArtistId, setSelectedArtistId] = useState("");
+  const [editName, setEditName] = useState("");
+  const [editGenre, setEditGenre] = useState("");
+  const [editError, setEditError] = useState("");
+
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [artistToDelete, setArtistToDelete] = useState<Artist | null>(null);
+
+  const [successMessage, setSuccessMessage] = useState("");
+  const [successType, setSuccessType] = useState<"create" | "update" | "delete" | "">("");
+  const [toast, setToast] = useState<{
+  message: string;
+  type: "success" | "error";
+} | null>(null);
+
+const showToast = (message: string, type: "success" | "error") => {
+  setToast({ message, type });
+  setTimeout(() => setToast(null), 3000);
+};
+
   useEffect(() => {
-    const user = getUser();
+    const timeoutId = window.setTimeout(() => {
+      const user = getUser();
+      if (!user) {
+        router.push("/login");
+        return;
+      }
 
-    if (!user) {
-      router.push("/login");
-      return;
-    }
+      setRole(user.role);
+    }, 0);
 
-    setRole(user.role);
+    return () => window.clearTimeout(timeoutId);
   }, [router]);
 
   useEffect(() => {
@@ -98,47 +154,6 @@ useEffect(() => {
 
   const canManage = role === "admin";
 
-  const [artists, setArtists] = useState<Artist[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [search, setSearch] = useState("");
-  const [viewMode, setViewMode] = useState<"table" | "list">("table");
-
-  const [eventArtists, setEventArtists] = useState<any[]>([]);
-  const [artistsList, setArtistsList] = useState<any[]>([]);
-  const [eventsList, setEventsList] = useState<any[]>([]);
-
-  const [selectedEventIdEA, setSelectedEventIdEA] = useState("");
-  const [selectedArtistIdEA, setSelectedArtistIdEA] = useState("");
-  const [roleEA, setRoleEA] = useState("");
-
-  const [eaError, setEaError] = useState("");
-
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [name, setName] = useState("");
-  const [genre, setGenre] = useState("");
-  const [error, setError] = useState("");
-
-  const [isEditOpen, setIsEditOpen] = useState(false);
-  const [selectedArtistId, setSelectedArtistId] = useState("");
-  const [editName, setEditName] = useState("");
-  const [editGenre, setEditGenre] = useState("");
-  const [editError, setEditError] = useState("");
-
-  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const [artistToDelete, setArtistToDelete] = useState<Artist | null>(null);
-
-  const [successMessage, setSuccessMessage] = useState("");
-  const [successType, setSuccessType] = useState<"create" | "update" | "delete" | "">("");
-  const [toast, setToast] = useState<{
-  message: string;
-  type: "success" | "error";
-} | null>(null);
-
-const showToast = (message: string, type: "success" | "error") => {
-  setToast({ message, type });
-  setTimeout(() => setToast(null), 3000);
-};
-
   const sortedArtists = useMemo(() => {
     return [...artists].sort((a, b) => a.name.localeCompare(b.name));
   }, [artists]);
@@ -162,7 +177,9 @@ const showToast = (message: string, type: "success" | "error") => {
     .map((artist) => (artist.genre || "").trim().toLowerCase())
     .filter(Boolean)
 ).size;
-  const totalTampilDiEvent = artists.length;
+  const totalTampilDiEvent = new Set(
+    eventArtists.map((item) => item.artist_id)
+  ).size;
 
   const resetCreateForm = () => {
     setName("");
