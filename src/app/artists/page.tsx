@@ -1,57 +1,26 @@
 "use client";
 
-import { v4 as uuidv4 } from "uuid";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Navbar from "@/components/Navbar";
 import { Artist } from "@/types/artist";
 import { getUser } from "@/lib/auth";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 
 type Role = "guest" | "admin" | "organizer" | "customer";
 
-const initialArtists: Artist[] = [
-  {
-    artist_id: "550e8400-e29b-41d4-a716-446655440001",
-    name: "Drake",
-    genre: "Hip-Hop",
-  },
-  {
-    artist_id: "550e8400-e29b-41d4-a716-446655440002",
-    name: "Justin Bieber",
-    genre: "Pop",
-  },
-  {
-    artist_id: "550e8400-e29b-41d4-a716-446655440003",
-    name: "Kanye West",
-    genre: "Hip-Hop",
-  },
-  {
-    artist_id: "550e8400-e29b-41d4-a716-446655440004",
-    name: "Olivia Rodrigo",
-    genre: "Pop",
-  },
-  {
-    artist_id: "550e8400-e29b-41d4-a716-446655440005",
-    name: "Selena Gomez",
-    genre: "Pop",
-  },
-  {
-    artist_id: "550e8400-e29b-41d4-a716-446655440006",
-    name: "SZA",
-    genre: "R&B",
-  },
-  {
-    artist_id: "550e8400-e29b-41d4-a716-446655440007",
-    name: "The Weeknd",
-    genre: "R&B / Pop",
-  },
-  {
-    artist_id: "550e8400-e29b-41d4-a716-446655440008",
-    name: "Travis Scott",
-    genre: "Hip-Hop",
-  },
-];
+type EventArtist = {
+  event_id: string;
+  event_title: string;
+  artist_id: string;
+  artist_name: string;
+  role: string;
+};
+
+type EventOption = {
+  event_id: string;
+  event_title: string;
+};
+
 
 function getInitial(name: string) {
   return name.trim().charAt(0).toUpperCase();
@@ -84,25 +53,22 @@ function getGenreBadgeClass(genre: string) {
 
 export default function ArtistsPage() {
   const router = useRouter();
-
   const [role, setRole] = useState<Role | null>(null);
 
-  useEffect(() => {
-    const user = getUser();
-
-    if (!user) {
-      router.push("/login");
-      return;
-    }
-
-    setRole(user.role);
-  }, [router]);
-
-  const canManage = role === "admin";
-
-  const [artists, setArtists] = useState<Artist[]>(initialArtists);
+  const [artists, setArtists] = useState<Artist[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState<"table" | "list">("table");
+
+  const [eventArtists, setEventArtists] = useState<EventArtist[]>([]);
+  const [artistsList, setArtistsList] = useState<Artist[]>([]);
+  const [eventsList, setEventsList] = useState<EventOption[]>([]);
+
+  const [selectedEventIdEA, setSelectedEventIdEA] = useState("");
+  const [selectedArtistIdEA, setSelectedArtistIdEA] = useState("");
+  const [roleEA, setRoleEA] = useState("");
+
+  const [eaError, setEaError] = useState("");
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [name, setName] = useState("");
@@ -120,6 +86,73 @@ export default function ArtistsPage() {
 
   const [successMessage, setSuccessMessage] = useState("");
   const [successType, setSuccessType] = useState<"create" | "update" | "delete" | "">("");
+  const [toast, setToast] = useState<{
+  message: string;
+  type: "success" | "error";
+} | null>(null);
+
+const showToast = (message: string, type: "success" | "error") => {
+  setToast({ message, type });
+  setTimeout(() => setToast(null), 3000);
+};
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      const user = getUser();
+      if (!user) {
+        router.push("/login");
+        return;
+      }
+
+      setRole(user.role);
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [router]);
+
+  useEffect(() => {
+  if (!role) return;
+
+  async function fetchArtists() {
+    try {
+      const res = await fetch("/api/artists");
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || "Gagal mengambil data artist.");
+      }
+
+      setArtists(data);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  fetchArtists();
+}, [role]);
+
+useEffect(() => {
+  async function fetchEventArtists() {
+    try {
+      const res = await fetch("/api/event-artists");
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.message);
+
+      setEventArtists(data.eventArtists);
+      setArtistsList(data.artists);
+      setEventsList(data.events);
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  fetchEventArtists();
+}, []);
+
+  const canManage = role === "admin";
 
   const sortedArtists = useMemo(() => {
     return [...artists].sort((a, b) => a.name.localeCompare(b.name));
@@ -133,16 +166,20 @@ export default function ArtistsPage() {
     return sortedArtists.filter(
       (artist) =>
         artist.name.toLowerCase().includes(keyword) ||
-        artist.genre.toLowerCase().includes(keyword) ||
+        (artist.genre || "").toLowerCase().includes(keyword) ||
         artist.artist_id.toLowerCase().includes(keyword)
     );
   }, [search, sortedArtists]);
 
   const totalArtists = artists.length;
   const totalGenres = new Set(
-    artists.map((artist) => artist.genre.trim().toLowerCase()).filter(Boolean)
+  artists
+    .map((artist) => (artist.genre || "").trim().toLowerCase())
+    .filter(Boolean)
+).size;
+  const totalTampilDiEvent = new Set(
+    eventArtists.map((item) => item.artist_id)
   ).size;
-  const totalTampilDiEvent = artists.length;
 
   const resetCreateForm = () => {
     setName("");
@@ -157,49 +194,84 @@ export default function ArtistsPage() {
     setEditError("");
   };
 
-  const handleCreateArtist = () => {
-    if (!name.trim()) {
-      setError("Name wajib diisi.");
+  const handleCreateArtist = async () => {
+  if (!name.trim()) {
+    setError("Name wajib diisi.");
+    showToast("Name wajib diisi.", "error");
+    return;
+  }
+
+  try {
+    const res = await fetch("/api/artists", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name: name.trim(),
+        genre: genre.trim(),
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      setError(data.message || "Gagal menambahkan artist.");
+      showToast(data.message || "Gagal menambahkan artist.", "error");
       return;
     }
-
-    const newArtist: Artist = {
-      artist_id: uuidv4(),
-      name: name.trim(),
-      genre: genre.trim(),
-    };
-
-    setArtists((prev) => [...prev, newArtist]);
+    setArtists((prev) => [...prev, data]);
     resetCreateForm();
     setIsCreateOpen(false);
     setSuccessMessage("Artist berhasil ditambahkan.");
     setSuccessType("create");
-  };
+    showToast("Artist berhasil ditambahkan.", "success");
+  } catch (error) {
+    console.error(error);
+    setError("Gagal menambahkan artist.");
+  showToast("Gagal menambahkan artist.", "error");
+  }
+};
 
   const handleOpenEdit = (artist: Artist) => {
     setSelectedArtistId(artist.artist_id);
     setEditName(artist.name);
-    setEditGenre(artist.genre);
+    setEditGenre(artist.genre || "");
     setEditError("");
     setSuccessMessage("");
     setIsEditOpen(true);
   };
 
-  const handleUpdateArtist = () => {
-    if (!editName.trim()) {
-      setEditError("Name wajib diisi.");
+  const handleUpdateArtist = async () => {
+  if (!editName.trim()) {
+    setEditError("Name wajib diisi.");
+    return;
+  }
+
+  try {
+    const res = await fetch("/api/artists", {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        artist_id: selectedArtistId,
+        name: editName.trim(),
+        genre: editGenre.trim(),
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      setEditError(data.message || "Gagal memperbarui artist.");
+      showToast(data.message || "Gagal memperbarui artist.", "error");
       return;
     }
 
     setArtists((prev) =>
       prev.map((artist) =>
-        artist.artist_id === selectedArtistId
-          ? {
-              ...artist,
-              name: editName.trim(),
-              genre: editGenre.trim(),
-            }
-          : artist
+        artist.artist_id === selectedArtistId ? data : artist
       )
     );
 
@@ -207,7 +279,12 @@ export default function ArtistsPage() {
     setIsEditOpen(false);
     setSuccessMessage("Artist berhasil diperbarui.");
     setSuccessType("update");
-  };
+    showToast("Artist berhasil diperbarui.", "success");
+  } catch (error) {
+    console.error(error);
+    setEditError("Gagal memperbarui artist.");
+  }
+};
 
   const handleOpenDelete = (artist: Artist) => {
     setArtistToDelete(artist);
@@ -215,20 +292,108 @@ export default function ArtistsPage() {
     setIsDeleteOpen(true);
   };
 
-  const handleDeleteArtist = () => {
-    if (!artistToDelete) return;
+  const handleDeleteArtist = async () => {
+  if (!artistToDelete) return;
+
+  try {
+    const res = await fetch("/api/artists", {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        artist_id: artistToDelete.artist_id,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      setSuccessMessage(data.message || "Gagal menghapus artist.");
+      setSuccessType("");
+      showToast(data.message || "Gagal menghapus artist.", "error");
+      return;
+    }
 
     setArtists((prev) =>
-      prev.filter((artist) => artist.artist_id !== artistToDelete.artist_id)
+      prev.filter((artist) => artist.artist_id !== data.artist_id)
     );
 
     setIsDeleteOpen(false);
     setArtistToDelete(null);
     setSuccessMessage("Artist berhasil dihapus.");
     setSuccessType("delete");
-  };
+    showToast("Artist berhasil dihapus.", "success");
+  } catch (error) {
+    console.error(error);
+    setSuccessMessage("Gagal menghapus artist.");
+    setSuccessType("");
+  }
+};
+
+const handleAddEventArtist = async () => {
+  if (!selectedEventIdEA || !selectedArtistIdEA || !roleEA.trim()) {
+    setEaError("Semua field wajib diisi.");
+    return;
+  }
+
+  try {
+    setEaError("");
+
+    const res = await fetch("/api/event-artists", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        event_id: selectedEventIdEA,
+        artist_id: selectedArtistIdEA,
+        role: roleEA,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      setEaError(data.message); 
+      return;
+    }
+
+    setEventArtists((prev) => [...prev, data]);
+
+    // reset
+    setSelectedEventIdEA("");
+    setSelectedArtistIdEA("");
+    setRoleEA("");
+  } catch (err) {
+    console.error(err);
+    setEaError("Gagal menambahkan artist ke event.");
+  }
+};
   
   if (!role) return null;
+  if (isLoading) {
+  return (
+    <main className="min-h-screen bg-gradient-to-b from-slate-100 via-slate-50 to-white">
+      <Navbar role={role} />
+      {toast && (
+  <div
+    className={`fixed right-6 top-20 z-[60] rounded-2xl border px-5 py-4 text-sm font-semibold shadow-lg ${
+      toast.type === "success"
+        ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+        : "border-rose-200 bg-rose-50 text-rose-700"
+    }`}
+  >
+    {toast.type === "success" ? "✅ " : "⚠️ "}
+    {toast.message}
+  </div>
+)}
+      <section className="mx-auto max-w-7xl px-6 py-8 text-slate-500">
+        Memuat data artist...
+      </section>
+    </main>
+  );
+}
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-100 via-slate-50 to-white">
@@ -287,6 +452,102 @@ export default function ArtistsPage() {
               </p>
             </div>
           </div>
+          {canManage && (
+  <div className="mb-8 rounded-[28px] border border-blue-100 bg-white p-6 shadow-sm">
+    <div className="mb-5">
+      <p className="text-sm font-semibold uppercase tracking-wide text-blue-500">
+        Trigger Event Artist
+      </p>
+      <h2 className="mt-1 text-2xl font-bold text-slate-900">
+        Tambah Artist ke Event
+      </h2>
+      <p className="mt-2 text-sm text-slate-500">
+        Pilih event dan artist untuk menguji validasi duplikasi artist pada event.
+      </p>
+    </div>
+
+    <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+      <select
+        value={selectedEventIdEA}
+        onChange={(e) => setSelectedEventIdEA(e.target.value)}
+        className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none focus:border-blue-500"
+      >
+        <option value="">Pilih Event</option>
+        {eventsList.map((event) => (
+          <option key={event.event_id} value={event.event_id}>
+            {event.event_title}
+          </option>
+        ))}
+      </select>
+
+      <select
+        value={selectedArtistIdEA}
+        onChange={(e) => setSelectedArtistIdEA(e.target.value)}
+        className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none focus:border-blue-500"
+      >
+        <option value="">Pilih Artist</option>
+        {artistsList.map((artist) => (
+          <option key={artist.artist_id} value={artist.artist_id}>
+            {artist.name}
+          </option>
+        ))}
+      </select>
+
+      <input
+        type="text"
+        placeholder="Role, cth. Main Performer"
+        value={roleEA}
+        onChange={(e) => setRoleEA(e.target.value)}
+        className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none focus:border-blue-500"
+      />
+
+      <button
+        onClick={handleAddEventArtist}
+        className="rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
+      >
+        Tambah ke Event
+      </button>
+    </div>
+
+    {eaError && (
+      <div className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
+        ⚠️ {eaError}
+      </div>
+    )}
+
+    {eventArtists.length > 0 && (
+      <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200">
+        <table className="min-w-full text-left text-sm">
+          <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-400">
+            <tr>
+              <th className="px-5 py-4">Event</th>
+              <th className="px-5 py-4">Artist</th>
+              <th className="px-5 py-4">Role</th>
+            </tr>
+          </thead>
+
+          <tbody className="divide-y divide-slate-100 bg-white">
+            {eventArtists.map((item) => (
+              <tr key={`${item.event_id}-${item.artist_id}`}>
+                <td className="px-5 py-4 font-medium text-slate-700">
+                  {item.event_title}
+                </td>
+                <td className="px-5 py-4 font-semibold text-slate-900">
+                  {item.artist_name}
+                </td>
+                <td className="px-5 py-4">
+                  <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700">
+                    {item.role}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )}
+  </div>
+)}
 
           {successMessage && canManage && (
             <div
@@ -557,7 +818,11 @@ export default function ArtistsPage() {
                 />
               </div>
 
-              {error && <p className="text-sm font-medium text-rose-500">{error}</p>}
+              {error && (
+   <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
+    {error}
+  </div>
+)}
 
               <div className="flex gap-3 pt-2">
                 <button
@@ -626,7 +891,10 @@ export default function ArtistsPage() {
               </div>
 
               {editError && (
-                <p className="text-sm font-medium text-rose-500">{editError}</p>
+                <div className="flex items-start gap-2 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
+                  <span>⚠️</span>
+                  <span>{editError}</span>
+                </div>
               )}
 
               <div className="flex gap-3 pt-2">
