@@ -95,3 +95,98 @@ export async function POST(request: Request) {
     );
   }
 }
+
+export async function PUT(request: Request) {
+  try {
+    const body = await request.json();
+    const { event_id, artist_id, role } = body;
+
+    if (!event_id || !artist_id || !role?.trim()) {
+      return NextResponse.json(
+        { message: "Event, artist, dan role wajib diisi." },
+        { status: 400 }
+      );
+    }
+
+    const result = await pool.query(
+      `
+      UPDATE tiktaktuk.event_artist
+      SET role = $3
+      WHERE event_id = $1 AND artist_id = $2
+      RETURNING event_id, artist_id, role;
+      `,
+      [event_id, artist_id, role.trim()]
+    );
+
+    if (result.rows.length === 0) {
+      return NextResponse.json(
+        { message: "Artist event tidak ditemukan." },
+        { status: 404 }
+      );
+    }
+
+    const joinedResult = await pool.query(
+      `
+      SELECT
+        ea.event_id,
+        e.event_title,
+        ea.artist_id,
+        a.name AS artist_name,
+        ea.role
+      FROM tiktaktuk.event_artist ea
+      JOIN tiktaktuk.event e ON e.event_id = ea.event_id
+      JOIN tiktaktuk.artist a ON a.artist_id = ea.artist_id
+      WHERE ea.event_id = $1 AND ea.artist_id = $2;
+      `,
+      [event_id, artist_id]
+    );
+
+    return NextResponse.json(joinedResult.rows[0]);
+  } catch (error: unknown) {
+    console.error(error);
+
+    return NextResponse.json(
+      { message: getErrorMessage(error, "Gagal memperbarui artist event.") },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const body = await request.json();
+    const { event_id, artist_id } = body;
+
+    if (!event_id || !artist_id) {
+      return NextResponse.json(
+        { message: "Event dan artist wajib diisi." },
+        { status: 400 }
+      );
+    }
+
+    const result = await pool.query(
+      `
+      DELETE FROM tiktaktuk.event_artist
+      WHERE event_id = $1 AND artist_id = $2
+      RETURNING event_id, artist_id, role;
+      `,
+      [event_id, artist_id]
+    );
+
+    if (result.rows.length === 0) {
+      return NextResponse.json(
+        { message: "Artist event tidak ditemukan." },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json(result.rows[0]);
+  } catch (error: unknown) {
+    console.error(error);
+
+    return NextResponse.json(
+      { message: getErrorMessage(error, "Gagal menghapus artist event.") },
+      { status: 500 }
+    );
+  }
+}

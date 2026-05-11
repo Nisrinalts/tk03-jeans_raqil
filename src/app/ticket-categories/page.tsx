@@ -37,6 +37,10 @@ export default function TicketCategoryPage() {
   const [ticketCategories, setTicketCategories] = useState<TicketCategory[]>([]);
   const [events, setEvents] = useState<EventDisplay[]>([]);
   const [quotaEventId, setQuotaEventId] = useState("");
+  const [manualQuotaEventId, setManualQuotaEventId] = useState("");
+  const [quotaInputMode, setQuotaInputMode] = useState<"select" | "manual">(
+    "select"
+  );
   const [remainingQuotas, setRemainingQuotas] = useState<RemainingQuota[]>([]);
   const [isQuotaLoading, setIsQuotaLoading] = useState(false);
   const [quotaError, setQuotaError] = useState("");
@@ -228,6 +232,8 @@ const showToast = (message: string, type: "success" | "error") => {
 
   if (validationError) {
     setError(validationError);
+    setSuccessMessage("");
+    setSuccessType("");
     showToast(validationError, "error");
     return;
   }
@@ -250,6 +256,8 @@ const showToast = (message: string, type: "success" | "error") => {
 
     if (!res.ok) {
       setError(data.message || "Gagal menambahkan kategori tiket.");
+      setSuccessMessage("");
+      setSuccessType("");
       showToast(data.message || "Gagal menambahkan kategori tiket.", "error");
       return;
     }
@@ -289,6 +297,8 @@ const showToast = (message: string, type: "success" | "error") => {
 
   if (validationError) {
     setEditError(validationError);
+    setSuccessMessage("");
+    setSuccessType("");
     showToast(validationError, "error");
     return;
   }
@@ -311,6 +321,8 @@ const showToast = (message: string, type: "success" | "error") => {
 
     if (!res.ok) {
       setEditError(data.message || "Gagal memperbarui kategori tiket.");
+      setSuccessMessage("");
+      setSuccessType("");
       showToast(data.message || "Gagal memperbarui kategori tiket.", "error");
       return;
     }
@@ -380,7 +392,10 @@ const showToast = (message: string, type: "success" | "error") => {
 };
 
 const handleCheckRemainingQuota = async () => {
-  if (!quotaEventId) {
+  const eventId =
+    quotaInputMode === "manual" ? manualQuotaEventId.trim() : quotaEventId;
+
+  if (!eventId) {
     setQuotaError("Event wajib dipilih.");
     showToast("Event wajib dipilih.", "error");
     return;
@@ -397,7 +412,7 @@ const handleCheckRemainingQuota = async () => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        event_id: quotaEventId,
+        event_id: eventId,
       }),
     });
 
@@ -514,19 +529,62 @@ const handleCheckRemainingQuota = async () => {
       </h2>
     </div>
 
-    <div className="flex flex-col gap-3 md:flex-row">
-      <select
-        value={quotaEventId}
-        onChange={(e) => setQuotaEventId(e.target.value)}
-        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 outline-none focus:border-blue-500 md:w-80"
-      >
-        <option value="">Pilih event</option>
-        {events.map((event) => (
-          <option key={event.event_id} value={event.event_id}>
-            {event.event_title}
-          </option>
-        ))}
-      </select>
+    <div className="flex flex-col gap-3 md:flex-row md:items-center">
+      <div className="inline-flex rounded-2xl border border-slate-200 bg-slate-50 p-1">
+        <button
+          type="button"
+          onClick={() => {
+            setQuotaInputMode("select");
+            setManualQuotaEventId("");
+            setQuotaError("");
+          }}
+          className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
+            quotaInputMode === "select"
+              ? "bg-white text-blue-700 shadow-sm"
+              : "text-slate-500 hover:text-slate-800"
+          }`}
+        >
+          Pilih event
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setQuotaInputMode("manual");
+            setQuotaEventId("");
+            setQuotaError("");
+          }}
+          className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
+            quotaInputMode === "manual"
+              ? "bg-white text-blue-700 shadow-sm"
+              : "text-slate-500 hover:text-slate-800"
+          }`}
+        >
+          Input ID
+        </button>
+      </div>
+
+      {quotaInputMode === "select" ? (
+        <select
+          value={quotaEventId}
+          onChange={(e) => setQuotaEventId(e.target.value)}
+          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 outline-none focus:border-blue-500 md:w-80"
+        >
+          <option value="">Pilih event</option>
+          {events.map((event) => (
+            <option key={event.event_id} value={event.event_id}>
+              {event.event_title}
+            </option>
+          ))}
+        </select>
+      ) : (
+        <input
+          type="text"
+          placeholder="Event ID manual"
+          value={manualQuotaEventId}
+          onChange={(e) => setManualQuotaEventId(e.target.value)}
+          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 outline-none focus:border-blue-500 md:w-80"
+        />
+      )}
 
       <button
         onClick={handleCheckRemainingQuota}
