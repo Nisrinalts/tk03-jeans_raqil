@@ -448,7 +448,7 @@ export default function EventsPage() {
                         <div className="flex justify-end gap-2">
                           {user?.role === "customer" && (
                             <a
-                              href={`/checkout?event_id=${event.event_id}`}
+                              href={`/checkout?event_id=${event.event_id}&user_id=${user?.user_id}`}
                               className="flex h-9 items-center justify-center rounded-xl bg-blue-600 px-3 text-xs font-semibold text-white transition hover:bg-blue-700"
                             >
                               Beli
