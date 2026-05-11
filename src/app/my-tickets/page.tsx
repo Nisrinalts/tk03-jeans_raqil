@@ -4,307 +4,329 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import { AuthUser, getUser } from "@/lib/auth";
+import { Ticket, createTicket, toJson, fromJson } from "@/types/ticket";
 
 // Dummy Interfaces
-export interface DummyTicket {
-  ticket_id: string;
-  ticker_code: string;
-  event_name: string;
-  venue_name: string;
-  category_name: string;
-  booking_date: string;
-  status: "Dipesan" | "Dipakai";
-  customer_name: string;
-  customer_id: string;
-  organizer_id: string;
-  seat_id?: string;
-}
+// export interface DummyTicket {
+//   ticket_id: string;
+//   ticker_code: string;
+//   event_name: string;
+//   venue_name: string;
+//   category_name: string;
+//   booking_date: string;
+//   status: "Dipesan" | "Dipakai";
+//   customer_name: string;
+//   customer_id: string;
+//   organizer_id: string;
+//   seat_id?: string;
+// }
 
-export const DUMMY_TICKETS: DummyTicket[] = [
-  {
-    ticket_id: "TKT-001",
-    ticker_code: "TKT-JEANS-001",
-    customer_id: "550e8400-e29b-41d4-a716-446655443004",
-    customer_name: "Budi Santoso",
-    event_name: "The Weeknd After Hours Tour",
-    venue_name: "Jakarta Convention Center",
-    category_name: "VIP",
-    booking_date: "2025-08-01 14:30",
-    status: "Dipesan",
-    organizer_id: "550e8400-e29b-41d4-a716-446655446001",
-  },
-  {
-    ticket_id: "TKT-002",
-    ticker_code: "TKT-JEANS-002",
-    customer_id: "550e8400-e29b-41d4-a716-446655443004",
-    customer_name: "Budi Santoso",
-    event_name: "Justin Bieber World Tour",
-    venue_name: "Jakarta Convention Center",
-    category_name: "Regular",
-    booking_date: "2025-08-05 10:15",
-    status: "Dipakai",
-    organizer_id: "550e8400-e29b-41d4-a716-446655446002",
-  },
-  {
-    ticket_id: "TKT-003",
-    ticker_code: "TKT-JEANS-003",
-    customer_id: "cust_other",
-    customer_name: "Siti Rahayu",
-    event_name: "Olivia Rodrigo GUTS Tour",
-    venue_name: "Sabuga Bandung",
-    category_name: "Festival",
-    booking_date: "2025-09-12 09:00",
-    status: "Dipakai",
-    organizer_id: "550e8400-e29b-41d4-a716-446655446001",
-  },
-  {
-    ticket_id: "TKT-004",
-    ticker_code: "TKT-JEANS-004",
-    customer_id: "cust_other_01",
-    customer_name: "Andi Pratama",
-    event_name: "Kanye West Donda Live",
-    venue_name: "Sabuga Bandung",
-    category_name: "Platinum",
-    booking_date: "2025-09-15 13:20",
-    status: "Dipakai",
-    organizer_id: "550e8400-e29b-41d4-a716-446655446002",
-  },
-  {
-    ticket_id: "TKT-005",
-    ticker_code: "TKT-JEANS-005",
-    customer_id: "550e8400-e29b-41d4-a716-446655443004",
-    customer_name: "Budi Santoso",
-    event_name: "The Weeknd Starboy Festival",
-    venue_name: "Sabuga Bandung",
-    category_name: "Festival",
-    booking_date: "2025-09-20 09:45",
-    status: "Dipakai",
-    organizer_id: "550e8400-e29b-41d4-a716-446655446001",
-  },
-  {
-    ticket_id: "TKT-006",
-    ticker_code: "TKT-JEANS-006",
-    customer_id: "cust_other_02",
-    customer_name: "Nadia Putri",
-    event_name: "Drake It's All A Blur Tour",
-    venue_name: "Grand City Surabaya",
-    category_name: "VIP",
-    booking_date: "2025-09-25 16:10",
-    status: "Dipakai",
-    organizer_id: "550e8400-e29b-41d4-a716-446655446002",
-  },
-  {
-    ticket_id: "TKT-007",
-    ticker_code: "TKT-JEANS-007",
-    customer_id: "550e8400-e29b-41d4-a716-446655443004",
-    customer_name: "Budi Santoso",
-    event_name: "The Weeknd After Hours Tour",
-    venue_name: "Jakarta Convention Center",
-    category_name: "VIP",
-    booking_date: "2025-10-01 11:30",
-    status: "Dipesan",
-    organizer_id: "550e8400-e29b-41d4-a716-446655446001",
-  },
-  {
-    ticket_id: "TKT-008",
-    ticker_code: "TKT-JEANS-008",
-    customer_id: "cust_other_03",
-    customer_name: "Rizky Maulana",
-    event_name: "Justin Bieber World Tour",
-    venue_name: "Jakarta Convention Center",
-    category_name: "Regular",
-    booking_date: "2025-10-03 14:00",
-    status: "Dipakai",
-    organizer_id: "550e8400-e29b-41d4-a716-446655446002",
-  },
-  {
-    ticket_id: "TKT-009",
-    ticker_code: "TKT-JEANS-009",
-    customer_id: "550e8400-e29b-41d4-a716-446655443004",
-    customer_name: "Budi Santoso",
-    event_name: "Olivia Rodrigo GUTS Tour",
-    venue_name: "Sabuga Bandung",
-    category_name: "CAT 1",
-    booking_date: "2025-10-07 08:15",
-    status: "Dipesan",
-    organizer_id: "550e8400-e29b-41d4-a716-446655446001",
-  },
-  {
-    ticket_id: "TKT-010",
-    ticker_code: "TKT-JEANS-010",
-    customer_id: "cust_other_04",
-    customer_name: "Maya Sari",
-    event_name: "Kanye West Donda Live",
-    venue_name: "Sabuga Bandung",
-    category_name: "CAT 2",
-    booking_date: "2025-10-10 15:40",
-    status: "Dipakai",
-    organizer_id: "550e8400-e29b-41d4-a716-446655446002",
-  },
-  {
-    ticket_id: "TKT-011",
-    ticker_code: "TKT-JEANS-011",
-    customer_id: "550e8400-e29b-41d4-a716-446655443004",
-    customer_name: "Budi Santoso",
-    event_name: "The Weeknd Starboy Festival",
-    venue_name: "Sabuga Bandung",
-    category_name: "Front Row",
-    booking_date: "2025-10-12 12:00",
-    status: "Dipesan",
-    organizer_id: "550e8400-e29b-41d4-a716-446655446001",
-  },
-  {
-    ticket_id: "TKT-012",
-    ticker_code: "TKT-JEANS-012",
-    customer_id: "cust_other_05",
-    customer_name: "Dimas Akbar",
-    event_name: "Drake It's All A Blur Tour",
-    venue_name: "Grand City Surabaya",
-    category_name: "Regular",
-    booking_date: "2025-10-15 10:25",
-    status: "Dipakai",
-    organizer_id: "550e8400-e29b-41d4-a716-446655446002",
-  },
-  {
-    ticket_id: "TKT-013",
-    ticker_code: "TKT-JEANS-013",
-    customer_id: "550e8400-e29b-41d4-a716-446655443004",
-    customer_name: "Budi Santoso",
-    event_name: "The Weeknd After Hours Tour",
-    venue_name: "Jakarta Convention Center",
-    category_name: "WVIP",
-    booking_date: "2025-10-18 13:55",
-    status: "Dipesan",
-    organizer_id: "550e8400-e29b-41d4-a716-446655446001",
-  },
-  {
-    ticket_id: "TKT-014",
-    ticker_code: "TKT-JEANS-014",
-    customer_id: "cust_other_06",
-    customer_name: "Salsa Nabila",
-    event_name: "Justin Bieber World Tour",
-    venue_name: "Jakarta Convention Center",
-    category_name: "VIP",
-    booking_date: "2025-10-20 17:05",
-    status: "Dipakai",
-    organizer_id: "550e8400-e29b-41d4-a716-446655446002",
-  },
-  {
-    ticket_id: "TKT-015",
-    ticker_code: "TKT-JEANS-015",
-    customer_id: "550e8400-e29b-41d4-a716-446655443004",
-    customer_name: "Budi Santoso",
-    event_name: "Olivia Rodrigo GUTS Tour",
-    venue_name: "Sabuga Bandung",
-    category_name: "CAT 1",
-    booking_date: "2025-10-22 09:30",
-    status: "Dipesan",
-    organizer_id: "550e8400-e29b-41d4-a716-446655446001",
-  },
-  {
-    ticket_id: "TKT-016",
-    ticker_code: "TKT-JEANS-016",
-    customer_id: "cust_other_07",
-    customer_name: "Fahri Ramadhan",
-    event_name: "Kanye West Donda Live",
-    venue_name: "Sabuga Bandung",
-    category_name: "Gold",
-    booking_date: "2025-10-24 14:15",
-    status: "Dipakai",
-    organizer_id: "550e8400-e29b-41d4-a716-446655446002",
-  },
-  {
-    ticket_id: "TKT-017",
-    ticker_code: "TKT-JEANS-017",
-    customer_id: "550e8400-e29b-41d4-a716-446655443004",
-    customer_name: "Budi Santoso",
-    event_name: "The Weeknd Starboy Festival",
-    venue_name: "Sabuga Bandung",
-    category_name: "Silver",
-    booking_date: "2025-10-26 11:45",
-    status: "Dipesan",
-    organizer_id: "550e8400-e29b-41d4-a716-446655446001",
-  },
-  {
-    ticket_id: "TKT-018",
-    ticker_code: "TKT-JEANS-018",
-    customer_id: "cust_other_08",
-    customer_name: "Tasya Aulia",
-    event_name: "Drake It's All A Blur Tour",
-    venue_name: "Grand City Surabaya",
-    category_name: "Front Row",
-    booking_date: "2025-10-28 16:20",
-    status: "Dipakai",
-    organizer_id: "550e8400-e29b-41d4-a716-446655446002",
-  },
-  {
-    ticket_id: "TKT-019",
-    ticker_code: "TKT-JEANS-019",
-    customer_id: "550e8400-e29b-41d4-a716-446655443004",
-    customer_name: "Budi Santoso",
-    event_name: "The Weeknd After Hours Tour",
-    venue_name: "Jakarta Convention Center",
-    category_name: "Festival",
-    booking_date: "2025-10-30 13:00",
-    status: "Dipesan",
-    organizer_id: "550e8400-e29b-41d4-a716-446655446001",
-  },
-  {
-    ticket_id: "TKT-020",
-    ticker_code: "TKT-JEANS-020",
-    customer_id: "cust_other_09",
-    customer_name: "Reza Nugraha",
-    event_name: "Justin Bieber World Tour",
-    venue_name: "Jakarta Convention Center",
-    category_name: "Regular",
-    booking_date: "2025-11-01 08:50",
-    status: "Dipakai",
-    organizer_id: "550e8400-e29b-41d4-a716-446655446002",
-  },
-];
+// export const DUMMY_TICKETS: DummyTicket[] = [
+//   {
+//     ticket_id: "TKT-001",
+//     ticker_code: "TKT-JEANS-001",
+//     customer_id: "550e8400-e29b-41d4-a716-446655443004",
+//     customer_name: "Budi Santoso",
+//     event_name: "The Weeknd After Hours Tour",
+//     venue_name: "Jakarta Convention Center",
+//     category_name: "VIP",
+//     booking_date: "2025-08-01 14:30",
+//     status: "Dipesan",
+//     organizer_id: "550e8400-e29b-41d4-a716-446655446001",
+//   },
+//   {
+//     ticket_id: "TKT-002",
+//     ticker_code: "TKT-JEANS-002",
+//     customer_id: "550e8400-e29b-41d4-a716-446655443004",
+//     customer_name: "Budi Santoso",
+//     event_name: "Justin Bieber World Tour",
+//     venue_name: "Jakarta Convention Center",
+//     category_name: "Regular",
+//     booking_date: "2025-08-05 10:15",
+//     status: "Dipakai",
+//     organizer_id: "550e8400-e29b-41d4-a716-446655446002",
+//   },
+//   {
+//     ticket_id: "TKT-003",
+//     ticker_code: "TKT-JEANS-003",
+//     customer_id: "cust_other",
+//     customer_name: "Siti Rahayu",
+//     event_name: "Olivia Rodrigo GUTS Tour",
+//     venue_name: "Sabuga Bandung",
+//     category_name: "Festival",
+//     booking_date: "2025-09-12 09:00",
+//     status: "Dipakai",
+//     organizer_id: "550e8400-e29b-41d4-a716-446655446001",
+//   },
+//   {
+//     ticket_id: "TKT-004",
+//     ticker_code: "TKT-JEANS-004",
+//     customer_id: "cust_other_01",
+//     customer_name: "Andi Pratama",
+//     event_name: "Kanye West Donda Live",
+//     venue_name: "Sabuga Bandung",
+//     category_name: "Platinum",
+//     booking_date: "2025-09-15 13:20",
+//     status: "Dipakai",
+//     organizer_id: "550e8400-e29b-41d4-a716-446655446002",
+//   },
+//   {
+//     ticket_id: "TKT-005",
+//     ticker_code: "TKT-JEANS-005",
+//     customer_id: "550e8400-e29b-41d4-a716-446655443004",
+//     customer_name: "Budi Santoso",
+//     event_name: "The Weeknd Starboy Festival",
+//     venue_name: "Sabuga Bandung",
+//     category_name: "Festival",
+//     booking_date: "2025-09-20 09:45",
+//     status: "Dipakai",
+//     organizer_id: "550e8400-e29b-41d4-a716-446655446001",
+//   },
+//   {
+//     ticket_id: "TKT-006",
+//     ticker_code: "TKT-JEANS-006",
+//     customer_id: "cust_other_02",
+//     customer_name: "Nadia Putri",
+//     event_name: "Drake It's All A Blur Tour",
+//     venue_name: "Grand City Surabaya",
+//     category_name: "VIP",
+//     booking_date: "2025-09-25 16:10",
+//     status: "Dipakai",
+//     organizer_id: "550e8400-e29b-41d4-a716-446655446002",
+//   },
+//   {
+//     ticket_id: "TKT-007",
+//     ticker_code: "TKT-JEANS-007",
+//     customer_id: "550e8400-e29b-41d4-a716-446655443004",
+//     customer_name: "Budi Santoso",
+//     event_name: "The Weeknd After Hours Tour",
+//     venue_name: "Jakarta Convention Center",
+//     category_name: "VIP",
+//     booking_date: "2025-10-01 11:30",
+//     status: "Dipesan",
+//     organizer_id: "550e8400-e29b-41d4-a716-446655446001",
+//   },
+//   {
+//     ticket_id: "TKT-008",
+//     ticker_code: "TKT-JEANS-008",
+//     customer_id: "cust_other_03",
+//     customer_name: "Rizky Maulana",
+//     event_name: "Justin Bieber World Tour",
+//     venue_name: "Jakarta Convention Center",
+//     category_name: "Regular",
+//     booking_date: "2025-10-03 14:00",
+//     status: "Dipakai",
+//     organizer_id: "550e8400-e29b-41d4-a716-446655446002",
+//   },
+//   {
+//     ticket_id: "TKT-009",
+//     ticker_code: "TKT-JEANS-009",
+//     customer_id: "550e8400-e29b-41d4-a716-446655443004",
+//     customer_name: "Budi Santoso",
+//     event_name: "Olivia Rodrigo GUTS Tour",
+//     venue_name: "Sabuga Bandung",
+//     category_name: "CAT 1",
+//     booking_date: "2025-10-07 08:15",
+//     status: "Dipesan",
+//     organizer_id: "550e8400-e29b-41d4-a716-446655446001",
+//   },
+//   {
+//     ticket_id: "TKT-010",
+//     ticker_code: "TKT-JEANS-010",
+//     customer_id: "cust_other_04",
+//     customer_name: "Maya Sari",
+//     event_name: "Kanye West Donda Live",
+//     venue_name: "Sabuga Bandung",
+//     category_name: "CAT 2",
+//     booking_date: "2025-10-10 15:40",
+//     status: "Dipakai",
+//     organizer_id: "550e8400-e29b-41d4-a716-446655446002",
+//   },
+//   {
+//     ticket_id: "TKT-011",
+//     ticker_code: "TKT-JEANS-011",
+//     customer_id: "550e8400-e29b-41d4-a716-446655443004",
+//     customer_name: "Budi Santoso",
+//     event_name: "The Weeknd Starboy Festival",
+//     venue_name: "Sabuga Bandung",
+//     category_name: "Front Row",
+//     booking_date: "2025-10-12 12:00",
+//     status: "Dipesan",
+//     organizer_id: "550e8400-e29b-41d4-a716-446655446001",
+//   },
+//   {
+//     ticket_id: "TKT-012",
+//     ticker_code: "TKT-JEANS-012",
+//     customer_id: "cust_other_05",
+//     customer_name: "Dimas Akbar",
+//     event_name: "Drake It's All A Blur Tour",
+//     venue_name: "Grand City Surabaya",
+//     category_name: "Regular",
+//     booking_date: "2025-10-15 10:25",
+//     status: "Dipakai",
+//     organizer_id: "550e8400-e29b-41d4-a716-446655446002",
+//   },
+//   {
+//     ticket_id: "TKT-013",
+//     ticker_code: "TKT-JEANS-013",
+//     customer_id: "550e8400-e29b-41d4-a716-446655443004",
+//     customer_name: "Budi Santoso",
+//     event_name: "The Weeknd After Hours Tour",
+//     venue_name: "Jakarta Convention Center",
+//     category_name: "WVIP",
+//     booking_date: "2025-10-18 13:55",
+//     status: "Dipesan",
+//     organizer_id: "550e8400-e29b-41d4-a716-446655446001",
+//   },
+//   {
+//     ticket_id: "TKT-014",
+//     ticker_code: "TKT-JEANS-014",
+//     customer_id: "cust_other_06",
+//     customer_name: "Salsa Nabila",
+//     event_name: "Justin Bieber World Tour",
+//     venue_name: "Jakarta Convention Center",
+//     category_name: "VIP",
+//     booking_date: "2025-10-20 17:05",
+//     status: "Dipakai",
+//     organizer_id: "550e8400-e29b-41d4-a716-446655446002",
+//   },
+//   {
+//     ticket_id: "TKT-015",
+//     ticker_code: "TKT-JEANS-015",
+//     customer_id: "550e8400-e29b-41d4-a716-446655443004",
+//     customer_name: "Budi Santoso",
+//     event_name: "Olivia Rodrigo GUTS Tour",
+//     venue_name: "Sabuga Bandung",
+//     category_name: "CAT 1",
+//     booking_date: "2025-10-22 09:30",
+//     status: "Dipesan",
+//     organizer_id: "550e8400-e29b-41d4-a716-446655446001",
+//   },
+//   {
+//     ticket_id: "TKT-016",
+//     ticker_code: "TKT-JEANS-016",
+//     customer_id: "cust_other_07",
+//     customer_name: "Fahri Ramadhan",
+//     event_name: "Kanye West Donda Live",
+//     venue_name: "Sabuga Bandung",
+//     category_name: "Gold",
+//     booking_date: "2025-10-24 14:15",
+//     status: "Dipakai",
+//     organizer_id: "550e8400-e29b-41d4-a716-446655446002",
+//   },
+//   {
+//     ticket_id: "TKT-017",
+//     ticker_code: "TKT-JEANS-017",
+//     customer_id: "550e8400-e29b-41d4-a716-446655443004",
+//     customer_name: "Budi Santoso",
+//     event_name: "The Weeknd Starboy Festival",
+//     venue_name: "Sabuga Bandung",
+//     category_name: "Silver",
+//     booking_date: "2025-10-26 11:45",
+//     status: "Dipesan",
+//     organizer_id: "550e8400-e29b-41d4-a716-446655446001",
+//   },
+//   {
+//     ticket_id: "TKT-018",
+//     ticker_code: "TKT-JEANS-018",
+//     customer_id: "cust_other_08",
+//     customer_name: "Tasya Aulia",
+//     event_name: "Drake It's All A Blur Tour",
+//     venue_name: "Grand City Surabaya",
+//     category_name: "Front Row",
+//     booking_date: "2025-10-28 16:20",
+//     status: "Dipakai",
+//     organizer_id: "550e8400-e29b-41d4-a716-446655446002",
+//   },
+//   {
+//     ticket_id: "TKT-019",
+//     ticker_code: "TKT-JEANS-019",
+//     customer_id: "550e8400-e29b-41d4-a716-446655443004",
+//     customer_name: "Budi Santoso",
+//     event_name: "The Weeknd After Hours Tour",
+//     venue_name: "Jakarta Convention Center",
+//     category_name: "Festival",
+//     booking_date: "2025-10-30 13:00",
+//     status: "Dipesan",
+//     organizer_id: "550e8400-e29b-41d4-a716-446655446001",
+//   },
+//   {
+//     ticket_id: "TKT-020",
+//     ticker_code: "TKT-JEANS-020",
+//     customer_id: "cust_other_09",
+//     customer_name: "Reza Nugraha",
+//     event_name: "Justin Bieber World Tour",
+//     venue_name: "Jakarta Convention Center",
+//     category_name: "Regular",
+//     booking_date: "2025-11-01 08:50",
+//     status: "Dipakai",
+//     organizer_id: "550e8400-e29b-41d4-a716-446655446002",
+//   },
+// ];
 
-// Dummy config forms
-export const DUMMY_ORDERS = [
-  { id: "ORD-001", customer: "Budi Santoso", event: "The Weeknd After Hours Tour" },
-  { id: "ORD-002", customer: "Siti Rahayu", event: "Olivia Rodrigo GUTS Tour" },
-];
-export const DUMMY_CATEGORIES = [
-  { id: "CAT-1", name: "WVIP", price: 1500000, max_quota: 100, used_quota: 100 },
-  { id: "CAT-2", name: "VIP", price: 1000000, max_quota: 200, used_quota: 150 },
-  { id: "CAT-3", name: "Regular", price: 500000, max_quota: 500, used_quota: 200 },
-];
-export const DUMMY_SEATS = [
-  { id: "S-1", display: "Section A - Baris 1, No. 1" },
-  { id: "S-2", display: "Section A - Baris 1, No. 2" },
-  { id: "S-3", display: "Section A - Baris 1, No. 3" },
-  { id: "S-4", display: "Section A - Baris 2, No. 1" },
-  { id: "S-5", display: "Section A - Baris 2, No. 2" },
-  { id: "S-6", display: "Section A - Baris 2, No. 3" },
-  { id: "S-7", display: "Section A - Baris 3, No. 1" },
-  { id: "S-8", display: "Section A - Baris 3, No. 2" },
-  { id: "S-9", display: "Section A - Baris 3, No. 3" },
-  { id: "S-10", display: "Section A - Baris 4, No. 1" },
-  { id: "S-11", display: "Section B - Baris 1, No. 1" },
-  { id: "S-12", display: "Section B - Baris 1, No. 2" },
-  { id: "S-13", display: "Section B - Baris 1, No. 3" },
-  { id: "S-14", display: "Section B - Baris 2, No. 1" },
-  { id: "S-15", display: "Section B - Baris 2, No. 2" },
-  { id: "S-16", display: "Section B - Baris 2, No. 3" },
-  { id: "S-17", display: "Section B - Baris 3, No. 1" },
-  { id: "S-18", display: "Section B - Baris 3, No. 2" },
-  { id: "S-19", display: "Section B - Baris 3, No. 3" },
-  { id: "S-20", display: "Section B - Baris 4, No. 1" },
-  { id: "S-21", display: "Section C - Baris 1, No. 1" },
-  { id: "S-22", display: "Section C - Baris 1, No. 2" },
-  { id: "S-23", display: "Section C - Baris 1, No. 3" },
-  { id: "S-24", display: "Section C - Baris 2, No. 1" },
-  { id: "S-25", display: "Section C - Baris 2, No. 2" },
-  { id: "S-26", display: "Section C - Baris 2, No. 3" },
-  { id: "S-27", display: "Section C - Baris 3, No. 1" },
-  { id: "S-28", display: "Section C - Baris 3, No. 2" },
-  { id: "S-29", display: "Section C - Baris 3, No. 3" },
-  { id: "S-30", display: "Section C - Baris 4, No. 1" },
-];
+// // Dummy config forms
+// export const DUMMY_ORDERS = [
+//   { id: "ORD-001", customer: "Budi Santoso", event: "The Weeknd After Hours Tour" },
+//   { id: "ORD-002", customer: "Siti Rahayu", event: "Olivia Rodrigo GUTS Tour" },
+// ];
+// export const DUMMY_CATEGORIES = [
+//   { id: "CAT-1", name: "WVIP", price: 1500000, max_quota: 100, used_quota: 100 },
+//   { id: "CAT-2", name: "VIP", price: 1000000, max_quota: 200, used_quota: 150 },
+//   { id: "CAT-3", name: "Regular", price: 500000, max_quota: 500, used_quota: 200 },
+// ];
+// export const DUMMY_SEATS = [
+//   { id: "S-1", display: "Section A - Baris 1, No. 1" },
+//   { id: "S-2", display: "Section A - Baris 1, No. 2" },
+//   { id: "S-3", display: "Section A - Baris 1, No. 3" },
+//   { id: "S-4", display: "Section A - Baris 2, No. 1" },
+//   { id: "S-5", display: "Section A - Baris 2, No. 2" },
+//   { id: "S-6", display: "Section A - Baris 2, No. 3" },
+//   { id: "S-7", display: "Section A - Baris 3, No. 1" },
+//   { id: "S-8", display: "Section A - Baris 3, No. 2" },
+//   { id: "S-9", display: "Section A - Baris 3, No. 3" },
+//   { id: "S-10", display: "Section A - Baris 4, No. 1" },
+//   { id: "S-11", display: "Section B - Baris 1, No. 1" },
+//   { id: "S-12", display: "Section B - Baris 1, No. 2" },
+//   { id: "S-13", display: "Section B - Baris 1, No. 3" },
+//   { id: "S-14", display: "Section B - Baris 2, No. 1" },
+//   { id: "S-15", display: "Section B - Baris 2, No. 2" },
+//   { id: "S-16", display: "Section B - Baris 2, No. 3" },
+//   { id: "S-17", display: "Section B - Baris 3, No. 1" },
+//   { id: "S-18", display: "Section B - Baris 3, No. 2" },
+//   { id: "S-19", display: "Section B - Baris 3, No. 3" },
+//   { id: "S-20", display: "Section B - Baris 4, No. 1" },
+//   { id: "S-21", display: "Section C - Baris 1, No. 1" },
+//   { id: "S-22", display: "Section C - Baris 1, No. 2" },
+//   { id: "S-23", display: "Section C - Baris 1, No. 3" },
+//   { id: "S-24", display: "Section C - Baris 2, No. 1" },
+//   { id: "S-25", display: "Section C - Baris 2, No. 2" },
+//   { id: "S-26", display: "Section C - Baris 2, No. 3" },
+//   { id: "S-27", display: "Section C - Baris 3, No. 1" },
+//   { id: "S-28", display: "Section C - Baris 3, No. 2" },
+//   { id: "S-29", display: "Section C - Baris 3, No. 3" },
+//   { id: "S-30", display: "Section C - Baris 4, No. 1" },
+// ];
+
+const retrieveTickets = async () => {
+  try {
+    const response = await fetch("/api/ticket", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    console.log("API Response Status:", response.status);
+    if (response.ok) {
+      const data = await response.json();
+      console.log("Fetched Tickets:", data);
+      const tickets = data as Ticket[];
+      return tickets;
+    }
+  } catch (error) {
+    console.error("Error fetching tickets:", error);
+    return [];
+  } 
+};
 
 export default function TicketPage() {
     // Create Modal State
@@ -316,16 +338,17 @@ export default function TicketPage() {
 
   // Edit Modal State
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [ticketToEdit, setTicketToEdit] = useState<DummyTicket | null>(null);
+  const [ticketToEdit, setTicketToEdit] = useState<Ticket | null>(null);
   const [editStatus, setEditStatus] = useState<"Dipesan" | "Dipakai">("Dipesan");
   const [editSeat, setEditSeat] = useState<string>("");
 
-  const router = useRouter();
-  const [filterStatus, setFilterStatus] = useState<"Semua" | "Dipesan" | "Dipakai">("Semua");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [tickets, setTickets] = useState<DummyTicket[]>([]);
+  const [tickets, setTickets] = useState<Ticket[]>([]); 
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isChecking, setIsChecking] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterStatus, setFilterStatus] = useState("Semua");
+
+  const router = useRouter();
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -340,9 +363,16 @@ export default function TicketPage() {
     } else {
       setUser(prev => prev?.user_id === u.user_id ? prev : u);
     }
-    setTickets(DUMMY_TICKETS);
-    setIsChecking(false);
-  }, [router]); 
+    const loadData = async () => {
+      const data = await retrieveTickets(); // Tunggu promise selesai
+      if (data) {
+        setTickets(data); // Simpan hasil objek normal ke state
+      }
+      setIsChecking(false);
+    };
+
+    loadData();
+  }, [router]);
 
   if (isChecking) return null;
   if (!user) return null;
@@ -353,77 +383,86 @@ export default function TicketPage() {
   const isAdmin = role === "admin";
 
   const visibleTickets = tickets.filter((t) => {
-    if (role === "customer" && t.customer_id !== user.user_id) return false;
-    if (role === "organizer" && t.organizer_id !== user.organizer_id) return false;
-    if (filterStatus !== "Semua" && t.status !== filterStatus) return false;
     const searchLower = searchQuery.toLowerCase();
-    if (
-      searchQuery &&
-      !t.ticker_code.toLowerCase().includes(searchLower) &&
-      !t.event_name.toLowerCase().includes(searchLower)
-    ) {
-      return false;
-    }
-    return true;
+    return (
+      t.ticket_code.toLowerCase().includes(searchLower) ||
+      t.torder_id.toLowerCase().includes(searchLower)
+    );
   });
 
-  const handleOpenEditModal = (ticket: DummyTicket) => {
-    setTicketToEdit(ticket);
-    setEditStatus(ticket.status);
-    setEditSeat(ticket.seat_id || "");
-    setIsEditModalOpen(true);
-  };
+  console.log("Visible Tickets after search filter:", visibleTickets);
+  // .filter((t) => {
+  //   if (role === "customer" && t.customer_id !== user.user_id) return false;
+  //   if (role === "organizer" && t.organizer_id !== user.organizer_id) return false;
+  //   if (filterStatus !== "Semua" && t.status !== filterStatus) return false;
+  //   const searchLower = searchQuery.toLowerCase();
+  //   if (
+  //     searchQuery &&
+  //     !t.ticker_code.toLowerCase().includes(searchLower) &&
+  //     !t.event_name.toLowerCase().includes(searchLower)
+  //   ) {
+  //     return false;
+  //   }
+  //   return true;
+  // });
 
-  const handleUpdateTicket = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!ticketToEdit) return;
+  // const handleOpenEditModal = (ticket: DummyTicket) => {
+  //   setTicketToEdit(ticket);
+  //   setEditStatus(ticket.status);
+  //   setEditSeat(ticket.seat_id || "");
+  //   setIsEditModalOpen(true);
+  // };
+
+  // const handleUpdateTicket = (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   if (!ticketToEdit) return;
     
-    const updatedTickets = tickets.map(t => {
-      if (t.ticket_id === ticketToEdit.ticket_id) {
-        return { ...t, status: editStatus, seat_id: editSeat === "" ? undefined : editSeat };
-      }
-      return t;
-    });
+  //   const updatedTickets = tickets.map(t => {
+  //     if (t.ticket_id === ticketToEdit.ticket_id) {
+  //       return { ...t, status: editStatus, seat_id: editSeat === "" ? undefined : editSeat };
+  //     }
+  //     return t;
+  //   });
 
-    setTickets(updatedTickets);
-    setIsEditModalOpen(false);
-    setTicketToEdit(null);
-  };
+  //   setTickets(updatedTickets);
+  //   setIsEditModalOpen(false);
+  //   setTicketToEdit(null);
+  // };
   
-  const handleCreateTicket = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formOrder || !formCategory) return;
+  // const handleCreateTicket = (e: React.FormEvent) => {
+    // e.preventDefault();
+    // if (!formOrder || !formCategory) return;
     
-    const selectedOrder = DUMMY_ORDERS.find(o => o.id === formOrder);
-    const selectedCat = DUMMY_CATEGORIES.find(c => c.id === formCategory);
+    // const selectedOrder = DUMMY_ORDERS.find(o => o.id === formOrder);
+    // const selectedCat = DUMMY_CATEGORIES.find(c => c.id === formCategory);
 
-    const newTicket: DummyTicket = {
-      ticket_id: `TKT-NEW-${Date.now()}`,
-      ticker_code: `TKT-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
-      event_name: selectedOrder?.event || "Unknown Event",
-      venue_name: "Venue Selected By Organizer",
-      category_name: selectedCat?.name || "Unknown Category",
-      booking_date: new Date().toISOString().split('T')[0] + " 00:00",
-      status: "Dipesan",
-      customer_name: selectedOrder?.customer || "Unknown Customer",
-      customer_id: "user_new", 
-      organizer_id: "org_new",
-      seat_id: formSeat === "" ? undefined : formSeat
-    };
+    // const newTicket: Ticket = {
+    //   ticket_id: `TKT-NEW-${Date.now()}`,
+    //   ticket_code: `TKT-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
+    //   event_name: selectedOrder?.event || "Unknown Event",
+    //   venue_name: "Venue Selected By Organizer",
+    //   category_name: selectedCat?.name || "Unknown Category",
+    //   booking_date: new Date().toISOString().split('T')[0] + " 00:00",
+    //   status: "Dipesan",
+    //   customer_name: selectedOrder?.customer || "Unknown Customer",
+    //   customer_id: "user_new", 
+    //   organizer_id: "org_new",
+    //   seat_id: formSeat === "" ? undefined : formSeat
+    // };
 
-    setTickets([newTicket, ...tickets]);
-    setIsModalOpen(false);
+  //   setTickets([newTicket, ...tickets]);
+  //   setIsModalOpen(false);
     
-    setFormOrder("");
-    setFormCategory("");
-    setFormSeat("");
-  };
+  //   setFormOrder("");
+  //   setFormCategory("");
+  //   setFormSeat("");
+  // };
 
-  const handleDeleteTicket = (id: string) => {
-    if (confirm("Apakah Anda yakin ingin menghapus tiket ini?")) {
-      setTickets(visibleTickets.filter(t => t.ticket_id !== id));
-    }
-  };
+  // const handleDeleteTicket = (id: string) => {
+  //   if (confirm("Apakah Anda yakin ingin menghapus tiket ini?")) {
+  //     setTickets(visibleTickets.filter(t => t.ticket_id !== id));
+  //   }
+  // };
   if (!isStaff && !isAdmin) {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col">
@@ -490,9 +529,9 @@ export default function TicketPage() {
                   <thead className="bg-slate-50 text-slate-600 font-semibold uppercase tracking-wider text-xs">
                     <tr>
                       <th scope="col" className="px-6 py-4">Kode Tiket</th>
-                      <th scope="col" className="px-6 py-4">Event & Venue</th>
-                      <th scope="col" className="px-6 py-4">Kategori & Tgl</th>
-                      <th scope="col" className="px-6 py-4">Status</th>
+                      <th scope="col" className="px-6 py-4">Order ID</th>
+                      <th scope="col" className="px-6 py-4">Kategori</th>
+                      {/* <th scope="col" className="px-6 py-4">Status</th> */}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 bg-white">
@@ -502,22 +541,24 @@ export default function TicketPage() {
                         className={`hover:bg-slate-50/50 transition-colors ${ticket.status === 'Dipakai' ? 'opacity-70' : ''}`}
                       >
                         <td className="px-6 py-5 align-top">
-                          <span className="font-mono font-semibold text-slate-900">{ticket.ticker_code}</span>
+                          <span className="font-mono font-semibold text-slate-900">{ticket.ticket_code}</span>
                         </td>
                         <td className="px-6 py-5 align-top">
-                          <div className="font-bold text-slate-900 mb-1">{ticket.event_name}</div>
-                          <div className="text-slate-500 text-xs">{ticket.venue_name}</div>
+                          {/* <div className="font-bold text-slate-900 mb-1">{ticket.event_name}</div>
+                          <div className="text-slate-500 text-xs">{ticket.venue_name}</div> */}
+                          <span className="font-bold text-slate-900 mb-1">{ticket.torder_id}</span>
                         </td>
                         
                         <td className="px-6 py-5 align-top">
-                          <div className="inline-flex py-1 px-2.5 bg-slate-100 rounded-lg text-slate-700 font-medium mb-2 w-max text-xs">
+                          {/* <div className="inline-flex py-1 px-2.5 bg-slate-100 rounded-lg text-slate-700 font-medium mb-2 w-max text-xs">
                             {ticket.category_name}
                           </div>
                           <div className="text-xs text-slate-500 flex items-center gap-1.5 break-words line-clamp-1">
                             {ticket.booking_date}
-                          </div>
+                          </div> */}
+                          <span className="font-medium text-slate-900 mb-1">{ticket.tcategory_id}</span>
                         </td>
-                        <td className="px-6 py-5 align-top">
+                        {/* <td className="px-6 py-5 align-top">
                           <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${
                             ticket.status === "Dipakai"
                             ? "bg-slate-100 text-slate-500 border border-slate-200"
@@ -531,7 +572,7 @@ export default function TicketPage() {
                             )}
                             {ticket.status}
                           </span>
-                        </td>
+                        </td> */}
                       </tr>
                     ))}
                   </tbody>
