@@ -336,11 +336,9 @@ export default function OrderPage() {
     }
   };
 
-  // =====================================================
-  // APPLY PROMO
-  // =====================================================
+const handleApplyPromo = async () => {
 
-  const handleApplyPromo = () => {
+  try {
 
     setPromoError("");
 
@@ -356,61 +354,95 @@ export default function OrderPage() {
           code
       );
 
-    // promo tidak ditemukan
     if (!foundPromo) {
 
       setPromoError(
-        "Kode promo tidak valid."
+        "Kode promo tidak ditemukan."
       );
 
       return;
     }
 
-    const today = new Date();
+    const userId =
+      params.get("user_id");
 
-    const startDate =
-      new Date(foundPromo.start_date);
-
-    const endDate =
-      new Date(foundPromo.end_date);
-
-    // belum aktif
-    if (today < startDate) {
+    if (!userId) {
 
       setPromoError(
-        "Promo belum aktif."
+        "User tidak ditemukan."
       );
 
       return;
     }
 
-    // expired
-    if (today > endDate) {
+    // ambil customer
+    const customerResponse =
+      await fetch(
+        `/api/customer?user_id=${userId}`
+      );
+
+    const customerData =
+      await customerResponse.json();
+
+    if (!customerResponse.ok) {
 
       setPromoError(
-        "Promo sudah berakhir."
+        customerData.error
       );
 
       return;
     }
 
-    // usage limit
-    if (
-      foundPromo.usage_count >=
-      foundPromo.usage_limit
-    ) {
+    // =====================================================
+    // VALIDASI VIA TRIGGER
+    // =====================================================
+
+    const response =
+      await fetch(
+        "/api/promotion/apply",
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+
+          body: JSON.stringify({
+            customer_id:
+              customerData.customer_id,
+
+            promotion_id:
+              foundPromo.promotion_id,
+          }),
+        }
+      );
+
+    const data =
+      await response.json();
+
+    if (!response.ok) {
 
       setPromoError(
-        "Kuota promo sudah habis."
+        data.error
       );
 
       return;
     }
 
-    // valid
-    setPromoApplied(foundPromo);
-  };
+    setPromoApplied(
+      foundPromo
+    );
 
+  } catch (error) {
+
+    console.error(error);
+
+    setPromoError(
+      "Terjadi kesalahan."
+    );
+  }
+};
   // =====================================================
   // CHECKOUT
   // =====================================================
