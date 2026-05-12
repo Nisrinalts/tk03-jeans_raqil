@@ -7,9 +7,29 @@ import { AuthUser, getUser } from "@/lib/auth";
 import { Ticket } from "@/types/ticket";
 
 
+const retrieveOrganizer = async (user : any) => {
+  try {
+    const response = await fetch(`/api/organizer?user_id=${user.user_id}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    console.log("Organizer Response Status:", response.status);
+    if (response.ok) {
+      const data = await response.json();
+      return data;
+    }
+    return null;
+  } catch (error) {
+    console.error("Error fetching organizer:", error);
+    return null;
+  }
+};
+
 const retrieveEvents = async () => {
   try {
-    const response = await fetch("/api/ticket-categories", {
+    const response = await fetch("/api/events", {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -18,7 +38,7 @@ const retrieveEvents = async () => {
     console.log("Event Response Status:", response.status);
     if (response.ok) {
       const data = await response.json();
-      const events = data["events"] || [];
+      const events = data;
       return events;
     }
   } catch (error) {
@@ -60,6 +80,7 @@ const retrieveCust = async (user : any) => {
       const customers = data;
       return customers;
     }
+    return null;
   } catch (error) {
     console.error("Error fetching customers:", error);
     return [];
@@ -121,6 +142,7 @@ export default function TicketPage() {
 
   const [order, setOrder] = useState<any[]>([]);
   const [customer, setCustomer] = useState<any>(null);
+  const [organizer, setOrganizer] = useState<any>(null);
   const [events, setEvents] = useState<any[]>([]);
   const [tickets, setTickets] = useState<any[]>([]); 
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -172,11 +194,16 @@ export default function TicketPage() {
       const data = await retrieveCust(u);
       setCustomer(data);
     };
+    const loadOrganizer = async (u: any) => {
+      const data = await retrieveOrganizer(u);
+      setOrganizer(data);
+    }
 
     loadEvents();
     loadOrders();
     if (u){
-      loadCustomer(u);
+        loadOrganizer(u);
+        loadCustomer(u);
     }
     loadCategories();
     loadData();
@@ -187,6 +214,7 @@ export default function TicketPage() {
 
   const role = user.role;
   console.log("User Role:", role);
+  console.log(customer);
   const isStaff = role === "admin" || role === "organizer";
   const isAdmin = role === "admin";
 
@@ -197,32 +225,46 @@ export default function TicketPage() {
          events.forEach((e) => {
             if (c.event_id == e.event_id) {
               t.event_name = e.event_title;
+              t.organizer_id = e.organizer_id;
             }
          });
        }
-       order.forEach((o) => {
-         if (t.torder_id == o.order_id) {
-           t.customer_id = o.customer_id;
-         }
-         if (t.customer_id == customer.customer_id) {
-           t.user_id = customer.user_id;
-         }
-       });
-     });
-   });
-  const visibleTickets = tickets.filter((t) => {
-    if (role === "customer" && t.user_id !== user.user_id) return false;
-      if (role === "organizer" && t.user_id !== user.organizer_id) return false;
-      const searchLower = searchQuery.toLowerCase();
-      if (
-        searchQuery &&
-        !t.ticker_code.toLowerCase().includes(searchLower) &&
-        !t.event_name.toLowerCase().includes(searchLower)
-      ) {
-        return false;
+      });
+      order.forEach((o) => {
+        if (t.torder_id == o.order_id) {
+          t.customer_id = o.customer_id;
+        }
+        if (user.role === "customer" && customer && t.customer_id === customer.customer_id) {
+          t.user_id = customer.user_id;
+        }
+      });
+      
+      if (user.role === "organizer"){ 
+        if (organizer) {
+          console.log("Current Organizer ID from state:", organizer.organizer_id);
+          if (t.organizer_id == organizer.organizer_id) {
+            t.user_organizer_id = organizer.user_id;
+          }
+        }
       }
-      return true;
+   });
+   console.log("Enriched Tickets:", tickets[0]);
+  const visibleTickets = tickets.filter((t) => {
+    if (role === "admin") return true;
+    if (role === "customer" && t.user_id !== user.user_id) return false;
+    if (role === "organizer" && t.user_id !== user.organizer_id) return false;
+    const searchLower = searchQuery.toLowerCase();
+    if (
+      searchQuery &&
+      !t.ticker_code.toLowerCase().includes(searchLower) &&
+      !t.event_name.toLowerCase().includes(searchLower)
+    ) {
+      return false;
+    }
+    return true;
   });
+
+  console.log("visible ticket", visibleTickets[0]);
 
   // .filter((t) => {
   //   if (role === "customer" && t.customer_id !== user.user_id) return false;
@@ -372,8 +414,7 @@ export default function TicketPage() {
                     {visibleTickets.map((ticket) => (
                       <tr 
                         key={ticket.ticket_id} 
-                        className={`hover:bg-slate-50/50 transition-colors ${ticket.status === 'Dipakai' ? 'opacity-70' : ''}`}
-                      >
+                        className={`hover:bg-slate-50/50 transition-colors ${ticket.status === 'Dipakai' ? 'opacity-70' : ''}`}>
                         <td className="px-6 py-5 align-top">
                           <span className="font-mono font-semibold text-slate-900">{ticket.ticket_code}</span>
                         </td>
@@ -470,7 +511,8 @@ export default function TicketPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {visibleTickets.map(ticket => (
+                {visibleTickets.length > 0 ?  (
+                  visibleTickets.map(ticket => (
                     <tr key={ticket.ticket_id} className="hover:bg-slate-50 transition-colors">
                       <td className="px-6 py-4 font-mono font-medium text-slate-800">
                         {ticket.ticker_code}
@@ -519,7 +561,14 @@ export default function TicketPage() {
                         </button>
                       </td>
                     </tr>
-                  ))}
+                  ))
+                ) : (
+                    <tr>
+                      <td colSpan={isAdmin ? 7 : 6} className="px-6 py-8 text-center text-slate-500">
+                        Belum ada tiket yang terdaftar.
+                      </td>
+                    </tr>
+                )}
                 </tbody>
               </table>
             </div>
