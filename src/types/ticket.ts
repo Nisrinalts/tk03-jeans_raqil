@@ -4,7 +4,7 @@ import { UUID } from "crypto";
 export type Ticket = {
     ticket_id: string;
     ticket_code : string;
-    tcat_id : string;
+    tcategory_id : string;
     torder_id : string;
 }
 

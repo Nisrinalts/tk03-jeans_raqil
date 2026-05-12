@@ -16,6 +16,20 @@ export async function GET() {
     );
   }
 }
+export async function GetCat() {
+  try {
+    const result = await sql`SELECT * FROM tiktaktuk.ticket_category;`;
+
+    return NextResponse.json(result);
+
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json(
+      { message: "Gagal mengambil data ticket category." },
+      { status: 500 }
+    );
+  }
+}
 
 export async function POST(request: Request) {
   try {

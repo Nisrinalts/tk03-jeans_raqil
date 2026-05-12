@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import { AuthUser, getUser } from "@/lib/auth";
-import { Ticket, createTicket, toJson, fromJson } from "@/types/ticket";
+import { Ticket } from "@/types/ticket";
+
 
 // Dummy Interfaces
 // export interface DummyTicket {
@@ -318,14 +319,33 @@ const retrieveTickets = async () => {
     console.log("API Response Status:", response.status);
     if (response.ok) {
       const data = await response.json();
-      console.log("Fetched Tickets:", data);
-      const tickets = data as Ticket[];
+      const tickets = data
       return tickets;
     }
   } catch (error) {
     console.error("Error fetching tickets:", error);
     return [];
   } 
+};
+
+const retrieveCategories = async () => {
+  try {
+    const response = await fetch("/api/ticket-categories", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    console.log("API Response Status (Categories):", response.status);
+    if (response.ok) {
+      const data = await response.json();
+      console.log("Fetched Categories:", data["ticketCategories"]);
+      return data["ticketCategories"] || [];
+    }
+  } catch (error) {
+    console.error("Error fetching categories:", error);
+    return [];
+  }
 };
 
 export default function TicketPage() {
@@ -342,13 +362,14 @@ export default function TicketPage() {
   const [editStatus, setEditStatus] = useState<"Dipesan" | "Dipakai">("Dipesan");
   const [editSeat, setEditSeat] = useState<string>("");
 
-  const [tickets, setTickets] = useState<Ticket[]>([]); 
+  const [tickets, setTickets] = useState<any[]>([]); 
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isChecking, setIsChecking] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("Semua");
 
   const router = useRouter();
+  const [categories, setCategories] = useState<any[]>([]);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -371,6 +392,14 @@ export default function TicketPage() {
       setIsChecking(false);
     };
 
+    const loadCategories = async () => {
+      const data = await retrieveCategories();
+      setCategories(data);
+      // Simpan kategori jika diperlukan
+    };
+
+
+    loadCategories();
     loadData();
   }, [router]);
 
@@ -379,18 +408,25 @@ export default function TicketPage() {
 
   const role = user.role;
   console.log("User Role:", role);
+  console.log("categories:", categories);
   const isStaff = role === "admin" || role === "organizer";
   const isAdmin = role === "admin";
 
   const visibleTickets = tickets.filter((t) => {
     const searchLower = searchQuery.toLowerCase();
-    return (
+        return (
       t.ticket_code.toLowerCase().includes(searchLower) ||
       t.torder_id.toLowerCase().includes(searchLower)
     );
   });
-
-  console.log("Visible Tickets after search filter:", visibleTickets);
+  visibleTickets.map((t) => {
+    categories.forEach((c) => {
+      if (t.tcategory_id === c.category_id) {
+        t.tcategory_name = c.category_name;
+      }
+    });
+    console.log("Mapped Ticket:", t.tcategory_name);
+  });
   // .filter((t) => {
   //   if (role === "customer" && t.customer_id !== user.user_id) return false;
   //   if (role === "organizer" && t.organizer_id !== user.organizer_id) return false;
@@ -556,7 +592,7 @@ export default function TicketPage() {
                           <div className="text-xs text-slate-500 flex items-center gap-1.5 break-words line-clamp-1">
                             {ticket.booking_date}
                           </div> */}
-                          <span className="font-medium text-slate-900 mb-1">{ticket.tcategory_id}</span>
+                          <span className="font-medium text-slate-900 mb-1">{ticket.tcategory_name}</span>
                         </td>
                         {/* <td className="px-6 py-5 align-top">
                           <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${
