@@ -73,7 +73,6 @@ export default function ArtistsPage() {
   >("select");
   const [roleEA, setRoleEA] = useState("");
 
-  const [eaError, setEaError] = useState("");
   const [editingEventArtistKey, setEditingEventArtistKey] = useState("");
   const [editingEventArtistRole, setEditingEventArtistRole] = useState("");
   const [editingEventArtistError, setEditingEventArtistError] = useState("");
@@ -94,17 +93,18 @@ export default function ArtistsPage() {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [artistToDelete, setArtistToDelete] = useState<Artist | null>(null);
 
-  const [successMessage, setSuccessMessage] = useState("");
-  const [successType, setSuccessType] = useState<"create" | "update" | "delete" | "">("");
   const [toast, setToast] = useState<{
-  message: string;
-  type: "success" | "error";
-} | null>(null);
+    message: string;
+    type: "success" | "warning" | "danger" | "error";
+  } | null>(null);
 
-const showToast = (message: string, type: "success" | "error") => {
-  setToast({ message, type });
-  setTimeout(() => setToast(null), 3000);
-};
+  const showToast = (
+    message: string,
+    type: "success" | "warning" | "danger" | "error"
+  ) => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -233,8 +233,6 @@ useEffect(() => {
     setArtists((prev) => [...prev, data]);
     resetCreateForm();
     setIsCreateOpen(false);
-    setSuccessMessage("Artist berhasil ditambahkan.");
-    setSuccessType("create");
     showToast("Artist berhasil ditambahkan.", "success");
   } catch (error) {
     console.error(error);
@@ -248,7 +246,6 @@ useEffect(() => {
     setEditName(artist.name);
     setEditGenre(artist.genre || "");
     setEditError("");
-    setSuccessMessage("");
     setIsEditOpen(true);
   };
 
@@ -287,9 +284,7 @@ useEffect(() => {
 
     resetEditForm();
     setIsEditOpen(false);
-    setSuccessMessage("Artist berhasil diperbarui.");
-    setSuccessType("update");
-    showToast("Artist berhasil diperbarui.", "success");
+    showToast("Artist berhasil diperbarui.", "warning");
   } catch (error) {
     console.error(error);
     setEditError("Gagal memperbarui artist.");
@@ -298,7 +293,6 @@ useEffect(() => {
 
   const handleOpenDelete = (artist: Artist) => {
     setArtistToDelete(artist);
-    setSuccessMessage("");
     setIsDeleteOpen(true);
   };
 
@@ -319,8 +313,6 @@ useEffect(() => {
     const data = await res.json();
 
     if (!res.ok) {
-      setSuccessMessage(data.message || "Gagal menghapus artist.");
-      setSuccessType("");
       showToast(data.message || "Gagal menghapus artist.", "error");
       return;
     }
@@ -331,13 +323,10 @@ useEffect(() => {
 
     setIsDeleteOpen(false);
     setArtistToDelete(null);
-    setSuccessMessage("Artist berhasil dihapus.");
-    setSuccessType("delete");
-    showToast("Artist berhasil dihapus.", "success");
+    showToast("Artist berhasil dihapus.", "danger");
   } catch (error) {
     console.error(error);
-    setSuccessMessage("Gagal menghapus artist.");
-    setSuccessType("");
+    showToast("Gagal menghapus artist.", "error");
   }
 };
 
@@ -350,13 +339,11 @@ const handleAddEventArtist = async () => {
       : selectedArtistIdEA;
 
   if (!eventId || !artistId || !roleEA.trim()) {
-    setEaError("Semua field wajib diisi.");
+    showToast("Semua field wajib diisi.", "error");
     return;
   }
 
   try {
-    setEaError("");
-
     const res = await fetch("/api/event-artists", {
       method: "POST",
       headers: {
@@ -372,7 +359,7 @@ const handleAddEventArtist = async () => {
     const data = await res.json();
 
     if (!res.ok) {
-      setEaError(data.message); 
+      showToast(data.message || "Gagal menambahkan artist ke event.", "error");
       return;
     }
 
@@ -387,7 +374,6 @@ const handleAddEventArtist = async () => {
     showToast("Artist berhasil ditambahkan ke event.", "success");
   } catch (err) {
     console.error(err);
-    setEaError("Gagal menambahkan artist ke event.");
     showToast("Gagal menambahkan artist ke event.", "error");
   }
 };
@@ -445,7 +431,7 @@ const handleUpdateEventArtist = async (item: EventArtist) => {
       )
     );
     handleCancelEditEventArtist();
-    showToast("Role artist event berhasil diperbarui.", "success");
+    showToast("Role artist event berhasil diperbarui.", "warning");
   } catch (error) {
     console.error(error);
     setEditingEventArtistError("Gagal memperbarui role.");
@@ -487,7 +473,7 @@ const handleDeleteEventArtist = async () => {
       )
     );
     setEventArtistToDelete(null);
-    showToast("Artist berhasil dihapus dari event.", "success");
+    showToast("Artist berhasil dihapus dari event.", "danger");
   } catch (error) {
     console.error(error);
     showToast("Gagal menghapus artist dari event.", "error");
@@ -495,24 +481,111 @@ const handleDeleteEventArtist = async () => {
 };
   
   if (!role) return null;
+
+  const toastStyle =
+    toast?.type === "success"
+      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+      : toast?.type === "warning"
+      ? "border-yellow-200 bg-yellow-50 text-yellow-700"
+      : "border-rose-200 bg-rose-50 text-rose-700";
+  const toastIcon =
+    toast?.type === "success" ? "✅ " : toast?.type === "warning" ? "⚠️ " : "⛔ ";
+
+  const toastBanner = toast ? (
+    <div
+      className={`fixed right-6 top-20 z-[60] rounded-2xl border px-5 py-4 text-sm font-semibold shadow-lg ${toastStyle}`}
+    >
+      {toastIcon}
+      {toast.message}
+    </div>
+  ) : null;
+
   if (isLoading) {
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-100 via-slate-50 to-white">
       <Navbar role={role} />
-      {toast && (
-  <div
-    className={`fixed right-6 top-20 z-[60] rounded-2xl border px-5 py-4 text-sm font-semibold shadow-lg ${
-      toast.type === "success"
-        ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-        : "border-rose-200 bg-rose-50 text-rose-700"
-    }`}
-  >
-    {toast.type === "success" ? "✅ " : "⚠️ "}
-    {toast.message}
-  </div>
-)}
-      <section className="mx-auto max-w-7xl px-6 py-8 text-slate-500">
-        Memuat data artist...
+      {toastBanner}
+      <section className="mx-auto max-w-7xl px-6 py-8">
+        <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <h1 className="text-4xl font-bold tracking-tight text-slate-900">
+              {canManage ? "Manajemen Artis" : "Daftar Artis"}
+            </h1>
+            <p className="mt-2 text-base text-slate-500">
+              {canManage
+                ? "Kelola data artist yang terdaftar pada platform TikTakTuk."
+                : "Lihat daftar artist yang terdaftar pada platform TikTakTuk."}
+            </p>
+          </div>
+
+          {canManage && (
+            <button
+              disabled
+              className="inline-flex items-center justify-center rounded-full bg-blue-600 px-5 py-3 text-sm font-semibold text-white opacity-70 shadow-sm"
+            >
+              <span className="mr-2 text-lg leading-none">＋</span>
+              Tambah Artis
+            </button>
+          )}
+        </div>
+
+        <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-3">
+          {["Total Artis", "Genre", "Tampil di Event"].map((label) => (
+            <div
+              key={label}
+              className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
+            >
+              <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">
+                {label}
+              </p>
+              <p className="mt-3 text-5xl font-bold text-slate-300">—</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
+          <div className="border-b border-slate-200 px-6 py-6">
+            <div className="mb-6 flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-3xl font-bold text-slate-900">
+                  Tabel Artis
+                </h2>
+                <p className="mt-2 text-sm text-slate-500">
+                  Menampilkan seluruh artist yang terdaftar.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  disabled
+                  className="rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-400"
+                >
+                  Tabel
+                </button>
+                <button
+                  disabled
+                  className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-400"
+                >
+                  Daftar
+                </button>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div className="h-12 w-full max-w-md rounded-2xl border border-slate-200 bg-white" />
+              <p className="text-sm font-medium text-slate-300">
+                — artis ditemukan
+              </p>
+            </div>
+          </div>
+
+          <div className="flex min-h-[260px] flex-col items-center justify-center px-6 py-14 text-center">
+            <div className="mb-4 h-8 w-8 animate-spin rounded-full border-4 border-blue-100 border-t-blue-500" />
+            <p className="text-sm font-medium text-slate-400">
+              Memuat data artist...
+            </p>
+          </div>
+        </div>
       </section>
     </main>
   );
@@ -521,6 +594,7 @@ const handleDeleteEventArtist = async () => {
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-100 via-slate-50 to-white">
       <Navbar role={role} />
+      {toastBanner}
 
       <section className="mx-auto max-w-7xl px-6 py-8">
         <div className="rounded-[28px] border border-slate-200 bg-white/90 p-6 shadow-[0_10px_40px_rgba(15,23,42,0.06)] backdrop-blur">
@@ -541,7 +615,6 @@ const handleDeleteEventArtist = async () => {
                 onClick={() => {
                   setIsCreateOpen(true);
                   setError("");
-                  setSuccessMessage("");
                 }}
                 className="inline-flex items-center justify-center rounded-full bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
               >
@@ -596,7 +669,6 @@ const handleDeleteEventArtist = async () => {
           setEventArtistInputMode("select");
           setManualEventIdEA("");
           setManualArtistIdEA("");
-          setEaError("");
         }}
         className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
           eventArtistInputMode === "select"
@@ -612,7 +684,6 @@ const handleDeleteEventArtist = async () => {
           setEventArtistInputMode("manual");
           setSelectedEventIdEA("");
           setSelectedArtistIdEA("");
-          setEaError("");
         }}
         className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
           eventArtistInputMode === "manual"
@@ -688,12 +759,6 @@ const handleDeleteEventArtist = async () => {
         Tambah ke Event
       </button>
     </div>
-
-    {eaError && (
-      <div className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
-        ⚠️ {eaError}
-      </div>
-    )}
 
     {eventArtists.length > 0 && (
       <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200">
@@ -787,22 +852,6 @@ const handleDeleteEventArtist = async () => {
     )}
   </div>
 )}
-
-          {successMessage && canManage && (
-            <div
-              className={`mb-6 rounded-2xl border px-4 py-3 text-sm font-medium ${
-                successType === "create"
-                  ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                  : successType === "update"
-                  ? "border-yellow-200 bg-yellow-50 text-yellow-700"
-                  : successType === "delete"
-                  ? "border-red-200 bg-red-50 text-red-700"
-                  : ""
-              }`}
-            >
-              {successMessage}
-            </div>
-          )}
 
           <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
             <div className="border-b border-slate-200 px-6 py-6">

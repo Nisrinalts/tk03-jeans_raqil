@@ -43,7 +43,6 @@ export default function TicketCategoryPage() {
   );
   const [remainingQuotas, setRemainingQuotas] = useState<RemainingQuota[]>([]);
   const [isQuotaLoading, setIsQuotaLoading] = useState(false);
-  const [quotaError, setQuotaError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState<"table" | "list">("table");
@@ -67,17 +66,18 @@ export default function TicketCategoryPage() {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState<TicketCategory | null>(null);
 
-  const [successMessage, setSuccessMessage] = useState("");
-  const [successType, setSuccessType] = useState<"create" | "update" | "delete" | "">("");
   const [toast, setToast] = useState<{
-  message: string;
-  type: "success" | "error";
-} | null>(null);
+    message: string;
+    type: "success" | "warning" | "danger" | "error";
+  } | null>(null);
 
-const showToast = (message: string, type: "success" | "error") => {
-  setToast({ message, type });
-  setTimeout(() => setToast(null), 3000);
-};
+  const showToast = (
+    message: string,
+    type: "success" | "warning" | "danger" | "error"
+  ) => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -232,8 +232,6 @@ const showToast = (message: string, type: "success" | "error") => {
 
   if (validationError) {
     setError(validationError);
-    setSuccessMessage("");
-    setSuccessType("");
     showToast(validationError, "error");
     return;
   }
@@ -256,8 +254,6 @@ const showToast = (message: string, type: "success" | "error") => {
 
     if (!res.ok) {
       setError(data.message || "Gagal menambahkan kategori tiket.");
-      setSuccessMessage("");
-      setSuccessType("");
       showToast(data.message || "Gagal menambahkan kategori tiket.", "error");
       return;
     }
@@ -265,8 +261,6 @@ const showToast = (message: string, type: "success" | "error") => {
     setTicketCategories((prev) => [...prev, data]);
     setIsCreateOpen(false);
     resetCreateForm();
-    setSuccessMessage("Kategori tiket berhasil ditambahkan.");
-    setSuccessType("create");
     showToast("Kategori tiket berhasil ditambahkan.", "success");
   } catch (error) {
     console.error(error);
@@ -282,7 +276,6 @@ const showToast = (message: string, type: "success" | "error") => {
     setEditQuota(String(category.quota));
     setEditPrice(String(category.price));
     setEditError("");
-    setSuccessMessage("");
     setIsEditOpen(true);
   };
 
@@ -297,8 +290,6 @@ const showToast = (message: string, type: "success" | "error") => {
 
   if (validationError) {
     setEditError(validationError);
-    setSuccessMessage("");
-    setSuccessType("");
     showToast(validationError, "error");
     return;
   }
@@ -321,8 +312,6 @@ const showToast = (message: string, type: "success" | "error") => {
 
     if (!res.ok) {
       setEditError(data.message || "Gagal memperbarui kategori tiket.");
-      setSuccessMessage("");
-      setSuccessType("");
       showToast(data.message || "Gagal memperbarui kategori tiket.", "error");
       return;
     }
@@ -335,9 +324,7 @@ const showToast = (message: string, type: "success" | "error") => {
 
     setIsEditOpen(false);
     resetEditForm();
-    setSuccessMessage("Kategori tiket berhasil diperbarui.");
-    setSuccessType("update");
-    showToast("Kategori tiket berhasil diperbarui.", "success");
+    showToast("Kategori tiket berhasil diperbarui.", "warning");
   } catch (error) {
     console.error(error);
     setEditError("Gagal memperbarui kategori tiket.");
@@ -347,7 +334,6 @@ const showToast = (message: string, type: "success" | "error") => {
 
   const handleOpenDelete = (category: TicketCategory) => {
     setCategoryToDelete(category);
-    setSuccessMessage("");
     setIsDeleteOpen(true);
   };
 
@@ -368,8 +354,6 @@ const showToast = (message: string, type: "success" | "error") => {
     const data = await res.json();
 
     if (!res.ok) {
-      setSuccessMessage(data.message || "Gagal menghapus kategori tiket.");
-      setSuccessType("");
       showToast(data.message || "Gagal menghapus kategori tiket.", "error");
       return;
     }
@@ -380,13 +364,9 @@ const showToast = (message: string, type: "success" | "error") => {
 
     setIsDeleteOpen(false);
     setCategoryToDelete(null);
-    setSuccessMessage("Kategori tiket berhasil dihapus.");
-    setSuccessType("delete");
-    showToast("Kategori tiket berhasil dihapus.", "success");
+    showToast("Kategori tiket berhasil dihapus.", "danger");
   } catch (error) {
     console.error(error);
-    setSuccessMessage("Gagal menghapus kategori tiket.");
-    setSuccessType("");
     showToast("Gagal menghapus kategori tiket.", "error");
   }
 };
@@ -396,14 +376,12 @@ const handleCheckRemainingQuota = async () => {
     quotaInputMode === "manual" ? manualQuotaEventId.trim() : quotaEventId;
 
   if (!eventId) {
-    setQuotaError("Event wajib dipilih.");
     showToast("Event wajib dipilih.", "error");
     return;
   }
 
   try {
     setIsQuotaLoading(true);
-    setQuotaError("");
     setRemainingQuotas([]);
 
     const res = await fetch("/api/ticket-categories/remaining-quota", {
@@ -419,7 +397,6 @@ const handleCheckRemainingQuota = async () => {
     const data = await res.json();
 
     if (!res.ok) {
-      setQuotaError(data.message || "Gagal mengambil sisa kuota.");
       showToast(data.message || "Gagal mengambil sisa kuota.", "error");
       return;
     }
@@ -428,31 +405,120 @@ const handleCheckRemainingQuota = async () => {
     showToast("Sisa kuota berhasil ditampilkan.", "success");
   } catch (error) {
     console.error(error);
-    setQuotaError("Gagal mengambil sisa kuota.");
     showToast("Gagal mengambil sisa kuota.", "error");
   } finally {
     setIsQuotaLoading(false);
   }
 };
   if (!role) return null;
+
+  const toastStyle =
+    toast?.type === "success"
+      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+      : toast?.type === "warning"
+      ? "border-yellow-200 bg-yellow-50 text-yellow-700"
+      : "border-rose-200 bg-rose-50 text-rose-700";
+  const toastIcon =
+    toast?.type === "success" ? "✅ " : toast?.type === "warning" ? "⚠️ " : "⛔ ";
+
+  const toastBanner = toast ? (
+    <div
+      className={`fixed right-6 top-20 z-[60] rounded-2xl border px-5 py-4 text-sm font-semibold shadow-lg ${toastStyle}`}
+    >
+      {toastIcon}
+      {toast.message}
+    </div>
+  ) : null;
+
   if (isLoading) {
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-100 via-slate-50 to-white">
       <Navbar role={role} />
-      {toast && (
-  <div
-    className={`fixed right-6 top-20 z-[60] rounded-2xl border px-5 py-4 text-sm font-semibold shadow-lg ${
-      toast.type === "success"
-        ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-        : "border-rose-200 bg-rose-50 text-rose-700"
-    }`}
-  >
-    {toast.type === "success" ? "✅ " : "⚠️ "}
-    {toast.message}
-  </div>
-)}
-      <section className="mx-auto max-w-7xl px-6 py-8 text-slate-500">
-        Memuat data kategori tiket...
+      {toastBanner}
+      <section className="mx-auto max-w-7xl px-6 py-8">
+        <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <h1 className="text-4xl font-bold tracking-tight text-slate-900">
+              {canManage ? "Manajemen Kategori Tiket" : "Kategori Tiket"}
+            </h1>
+            <p className="mt-2 text-base text-slate-500">
+              {canManage
+                ? "Kelola kategori tiket yang terdaftar pada platform TikTakTuk."
+                : "Lihat kategori dan harga tiket per acara."}
+            </p>
+          </div>
+
+          {canManage && (
+            <button
+              disabled
+              className="inline-flex items-center justify-center rounded-full bg-blue-600 px-5 py-3 text-sm font-semibold text-white opacity-70 shadow-sm"
+            >
+              <span className="mr-2 text-lg leading-none">＋</span>
+              Tambah Kategori Tiket
+            </button>
+          )}
+        </div>
+
+        <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-3">
+          {["Total Kategori", "Total Kuota", "Harga Tertinggi"].map((label) => (
+            <div
+              key={label}
+              className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
+            >
+              <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">
+                {label}
+              </p>
+              <p className="mt-3 text-5xl font-bold text-slate-300">—</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
+          <div className="border-b border-slate-200 px-6 py-6">
+            <div className="mb-6 flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-3xl font-bold text-slate-900">
+                  Tabel Kategori Tiket
+                </h2>
+                <p className="mt-2 text-sm text-slate-500">
+                  Menampilkan seluruh kategori tiket.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  disabled
+                  className="rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-400"
+                >
+                  Tabel
+                </button>
+                <button
+                  disabled
+                  className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-400"
+                >
+                  Daftar
+                </button>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div className="flex w-full flex-col gap-4 md:max-w-2xl md:flex-row">
+                <div className="h-12 w-full rounded-2xl border border-slate-200 bg-white md:flex-1" />
+                <div className="h-12 w-full rounded-2xl border border-slate-200 bg-white md:w-[220px]" />
+              </div>
+              <p className="text-sm font-medium text-slate-300">
+                — kategori ditemukan
+              </p>
+            </div>
+          </div>
+
+          <div className="flex min-h-[260px] flex-col items-center justify-center px-6 py-14 text-center">
+            <div className="mb-4 h-8 w-8 animate-spin rounded-full border-4 border-blue-100 border-t-blue-500" />
+            <p className="text-sm font-medium text-slate-400">
+              Memuat data kategori tiket...
+            </p>
+          </div>
+        </div>
       </section>
     </main>
   );
@@ -461,6 +527,7 @@ const handleCheckRemainingQuota = async () => {
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-100 via-slate-50 to-white">
       <Navbar role={role} />
+      {toastBanner}
 
       <section className="mx-auto max-w-7xl px-6 py-8">
         <div className="rounded-[28px] border border-slate-200 bg-white/90 p-6 shadow-[0_10px_40px_rgba(15,23,42,0.06)] backdrop-blur">
@@ -481,7 +548,6 @@ const handleCheckRemainingQuota = async () => {
                 onClick={() => {
                   setIsCreateOpen(true);
                   setError("");
-                  setSuccessMessage("");
                 }}
                 className="inline-flex items-center justify-center rounded-full bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
               >
@@ -536,7 +602,6 @@ const handleCheckRemainingQuota = async () => {
           onClick={() => {
             setQuotaInputMode("select");
             setManualQuotaEventId("");
-            setQuotaError("");
           }}
           className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
             quotaInputMode === "select"
@@ -551,7 +616,6 @@ const handleCheckRemainingQuota = async () => {
           onClick={() => {
             setQuotaInputMode("manual");
             setQuotaEventId("");
-            setQuotaError("");
           }}
           className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
             quotaInputMode === "manual"
@@ -596,12 +660,6 @@ const handleCheckRemainingQuota = async () => {
     </div>
   </div>
 
-  {quotaError && (
-    <div className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
-      ⚠️ {quotaError}
-    </div>
-  )}
-
   {remainingQuotas.length > 0 && (
     <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200">
       <table className="min-w-full text-left text-sm">
@@ -638,21 +696,6 @@ const handleCheckRemainingQuota = async () => {
     </div>
   )}
 </div>
-
-          {successMessage && canManage && (
-            <div
-              className={`mb-6 rounded-2xl border px-4 py-3 text-sm font-medium ${successType === "create"
-                  ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                  : successType === "update"
-                    ? "border-yellow-200 bg-yellow-50 text-yellow-700"
-                    : successType === "delete"
-                      ? "border-red-200 bg-red-50 text-red-700"
-                      : ""
-                }`}
-            >
-              {successMessage}
-            </div>
-          )}
 
           <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
             <div className="border-b border-slate-200 px-6 py-6">
