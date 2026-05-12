@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
-import { Ticket, createTicket, toJson } from "@/types/ticket";
-
 export async function GET() {
   try {
     const result = await sql`SELECT * FROM tiktaktuk.ticket ORDER BY ticket_code ASC;`;
