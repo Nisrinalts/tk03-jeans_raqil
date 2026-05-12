@@ -7,32 +7,7 @@ import Navbar from "@/components/Navbar";
 import { Venue } from "@/types/venue";
 import { getUser, AuthUser } from "@/lib/auth";
 
-const initialVenues: Venue[] = [
-  {
-    venue_id: "550e8400-e29b-41d4-a716-446655447001",
-    venue_name: "Jakarta Convention Center",
-    capacity: 500,
-    address: "Jl. Gatot Subroto, Senayan",
-    city: "Jakarta",
-    is_reserved_seating: true,
-  },
-  {
-    venue_id: "550e8400-e29b-41d4-a716-446655447002",
-    venue_name: "Sabuga Bandung",
-    capacity: 500,
-    address: "Jl. Tamansari No.73",
-    city: "Bandung",
-    is_reserved_seating: false,
-  },
-  {
-    venue_id: "550e8400-e29b-41d4-a716-446655447003",
-    venue_name: "Grand City Surabaya",
-    capacity: 300,
-    address: "Jl. Gubeng Pojok No.1",
-    city: "Surabaya",
-    is_reserved_seating: true,
-  },
-];
+const initialVenues: Venue[] = [];
 
 function getCityBadgeClass(city: string) {
   const c = city.toLowerCase();
@@ -83,6 +58,19 @@ export default function VenuesPage() {
     }
     setUser(u);
     setLoading(false);
+
+    async function fetchVenues() {
+      try {
+        const res = await fetch("/api/venues");
+        if (res.ok) {
+          const data = await res.json();
+          setVenues(data);
+        }
+      } catch (e) {
+        console.error("Failed to fetch venues:", e);
+      }
+    }
+    fetchVenues();
   }, [router]);
 
   const filtered = useMemo(() => {
@@ -99,7 +87,7 @@ export default function VenuesPage() {
   const canManage = user?.role === "admin" || user?.role === "organizer";
   const navRole = user?.role ?? "guest";
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!venueName.trim()) { setError("Nama venue wajib diisi."); return; }
     if (!capacity || isNaN(Number(capacity)) || Number(capacity) <= 0) {
       setError("Kapasitas harus berupa angka lebih dari 0."); return;
@@ -107,14 +95,33 @@ export default function VenuesPage() {
     if (!address.trim()) { setError("Alamat wajib diisi."); return; }
     if (!city.trim()) { setError("Kota wajib diisi."); return; }
 
-    setVenues((prev) => [
-      ...prev,
-      { venue_id: uuidv4(), venue_name: venueName.trim(), capacity: Number(capacity), address: address.trim(), city: city.trim(), is_reserved_seating: isReserved },
-    ]);
-    setVenueName(""); setCapacity(""); setAddress(""); setCity(""); setIsReserved(false); setError("");
-    setIsCreateOpen(false);
-    setSuccessMessage("Venue berhasil ditambahkan.");
-    setSuccessType("create");
+    try {
+      const res = await fetch("/api/venues", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: venueName.trim(),
+          capacity: Number(capacity),
+          address: address.trim(),
+          city: city.trim(),
+        }),
+      });
+
+      if (!res.ok) throw new Error("Gagal menambahkan venue.");
+
+      const fetchRes = await fetch("/api/venues");
+      if (fetchRes.ok) {
+        const freshVenues = await fetchRes.json();
+        setVenues(freshVenues);
+      }
+
+      setVenueName(""); setCapacity(""); setAddress(""); setCity(""); setIsReserved(false); setError("");
+      setIsCreateOpen(false);
+      setSuccessMessage("Venue berhasil ditambahkan.");
+      setSuccessType("create");
+    } catch (e: any) {
+      setError(e.message);
+    }
   };
 
   const handleOpenEdit = (venue: Venue) => {
@@ -129,7 +136,7 @@ export default function VenuesPage() {
     setIsEditOpen(true);
   };
 
-  const handleUpdate = () => {
+  const handleUpdate = async () => {
     if (!editVenueName.trim()) { setEditError("Nama venue wajib diisi."); return; }
     if (!editCapacity || isNaN(Number(editCapacity)) || Number(editCapacity) <= 0) {
       setEditError("Kapasitas harus berupa angka lebih dari 0."); return;
@@ -137,16 +144,33 @@ export default function VenuesPage() {
     if (!editAddress.trim()) { setEditError("Alamat wajib diisi."); return; }
     if (!editCity.trim()) { setEditError("Kota wajib diisi."); return; }
 
-    setVenues((prev) =>
-      prev.map((v) =>
-        v.venue_id === selectedId
-          ? { ...v, venue_name: editVenueName.trim(), capacity: Number(editCapacity), address: editAddress.trim(), city: editCity.trim(), is_reserved_seating: editIsReserved }
-          : v
-      )
-    );
-    setIsEditOpen(false);
-    setSuccessMessage("Venue berhasil diperbarui.");
-    setSuccessType("update");
+    try {
+      const res = await fetch("/api/venues", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          venue_id: selectedId,
+          name: editVenueName.trim(),
+          capacity: Number(editCapacity),
+          address: editAddress.trim(),
+          city: editCity.trim(),
+        }),
+      });
+
+      if (!res.ok) throw new Error("Gagal memperbarui venue.");
+
+      const fetchRes = await fetch("/api/venues");
+      if (fetchRes.ok) {
+        const freshVenues = await fetchRes.json();
+        setVenues(freshVenues);
+      }
+
+      setIsEditOpen(false);
+      setSuccessMessage("Venue berhasil diperbarui.");
+      setSuccessType("update");
+    } catch (e: any) {
+      setEditError(e.message);
+    }
   };
 
   const handleOpenDelete = (venue: Venue) => {
@@ -155,13 +179,31 @@ export default function VenuesPage() {
     setIsDeleteOpen(true);
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!venueToDelete) return;
-    setVenues((prev) => prev.filter((v) => v.venue_id !== venueToDelete.venue_id));
-    setIsDeleteOpen(false);
-    setVenueToDelete(null);
-    setSuccessMessage("Venue berhasil dihapus.");
-    setSuccessType("delete");
+    try {
+      const res = await fetch("/api/venues", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ venue_id: venueToDelete.venue_id }),
+      });
+
+      if (!res.ok) throw new Error("Gagal menghapus venue.");
+
+      const fetchRes = await fetch("/api/venues");
+      if (fetchRes.ok) {
+        const freshVenues = await fetchRes.json();
+        setVenues(freshVenues);
+      }
+
+      setIsDeleteOpen(false);
+      setVenueToDelete(null);
+      setSuccessMessage("Venue berhasil dihapus.");
+      setSuccessType("delete");
+    } catch (e: any) {
+      setSuccessMessage(e.message);
+      setSuccessType("delete");
+    }
   };
 
   if (loading || !user) return null;
