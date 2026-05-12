@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { register } from "@/lib/auth";
 
 type Role = "customer" | "organizer" | "admin";
 
@@ -27,6 +26,7 @@ export default function RegisterPage() {
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const handleSelectRole = (r: Role) => {
     setRole(r);
@@ -34,7 +34,7 @@ export default function RegisterPage() {
     setError("");
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setError("");
     if (!username.trim() || !password.trim() || !confirmPassword.trim()) {
       setError("Username dan password wajib diisi.");
@@ -54,25 +54,38 @@ export default function RegisterPage() {
     }
     // admin: tidak ada field tambahan
 
-    const result = register(
-      username.trim(),
-      password.trim(),
-      role!,
-      {
-        full_name: fullName.trim() || undefined,
-        phone_number: phoneNumber.trim() || undefined,
-        organizer_name: organizerName.trim() || undefined,
-        contact_email: contactEmail.trim() || undefined,
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: username.trim(),
+          password: password.trim(),
+          role,
+          full_name: fullName.trim() || undefined,
+          phone_number: phoneNumber.trim() || undefined,
+          organizer_name: organizerName.trim() || undefined,
+          contact_email: contactEmail.trim() || undefined,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        // Tampilkan pesan error langsung dari trigger/procedure database.
+        setError(data?.message ?? "Pendaftaran gagal.");
+        return;
       }
-    );
 
-    if (!result.success) {
-      setError(result.error ?? "Pendaftaran gagal.");
-      return;
+      setSuccess(true);
+      setTimeout(() => router.push("/login"), 1500);
+    } catch (e) {
+      console.error(e);
+      setError("Terjadi kesalahan jaringan. Coba lagi.");
+    } finally {
+      setSubmitting(false);
     }
-
-    setSuccess(true);
-    setTimeout(() => router.push("/login"), 1500);
   };
 
   return (
@@ -177,10 +190,10 @@ export default function RegisterPage() {
 
             <button
               onClick={handleSubmit}
-              disabled={success}
+              disabled={success || submitting}
               className="w-full rounded-2xl bg-blue-600 px-4 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:opacity-60"
             >
-              Daftar
+              {submitting ? "Mendaftar..." : "Daftar"}
             </button>
 
           </div>
