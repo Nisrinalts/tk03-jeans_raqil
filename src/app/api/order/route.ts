@@ -1,94 +1,59 @@
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 
-// GET - fetch all orders
+//fetch orders
 export async function GET() {
   try {
     const result = await pool.query(`
       SELECT DISTINCT ON (o.order_id)
-        o.order_id,
-        TO_CHAR(o.order_date, 'YYYY-MM-DD HH24:MI:SS') AS order_date,
-        o.payment_status,
-        o.total_amount,
-        o.customer_id,
-
-        c.full_name AS customer_name,
-
-        e.event_title,
-        e.organizer_id
-
+        o.order_id,TO_CHAR(o.order_date, 'YYYY-MM-DD HH24:MI:SS') AS order_date,
+        o.payment_status,o.total_amount,
+        o.customer_id,c.full_name AS customer_name,
+        e.event_title,e.organizer_id
       FROM tiktaktuk."order" o
-
       LEFT JOIN tiktaktuk.customer c
-        ON c.customer_id = o.customer_id
-
+      ON c.customer_id = o.customer_id
       LEFT JOIN tiktaktuk.ticket t
-        ON t.torder_id = o.order_id
-
+      ON t.torder_id = o.order_id
       LEFT JOIN tiktaktuk.ticket_category tc
-        ON tc.category_id = t.tcategory_id
-
+      ON tc.category_id = t.tcategory_id
       LEFT JOIN tiktaktuk.event e
-        ON e.event_id = tc.event_id
-
+      ON e.event_id = tc.event_id
       ORDER BY o.order_id, o.order_date DESC
     `);
-
     return NextResponse.json(result.rows);
 
   } catch (error) {
     console.error("GET /api/order error:", error);
-
     return NextResponse.json(
       { error: "Gagal mengambil data order." },
       { status: 500 }
     );
   }
 }
-
-// POST - create order
+// create order 
 export async function POST(request: Request) {
-
   const client = await pool.connect();
-
   try {
-
     const body = await request.json();
-
     const {
       customer_id,
       total_amount,
       payment_status = "Pending",
       promotion_id,
     } = body;
-
     if (!customer_id || total_amount == null) {
-
       return NextResponse.json(
-        {
-          error:
-            "customer_id dan total_amount wajib diisi.",
-        },
-        {
-          status: 400,
-        }
+        { error:"customer_id dan total_amount wajib diisi.",},
+        { status: 400,}
       );
     }
-
-    const orderDate =
-      new Date();
-
+    const orderDate = new Date();
     await client.query("BEGIN");
-
-    // =====================================================
-    // INSERT ORDER
-    // =====================================================
-
     const orderId =
       crypto.randomUUID();
 
-    const orderResult =
-      await client.query(
+    const orderResult =await client.query(
         `
         INSERT INTO tiktaktuk."order"
         (
@@ -118,27 +83,15 @@ export async function POST(request: Request) {
           customer_id,
         ]
       );
-
-    // =====================================================
-    // INSERT ORDER PROMOTION
-    // VALIDASI FULL DARI TRIGGER POSTGRES
-    // =====================================================
-
     if (promotion_id) {
-
-      const orderPromotionId =
-        crypto.randomUUID();
-
+      const orderPromotionId =crypto.randomUUID();
       await client.query(
-        `
-        INSERT INTO tiktaktuk.order_promotion
+        `INSERT INTO tiktaktuk.order_promotion
         (
           order_promotion_id,
           promotion_id,
           order_id
-        )
-        VALUES ($1, $2, $3)
-        `,
+        )VALUES ($1, $2, $3) `,
         [
           orderPromotionId,
           promotion_id,
@@ -146,54 +99,28 @@ export async function POST(request: Request) {
         ]
       );
     }
-
     await client.query("COMMIT");
-
     return NextResponse.json(
-      orderResult.rows[0],
-      {
-        status: 201,
-      }
+      orderResult.rows[0], {status: 201,}
     );
-
   } catch (error: any) {
-
-    await client.query(
-      "ROLLBACK"
-    );
-
-    console.error(
-      "POST /api/order error:",
-      error
-    );
-
+    await client.query("ROLLBACK");
+    console.error("POST /api/order error:",error);
     return NextResponse.json(
-      {
-        error:
-          error.message ||
-          "Gagal membuat order.",
-      },
-      {
-        status: 400,
-      }
+      {error:error.message || "Gagal membuat order.", },{ status: 400,}
     );
-
   } finally {
-
     client.release();
   }
 }
-// PUT - update payment status
+// udpdate payment
 export async function PUT(request: Request) {
   try {
-
     const body = await request.json();
-
     const {
       order_id,
       payment_status
     } = body;
-
     if (!order_id || !payment_status) {
       return NextResponse.json(
         {
@@ -202,9 +129,7 @@ export async function PUT(request: Request) {
         { status: 400 }
       );
     }
-
     const allowed = ["Pending", "Paid", "Cancelled"];
-
     if (!allowed.includes(payment_status)) {
       return NextResponse.json(
         {
@@ -240,9 +165,7 @@ export async function PUT(request: Request) {
     return NextResponse.json(result.rows[0]);
 
   } catch (error) {
-
     console.error("PUT /api/order error:", error);
-
     return NextResponse.json(
       { error: "Gagal mengupdate order." },
       { status: 500 }
@@ -270,8 +193,6 @@ export async function DELETE(request: Request) {
     try {
 
       await client.query("BEGIN");
-
-      // hapus relasi promotion dulu
       await client.query(
         `
         DELETE FROM tiktaktuk.order_promotion
@@ -279,7 +200,6 @@ export async function DELETE(request: Request) {
         `,
         [order_id]
       );
-
       const result = await client.query(
         `
         DELETE FROM tiktaktuk."order"
@@ -288,39 +208,26 @@ export async function DELETE(request: Request) {
         `,
         [order_id]
       );
-
       if (result.rows.length === 0) {
-
         await client.query("ROLLBACK");
-
         return NextResponse.json(
           { error: "Order tidak ditemukan." },
           { status: 404 }
         );
       }
-
       await client.query("COMMIT");
 
       return NextResponse.json({
         success: true,
         deleted_id: order_id
       });
-
     } catch (txError) {
-
       await client.query("ROLLBACK");
       throw txError;
-
     } finally {
-
-      client.release();
-
-    }
-
+      client.release(); }
   } catch (error) {
-
     console.error("DELETE /api/order error:", error);
-
     return NextResponse.json(
       { error: "Gagal menghapus order." },
       { status: 500 }

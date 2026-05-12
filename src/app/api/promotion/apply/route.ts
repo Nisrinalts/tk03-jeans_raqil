@@ -9,17 +9,14 @@ export async function POST(request: Request) {
 
     const body =
       await request.json();
-
     const {
       customer_id,
       promotion_id,
     } = body;
-
     if (
       !customer_id ||
       !promotion_id
     ) {
-
       return NextResponse.json(
         {
           error:

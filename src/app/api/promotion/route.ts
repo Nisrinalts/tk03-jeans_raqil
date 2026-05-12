@@ -13,14 +13,10 @@ export async function GET() {
         TO_CHAR(p.start_date, 'YYYY-MM-DD') AS start_date,
         TO_CHAR(p.end_date, 'YYYY-MM-DD') AS end_date,
         p.usage_limit,
-
         COUNT(op.order_promotion_id)::INTEGER AS usage_count
-
       FROM tiktaktuk.promotion p
-
       LEFT JOIN tiktaktuk.order_promotion op
         ON op.promotion_id = p.promotion_id
-
       GROUP BY
         p.promotion_id,
         p.promo_code,
@@ -29,10 +25,7 @@ export async function GET() {
         p.start_date,
         p.end_date,
         p.usage_limit
-
-      ORDER BY p.start_date DESC
-    `);
-
+      ORDER BY p.start_date DESC `);
     return NextResponse.json(result.rows);
 
   } catch (error) {
@@ -106,8 +99,7 @@ export async function POST(request: Request) {
     const id = crypto.randomUUID();
 
     const result = await pool.query(
-      `
-      INSERT INTO tiktaktuk.promotion
+      ` INSERT INTO tiktaktuk.promotion
       (
         promotion_id,
         promo_code,
@@ -118,7 +110,6 @@ export async function POST(request: Request) {
         usage_limit
       )
       VALUES ($1, $2, $3, $4, $5, $6, $7)
-
       RETURNING
         promotion_id,
         promo_code,
@@ -221,9 +212,7 @@ export async function PUT(request: Request) {
         start_date = COALESCE($5, start_date),
         end_date = COALESCE($6, end_date),
         usage_limit = COALESCE($7, usage_limit)
-
       WHERE promotion_id = $1
-
       RETURNING
         promotion_id,
         promo_code,
@@ -289,8 +278,6 @@ export async function DELETE(request: Request) {
         { status: 400 }
       );
     }
-
-    // delete relation first
     await pool.query(
       `
       DELETE FROM tiktaktuk.order_promotion
@@ -307,14 +294,12 @@ export async function DELETE(request: Request) {
       `,
       [promotion_id]
     );
-
     if (result.rows.length === 0) {
       return NextResponse.json(
         { error: "Promosi tidak ditemukan." },
         { status: 404 }
       );
     }
-
     return NextResponse.json({
       success: true,
       deleted_id: promotion_id,

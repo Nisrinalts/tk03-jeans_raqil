@@ -355,11 +355,9 @@ const handleApplyPromo = async () => {
       );
 
     if (!foundPromo) {
-
       setPromoError(
         "Kode promo tidak ditemukan."
       );
-
       return;
     }
 
@@ -630,7 +628,6 @@ const handleApplyPromo = async () => {
             </span>
 
           </p>
-
           <div className="bg-white rounded-2xl border border-slate-200 p-5 w-full text-left text-sm space-y-2 mb-6">
 
             <div className="flex justify-between">

@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import Navbar from "@/components/Navbar";
 import { getUser, AuthUser } from "@/lib/auth";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// TYPES
 type PaymentStatus = "Pending" | "Paid" | "Cancelled";
 
 type Order = {
@@ -18,7 +18,7 @@ type Order = {
   organizer_id: string;
 };
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// HELPER METHOD
 function formatRp(n: number) {
   return "Rp " + Number(n).toLocaleString("id-ID");
 }
@@ -39,7 +39,7 @@ const statusLabel: Record<PaymentStatus, string> = {
   Cancelled: "Dibatalkan",
 };
 
-// ─── Update Modal ─────────────────────────────────────────────────────────────
+//Update function
 function UpdateModal({
   order,
   onClose,
@@ -109,7 +109,7 @@ function UpdateModal({
   );
 }
 
-// ─── Delete Modal ─────────────────────────────────────────────────────────────
+//DELETE FUNCTION
 function DeleteModal({
   order,
   onClose,
@@ -169,8 +169,6 @@ function DeleteModal({
     </div>
   );
 }
-
-// ─── Main Component ───────────────────────────────────────────────────────────
 export default function OrdersPage() {
   const [user, setUser] = useState<AuthUser | null | "guest">(null);
   const [orders, setOrders] = useState<Order[]>([]);

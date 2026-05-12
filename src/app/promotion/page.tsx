@@ -3,8 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import Navbar from "@/components/Navbar";
 import { getUser, AuthUser } from "@/lib/auth";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
+//types
 type DiscountType = "PERCENTAGE" | "NOMINAL";
 
 type Promotion = {
@@ -18,13 +17,13 @@ type Promotion = {
   usage_count: number;
 };
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+
 function formatDiscount(p: Promotion) {
   if (p.discount_type === "PERCENTAGE") return `${p.discount_value}%`;
   return "Rp " + Number(p.discount_value).toLocaleString("id-ID");
 }
 
-// ─── Empty Form ───────────────────────────────────────────────────────────────
+// empty form
 const emptyForm = {
   promo_code: "",
   discount_type: "PERCENTAGE" as DiscountType,
@@ -34,7 +33,7 @@ const emptyForm = {
   usage_limit: "1",
 };
 
-// ─── Create/Edit Modal ────────────────────────────────────────────────────────
+// create/edit
 function PromoModal({
   mode,
   initial,
@@ -190,7 +189,7 @@ function PromoModal({
   );
 }
 
-// ─── Delete Modal ─────────────────────────────────────────────────────────────
+//Delete Modal 
 function DeletePromoModal({
   promo,
   onClose,
@@ -250,8 +249,6 @@ function DeletePromoModal({
     </div>
   );
 }
-
-// ─── Main Component ───────────────────────────────────────────────────────────
 export default function PromotionsPage() {
   const [user, setUser] = useState<AuthUser | null | "guest">(null);
   const [promotions, setPromotions] = useState<Promotion[]>([]);
