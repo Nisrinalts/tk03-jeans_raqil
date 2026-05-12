@@ -12,10 +12,10 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS trg_validate_username_chars ON users;
+DROP TRIGGER IF EXISTS trg_validate_username_chars ON user_account;
 
 CREATE TRIGGER trg_validate_username_chars
-BEFORE INSERT ON users
+BEFORE INSERT ON user_account
 FOR EACH ROW
 EXECUTE FUNCTION validate_username_chars();
 
@@ -25,7 +25,7 @@ BEGIN
     -- Cek duplikat username (case-insensitive)
     IF EXISTS (
         SELECT 1
-        FROM users u
+        FROM user_account u
         WHERE LOWER(u.username) = LOWER(NEW.username)
     ) THEN
         RAISE EXCEPTION 'ERROR: Username "%" sudah terdaftar, gunakan username lain.', NEW.username;
@@ -35,10 +35,10 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS trg_validate_username_unique ON users;
+DROP TRIGGER IF EXISTS trg_validate_username_unique ON user_account;
 
 CREATE TRIGGER trg_validate_username_unique
-BEFORE INSERT ON users
+BEFORE INSERT ON user_account
 FOR EACH ROW
 EXECUTE FUNCTION validate_username_unique();
 
@@ -54,7 +54,7 @@ AS $$
 BEGIN
     -- Trigger trg_validate_username_chars dan trg_validate_username_unique
     -- akan otomatis dipanggil sebelum INSERT.
-    INSERT INTO users (user_id, username, password, role)
+    INSERT INTO user_account (user_id, username, password, role)
     VALUES (p_user_id, p_username, p_password, p_role);
 END;
 $$;

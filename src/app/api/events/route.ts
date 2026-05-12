@@ -7,14 +7,10 @@ export async function GET() {
       SELECT
         e.event_id,
         e.event_title,
-        e.description,
         e.event_datetime,
         e.venue_id,
-        v.name as venue_name,
         e.organizer_id,
-        o.name as organizer_name,
         ea.artist_id,
-        a.name as artist_name,
         ARRAY_AGG(tc.category_id) as category_ids,
         ARRAY_AGG(tc.category_name) as category_names
       FROM tiktaktuk.event e
@@ -23,11 +19,12 @@ export async function GET() {
       LEFT JOIN tiktaktuk.event_artist ea ON e.event_id = ea.event_id
       LEFT JOIN tiktaktuk.artist a ON ea.artist_id = a.artist_id
       LEFT JOIN tiktaktuk.ticket_category tc ON e.event_id = tc.event_id
-      GROUP BY e.event_id, v.name, o.name, ea.artist_id, a.name;
+      GROUP BY e.event_id, ea.artist_id;
     `);
     return NextResponse.json(result.rows);
-  } catch (error: unknown) {
-    return NextResponse.json({ message: "Gagal mengambil data event." }, { status: 500 });
+  } catch (error: any) {
+    console.error("Database Error:", error);
+    return NextResponse.json({ message: "Gagal mengambil data event.", error: error.message }, { status: 500 });
   }
 }
 
