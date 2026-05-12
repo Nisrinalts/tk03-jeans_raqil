@@ -1,19 +1,8 @@
 SET search_path TO tiktaktuk;
 
--- ============================================================
--- TRIGGER: Validasi username saat register
--- 1. Username harus unik (case-insensitive)
--- 2. Username hanya boleh huruf (a-z, A-Z) dan angka (0-9)
--- ============================================================
-
-CREATE OR REPLACE FUNCTION validate_username_register()
+CREATE OR REPLACE FUNCTION validate_username_unique()
 RETURNS TRIGGER AS $$
 BEGIN
-    -- Cek karakter spesial: hanya boleh a-z, A-Z, 0-9
-    IF NEW.username !~ '^[a-zA-Z0-9]+$' THEN
-        RAISE EXCEPTION 'ERROR: Username "%" hanya boleh mengandung huruf dan angka tanpa simbol atau spasi.', NEW.username;
-    END IF;
-
     -- Cek duplikat username (case-insensitive)
     IF EXISTS (
         SELECT 1
@@ -27,12 +16,12 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS trg_validate_username_register ON users;
+DROP TRIGGER IF EXISTS trg_validate_username_unique ON users;
 
-CREATE TRIGGER trg_validate_username_register
+CREATE TRIGGER trg_validate_username_unique
 BEFORE INSERT ON users
 FOR EACH ROW
-EXECUTE FUNCTION validate_username_register();
+EXECUTE FUNCTION validate_username_unique();
 
 
 -- ============================================================
@@ -51,10 +40,8 @@ CREATE OR REPLACE PROCEDURE register_user(
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    -- Trigger trg_validate_username_register akan otomatis dipanggil
-    -- sebelum INSERT. Jika ada pelanggaran (karakter spesial atau
-    -- username duplikat), trigger akan RAISE EXCEPTION dan
-    -- procedure ini akan ikut gagal dengan pesan error yang sama.
+    -- Trigger trg_validate_username_chars dan trg_validate_username_unique
+    -- akan otomatis dipanggil sebelum INSERT.
     INSERT INTO users (user_id, username, password, role)
     VALUES (p_user_id, p_username, p_password, p_role);
 END;

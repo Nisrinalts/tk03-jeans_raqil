@@ -21,126 +21,12 @@ type EventDisplay = {
   category_names: string[];
 };
 
-const venueOptions = [
-  { venue_id: "550e8400-e29b-41d4-a716-446655447001", venue_name: "Jakarta Convention Center" },
-  { venue_id: "550e8400-e29b-41d4-a716-446655447002", venue_name: "Sabuga Bandung" },
-  { venue_id: "550e8400-e29b-41d4-a716-446655447003", venue_name: "Grand City Surabaya" },
-];
+const venueOptions: any[] = [];
+const organizerOptions: any[] = [];
+const artistOptions: any[] = [];
+const categoryOptions: any[] = [];
 
-const organizerOptions = [
-  { organizer_id: "550e8400-e29b-41d4-a716-446655446001", organizer_name: "Organizer Satu" },
-  { organizer_id: "550e8400-e29b-41d4-a716-446655446002", organizer_name: "Organizer Dua" },
-];
-
-const artistOptions = [
-  { artist_id: "550e8400-e29b-41d4-a716-446655440001", artist_name: "Drake" },
-  { artist_id: "550e8400-e29b-41d4-a716-446655440002", artist_name: "Justin Bieber" },
-  { artist_id: "550e8400-e29b-41d4-a716-446655440003", artist_name: "Kanye West" },
-  { artist_id: "550e8400-e29b-41d4-a716-446655440004", artist_name: "Olivia Rodrigo" },
-  { artist_id: "550e8400-e29b-41d4-a716-446655440005", artist_name: "Selena Gomez" },
-  { artist_id: "550e8400-e29b-41d4-a716-446655440006", artist_name: "SZA" },
-  { artist_id: "550e8400-e29b-41d4-a716-446655440007", artist_name: "The Weeknd" },
-  { artist_id: "550e8400-e29b-41d4-a716-446655440008", artist_name: "Travis Scott" },
-];
-
-const categoryOptions = [
-  { category_id: "550e8400-e29b-41d4-a716-446655442001", category_name: "WVIP" },
-  { category_id: "550e8400-e29b-41d4-a716-446655442002", category_name: "VIP" },
-  { category_id: "550e8400-e29b-41d4-a716-446655442003", category_name: "Category 1" },
-  { category_id: "550e8400-e29b-41d4-a716-446655442004", category_name: "Platinum" },
-  { category_id: "550e8400-e29b-41d4-a716-446655442005", category_name: "Gold" },
-  { category_id: "550e8400-e29b-41d4-a716-446655442006", category_name: "Silver" },
-  { category_id: "550e8400-e29b-41d4-a716-446655442007", category_name: "CAT 1" },
-  { category_id: "550e8400-e29b-41d4-a716-446655442008", category_name: "CAT 2" },
-  { category_id: "550e8400-e29b-41d4-a716-446655442009", category_name: "Regular" },
-];
-
-const initialEvents: EventDisplay[] = [
-  {
-    event_id: "550e8400-e29b-41d4-a716-446655441001",
-    event_title: "The Weeknd After Hours Tour",
-    description: "Konser spektakuler The Weeknd membawakan album After Hours dengan panggung megah dan efek visual memukau.",
-    event_datetime: "2025-08-15T19:00",
-    venue_id: "550e8400-e29b-41d4-a716-446655447001",
-    venue_name: "Jakarta Convention Center",
-    organizer_id: "550e8400-e29b-41d4-a716-446655446001",
-    organizer_name: "Organizer Satu",
-    artist_id: "550e8400-e29b-41d4-a716-446655440007",
-    artist_name: "The Weeknd",
-    category_ids: ["550e8400-e29b-41d4-a716-446655442001", "550e8400-e29b-41d4-a716-446655442002", "550e8400-e29b-41d4-a716-446655442009"],
-    category_names: ["WVIP", "VIP", "Regular"],
-  },
-  {
-    event_id: "550e8400-e29b-41d4-a716-446655441002",
-    event_title: "Justin Bieber World Tour",
-    description: "Justin Bieber hadir di Indonesia membawakan hits terbaiknya dalam tur dunia yang ditunggu-tunggu.",
-    event_datetime: "2025-09-20T18:00",
-    venue_id: "550e8400-e29b-41d4-a716-446655447001",
-    venue_name: "Jakarta Convention Center",
-    organizer_id: "550e8400-e29b-41d4-a716-446655446002",
-    organizer_name: "Organizer Dua",
-    artist_id: "550e8400-e29b-41d4-a716-446655440002",
-    artist_name: "Justin Bieber",
-    category_ids: ["550e8400-e29b-41d4-a716-446655442002", "550e8400-e29b-41d4-a716-446655442007", "550e8400-e29b-41d4-a716-446655442009"],
-    category_names: ["VIP", "CAT 1", "Regular"],
-  },
-  {
-    event_id: "550e8400-e29b-41d4-a716-446655441003",
-    event_title: "Olivia Rodrigo GUTS Tour",
-    description: "Olivia Rodrigo membawa tur GUTS ke Indonesia dengan setlist lengkap dari album terbaru.",
-    event_datetime: "2025-10-05T20:00",
-    venue_id: "550e8400-e29b-41d4-a716-446655447002",
-    venue_name: "Sabuga Bandung",
-    organizer_id: "550e8400-e29b-41d4-a716-446655446001",
-    organizer_name: "Organizer Satu",
-    artist_id: "550e8400-e29b-41d4-a716-446655440004",
-    artist_name: "Olivia Rodrigo",
-    category_ids: ["550e8400-e29b-41d4-a716-446655442002", "550e8400-e29b-41d4-a716-446655442003", "550e8400-e29b-41d4-a716-446655442009"],
-    category_names: ["VIP", "Category 1", "Regular"],
-  },
-  {
-    event_id: "550e8400-e29b-41d4-a716-446655441004",
-    event_title: "Kanye West Donda Live",
-    description: "Pengalaman konser imersif Kanye West dengan instalasi seni dan produksi audio-visual terdepan.",
-    event_datetime: "2025-11-12T19:30",
-    venue_id: "550e8400-e29b-41d4-a716-446655447002",
-    venue_name: "Sabuga Bandung",
-    organizer_id: "550e8400-e29b-41d4-a716-446655446002",
-    organizer_name: "Organizer Dua",
-    artist_id: "550e8400-e29b-41d4-a716-446655440003",
-    artist_name: "Kanye West",
-    category_ids: ["550e8400-e29b-41d4-a716-446655442001", "550e8400-e29b-41d4-a716-446655442004", "550e8400-e29b-41d4-a716-446655442008"],
-    category_names: ["WVIP", "Platinum", "CAT 2"],
-  },
-  {
-    event_id: "550e8400-e29b-41d4-a716-446655441005",
-    event_title: "The Weeknd Starboy Festival",
-    description: "Festival musik The Weeknd bertema Starboy dengan kolaborasi artis kejutan dan penampilan spesial.",
-    event_datetime: "2025-12-01T20:00",
-    venue_id: "550e8400-e29b-41d4-a716-446655447002",
-    venue_name: "Sabuga Bandung",
-    organizer_id: "550e8400-e29b-41d4-a716-446655446001",
-    organizer_name: "Organizer Satu",
-    artist_id: "550e8400-e29b-41d4-a716-446655440007",
-    artist_name: "The Weeknd",
-    category_ids: ["550e8400-e29b-41d4-a716-446655442001", "550e8400-e29b-41d4-a716-446655442002", "550e8400-e29b-41d4-a716-446655442005", "550e8400-e29b-41d4-a716-446655442006"],
-    category_names: ["WVIP", "VIP", "Gold", "Silver"],
-  },
-  {
-    event_id: "550e8400-e29b-41d4-a716-446655441006",
-    event_title: "Drake It's All A Blur Tour",
-    description: "Drake tampil live membawakan lagu-lagu ikoniknya dalam tur It's All A Blur yang memukau.",
-    event_datetime: "2026-01-10T19:00",
-    venue_id: "550e8400-e29b-41d4-a716-446655447003",
-    venue_name: "Grand City Surabaya",
-    organizer_id: "550e8400-e29b-41d4-a716-446655446002",
-    organizer_name: "Organizer Dua",
-    artist_id: "550e8400-e29b-41d4-a716-446655440001",
-    artist_name: "Drake",
-    category_ids: ["550e8400-e29b-41d4-a716-446655442002", "550e8400-e29b-41d4-a716-446655442007", "550e8400-e29b-41d4-a716-446655442009"],
-    category_names: ["VIP", "CAT 1", "Regular"],
-  },
-];
+const initialEvents: EventDisplay[] = [];
 
 export default function EventsPage() {
   const router = useRouter();
@@ -186,6 +72,19 @@ export default function EventsPage() {
     if (u.role === "organizer" && u.organizer_id) {
       setOrganizerId(u.organizer_id);
     }
+
+    async function fetchEvents() {
+      try {
+        const res = await fetch("/api/events");
+        if (res.ok) {
+          const data = await res.json();
+          setEvents(data);
+        }
+      } catch (e) {
+        console.error("Failed to fetch events:", e);
+      }
+    }
+    fetchEvents();
   }, [router]);
 
   const canManage = user?.role === "admin" || user?.role === "organizer";
@@ -221,7 +120,7 @@ export default function EventsPage() {
     setArtistId(""); setCategoryIds([]); setError("");
   };
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!title.trim()) { setError("Judul event wajib diisi."); return; }
     if (!datetime) { setError("Tanggal & waktu wajib diisi."); return; }
     if (!venueId) { setError("Venue wajib dipilih."); return; }
@@ -229,32 +128,39 @@ export default function EventsPage() {
     if (!artistId) { setError("Artis wajib dipilih."); return; }
     if (categoryIds.length === 0) { setError("Pilih minimal satu kategori tiket."); return; }
 
-    const venue = resolveVenue(venueId)!;
-    const org = resolveOrganizer(organizerId)!;
-    const artist = resolveArtist(artistId)!;
-    const cats = categoryOptions.filter((c) => categoryIds.includes(c.category_id));
+    try {
+      const res = await fetch("/api/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          event_title: title.trim(),
+          description: description.trim(),
+          event_datetime: datetime,
+          venue_id: venueId,
+          organizer_id: organizerId,
+          artist_id: artistId,
+          category_ids: categoryIds,
+        }),
+      });
 
-    setEvents((prev) => [
-      ...prev,
-      {
-        event_id: uuidv4(),
-        event_title: title.trim(),
-        description: description.trim(),
-        event_datetime: datetime,
-        venue_id: venue.venue_id,
-        venue_name: venue.venue_name,
-        organizer_id: org.organizer_id,
-        organizer_name: org.organizer_name,
-        artist_id: artist.artist_id,
-        artist_name: artist.artist_name,
-        category_ids: cats.map((c) => c.category_id),
-        category_names: cats.map((c) => c.category_name),
-      },
-    ]);
-    resetCreate();
-    setIsCreateOpen(false);
-    setSuccessMessage("Event berhasil ditambahkan.");
-    setSuccessType("create");
+      if (!res.ok) throw new Error("Gagal membuat event.");
+
+      const data = await res.json();
+
+      // Fetch fresh data to keep state in sync with DB (including joined names)
+      const fetchRes = await fetch("/api/events");
+      if (fetchRes.ok) {
+        const freshEvents = await fetchRes.json();
+        setEvents(freshEvents);
+      }
+
+      resetCreate();
+      setIsCreateOpen(false);
+      setSuccessMessage("Event berhasil ditambahkan.");
+      setSuccessType("create");
+    } catch (e: any) {
+      setError(e.message);
+    }
   };
 
   const handleOpenEdit = (event: EventDisplay) => {
@@ -271,7 +177,7 @@ export default function EventsPage() {
     setIsEditOpen(true);
   };
 
-  const handleUpdate = () => {
+  const handleUpdate = async () => {
     if (!editTitle.trim()) { setEditError("Judul event wajib diisi."); return; }
     if (!editDatetime) { setEditError("Tanggal & waktu wajib diisi."); return; }
     if (!editVenueId) { setEditError("Venue wajib dipilih."); return; }
@@ -279,34 +185,34 @@ export default function EventsPage() {
     if (!editArtistId) { setEditError("Artis wajib dipilih."); return; }
     if (editCategoryIds.length === 0) { setEditError("Pilih minimal satu kategori tiket."); return; }
 
-    const venue = resolveVenue(editVenueId)!;
-    const org = resolveOrganizer(editOrganizerId)!;
-    const artist = resolveArtist(editArtistId)!;
-    const cats = categoryOptions.filter((c) => editCategoryIds.includes(c.category_id));
+    try {
+      const res = await fetch("/api/events", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          event_id: selectedId,
+          event_title: editTitle.trim(),
+          description: editDescription.trim(),
+          event_datetime: editDatetime,
+          venue_id: editVenueId,
+          organizer_id: editOrganizerId,
+        }),
+      });
 
-    setEvents((prev) =>
-      prev.map((e) =>
-        e.event_id === selectedId
-          ? {
-              ...e,
-              event_title: editTitle.trim(),
-              description: editDescription.trim(),
-              event_datetime: editDatetime,
-              venue_id: venue.venue_id,
-              venue_name: venue.venue_name,
-              organizer_id: org.organizer_id,
-              organizer_name: org.organizer_name,
-              artist_id: artist.artist_id,
-              artist_name: artist.artist_name,
-              category_ids: cats.map((c) => c.category_id),
-              category_names: cats.map((c) => c.category_name),
-            }
-          : e
-      )
-    );
-    setIsEditOpen(false);
-    setSuccessMessage("Event berhasil diperbarui.");
-    setSuccessType("update");
+      if (!res.ok) throw new Error("Gagal memperbarui event.");
+
+      const fetchRes = await fetch("/api/events");
+      if (fetchRes.ok) {
+        const freshEvents = await fetchRes.json();
+        setEvents(freshEvents);
+      }
+
+      setIsEditOpen(false);
+      setSuccessMessage("Event berhasil diperbarui.");
+      setSuccessType("update");
+    } catch (e: any) {
+      setEditError(e.message);
+    }
   };
 
   if (loading || !user) return null;
