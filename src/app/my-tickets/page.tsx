@@ -234,8 +234,9 @@ export default function TicketPage() {
         if (t.torder_id == o.order_id) {
           t.customer_id = o.customer_id;
         }
-        if (user.role === "customer" && customer && t.customer_id === customer.customer_id) {
+        if (user.role === "customer" && t.customer_id === customer.customer_id) {
           t.user_id = customer.user_id;
+          t.customer_name = customer.customer_name;
         }
       });
       
@@ -244,6 +245,7 @@ export default function TicketPage() {
           console.log("Current Organizer ID from state:", organizer.organizer_id);
           if (t.organizer_id == organizer.organizer_id) {
             t.user_organizer_id = organizer.user_id;
+            t.organizer_name = organizer.organizer_name;
           }
         }
       }
@@ -252,7 +254,7 @@ export default function TicketPage() {
   const visibleTickets = tickets.filter((t) => {
     if (role === "admin") return true;
     if (role === "customer" && t.user_id !== user.user_id) return false;
-    if (role === "organizer" && t.user_id !== user.organizer_id) return false;
+    if (role === "organizer" && t.user_organizer_id !== user.user_id) return false;
     const searchLower = searchQuery.toLowerCase();
     if (
       searchQuery &&
@@ -515,7 +517,7 @@ export default function TicketPage() {
                   visibleTickets.map(ticket => (
                     <tr key={ticket.ticket_id} className="hover:bg-slate-50 transition-colors">
                       <td className="px-6 py-4 font-mono font-medium text-slate-800">
-                        {ticket.ticker_code}
+                        {ticket.ticket_code}
                       </td>
                       <td className="px-6 py-4 font-medium text-slate-800">
                         {ticket.customer_name}
