@@ -5,87 +5,28 @@ import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import { AuthUser, getUser } from "@/lib/auth";
 import { Ticket } from "@/types/ticket";
+import LoadingState from "@/components/LoadingState";
+import { error } from "console";
 
-
-const retrieveOrganizer = async (user : any) => {
+const retrievHaseRelationship = async () => {
   try {
-    const response = await fetch(`/api/organizer?user_id=${user.user_id}`, {
+    const response = await fetch("/api/has-relationship", {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
       },
     });
-    console.log("Organizer Response Status:", response.status);
+    console.log("API Response Status:", response.status);
     if (response.ok) {
       const data = await response.json();
-      return data;
+      const relationships = data
+      return relationships;
     }
-    return null;
   } catch (error) {
-    console.error("Error fetching organizer:", error);
-    return null;
+    console.error("Error fetching has-relationship:", error);
+    return [];
   }
-};
-
-const retrieveEvents = async () => {
-  try {
-    const response = await fetch("/api/events", {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-    console.log("Event Response Status:", response.status);
-    if (response.ok) {
-      const data = await response.json();
-      const events = data;
-      return events;
-    }
-  } catch (error) {
-    console.error("Error fetching events:", error);
-    return [];
-  } 
-};
-
-const retrieveOrder = async () => {
-  try {
-    const response = await fetch("/api/order", {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-    console.log("Order Response Status:", response.status);
-    if (response.ok) {
-      const data = await response.json();
-      const orders = data;
-      return orders;
-    }
-  } catch (error) {
-    console.error("Error fetching orders:", error);
-    return [];
-  } 
-};
-const retrieveCust = async (user : any) => {
-  try {
-    const response = await fetch(`/api/customer?user_id=${user.user_id}`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-    console.log("cust Response Status:", response.status);
-    if (response.ok) {
-      const data = await response.json();
-      const customers = data;
-      return customers;
-    }
-    return null;
-  } catch (error) {
-    console.error("Error fetching customers:", error);
-    return [];
-  } 
-};
+}
 
 const retrieveTickets = async () => {
   try {
@@ -115,14 +56,48 @@ const retrieveCategories = async () => {
         "Content-Type": "application/json",
       },
     });
-    console.log("API Response Status (Categories):", response.status);
+    console.log("API Response Status:", response.status);
     if (response.ok) {
       const data = await response.json();
-      return data["ticketCategories"] || [];
+      const categories = data["ticketCategories"];
+      return categories;
     }
   } catch (error) {
     console.error("Error fetching categories:", error);
     return [];
+  }
+}
+const retrieveOrders = async () => {
+  try {
+    const response = await fetch("/api/order", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    console.log("API Response Status:", response.status);
+    if (response.ok) {
+      const data = await response.json();
+      const orders = data
+      return orders;
+    }
+  } catch (error) {
+    console.error("Error fetching orders:", error);
+    return [];
+  }
+}
+
+const retrieveSeats = async () => {
+  try {
+    const res = await fetch("/api/seat");
+    if (res.ok) {
+      const data = await res.json();
+      console.log("Seats fetch status:", res.status);
+      return data;
+    }
+  } catch (error) {
+    console.error("Error fetching seats:", error);
+    throw error;
   }
 };
 
@@ -136,19 +111,19 @@ export default function TicketPage() {
 
   // Edit Modal State
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [ticketToEdit, setTicketToEdit] = useState<Ticket | null>(null);
-  const [editStatus, setEditStatus] = useState<"Dipesan" | "Dipakai">("Dipesan");
+  const [ticketToEdit, setTicketToEdit] = useState<any | null>(null);
+  const [editStatus, setEditStatus] = useState<"Valid" | "Invalid">("Valid");
   const [editSeat, setEditSeat] = useState<string>("");
 
-  const [order, setOrder] = useState<any[]>([]);
-  const [customer, setCustomer] = useState<any>(null);
-  const [organizer, setOrganizer] = useState<any>(null);
-  const [events, setEvents] = useState<any[]>([]);
+  const [hasRelationships, setHasRelationships] = useState<any[]>([]);
+  const [seats, setSeats] = useState<any[]>([]);
+  const [orders, setOrders] = useState<any[]>([]);
   const [tickets, setTickets] = useState<any[]>([]); 
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isChecking, setIsChecking] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("Semua");
+  const [loading, setLoading] = useState(true);
 
   const router = useRouter();
   const [categories, setCategories] = useState<any[]>([]);
@@ -169,177 +144,243 @@ export default function TicketPage() {
     const loadData = async () => {
       const data = await retrieveTickets(); // Tunggu promise selesai
       if (data) {
+        for (let i = 0; i < data.length; i++) {
+          if (i % 3 == 0) {
+            data[i].status = "Dipakai";
+          }else {
+            data[i].status = "Dipesan";
+          }
+        }
         setTickets(data); // Simpan hasil objek normal ke state
-      }
+      } // Set loading ke false setelah data berhasil diambil
+      setLoading(false);
       setIsChecking(false);
     };
 
     const loadCategories = async () => {
       const data = await retrieveCategories();
-      setCategories(data);
-      // Simpan kategori jika diperlukan
-    };
+      if (data) {
+        setCategories(data);
+      }
+    }
 
-    const loadEvents = async () => {
-      const data = await retrieveEvents();
-      setEvents(data);
-    };
+    const loadRelationships = async () => {
+      const data = await retrievHaseRelationship();
+      if (data) {
+        setHasRelationships(data);
+      }
+    }
 
     const loadOrders = async () => {
-      const data = await retrieveOrder();
-      setOrder(data);
-    };
-
-    const loadCustomer = async (u: any) => {
-      const data = await retrieveCust(u);
-      setCustomer(data);
-    };
-    const loadOrganizer = async (u: any) => {
-      const data = await retrieveOrganizer(u);
-      setOrganizer(data);
+      const data = await retrieveOrders();
+      if (data) {
+        setOrders(data);
+      }
     }
 
-    loadEvents();
-    loadOrders();
-    if (u){
-        loadOrganizer(u);
-        loadCustomer(u);
+    const loadSeats = async () => {
+      try {
+        const data = await retrieveSeats();
+        if (data) {
+          setSeats(data);
+        }
+      } catch (error) {
+        console.error("Failed to load seats:", error);
+      }
     }
-    loadCategories();
+
     loadData();
+    loadCategories();
+    loadOrders();
+    loadSeats();
+    loadRelationships();
   }, [router]);
 
-  if (isChecking) return null;
+  if (loading || isChecking) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <LoadingState message="Memuat data tiket..." />
+      </div>
+    );
+  }
   if (!user) return null;
 
   const role = user.role;
   console.log("User Role:", role);
-  console.log(customer);
+  console.log(tickets);
   const isStaff = role === "admin" || role === "organizer";
   const isAdmin = role === "admin";
 
-  tickets.forEach((t) => {
-     categories.forEach((c) => {
-       if (t.tcategory_id == c.category_id) {
-         t.tcategory_name = c.category_name;
-         events.forEach((e) => {
-            if (c.event_id == e.event_id) {
-              t.event_name = e.event_title;
-              t.organizer_id = e.organizer_id;
-            }
-         });
-       }
-      });
-      order.forEach((o) => {
-        if (t.torder_id == o.order_id) {
-          t.customer_id = o.customer_id;
-        }
-        if (user.role === "customer" && t.customer_id === customer.customer_id) {
-          t.user_id = customer.user_id;
-          t.customer_name = customer.customer_name;
-        }
-      });
-      
-      if (user.role === "organizer"){ 
-        if (organizer) {
-          console.log("Current Organizer ID from state:", organizer.organizer_id);
-          if (t.organizer_id == organizer.organizer_id) {
-            t.user_organizer_id = organizer.user_id;
-            t.organizer_name = organizer.organizer_name;
-          }
-        }
-      }
-   });
-   console.log("Enriched Tickets:", tickets[0]);
   const visibleTickets = tickets.filter((t) => {
-    if (role === "admin") return true;
-    if (role === "customer" && t.user_id !== user.user_id) return false;
-    if (role === "organizer" && t.user_organizer_id !== user.user_id) return false;
+    // Terapkan filter berdasarkan input pencarian
     const searchLower = searchQuery.toLowerCase();
     if (
       searchQuery &&
-      !t.ticker_code.toLowerCase().includes(searchLower) &&
-      !t.event_name.toLowerCase().includes(searchLower)
+      !t.ticket_code.toLowerCase().includes(searchLower) &&
+      !t.event_title.toLowerCase().includes(searchLower)
     ) {
       return false;
     }
-    return true;
+
+    // Terapkan filter status
+    if (role === "admin") return true;
+    if (role === "customer" && t.cust_user_id !== user.user_id) return false;
+    if (role === "organizer" && t.org_user_id !== user.user_id) return false;
+    if (filterStatus == "Semua") return true;
+    if (filterStatus === "Dipakai" && t.status == "Dipakai") return true;
+    if (filterStatus === "Dipesan" && t.status == "Dipesan") return true; 
+    
+
+    
   });
 
-  console.log("visible ticket", visibleTickets[0]);
+  const handleOpenEditModal = (ticket: any) => {
+    setTicketToEdit(ticket);
+    setEditStatus(ticket.status);
+    setEditSeat(ticket.seat_id || "");
+    setIsEditModalOpen(true);
+  };
 
-  // .filter((t) => {
-  //   if (role === "customer" && t.customer_id !== user.user_id) return false;
-  //   if (role === "organizer" && t.organizer_id !== user.organizer_id) return false;
-  //   if (filterStatus !== "Semua" && t.status !== filterStatus) return false;
-  //   const searchLower = searchQuery.toLowerCase();
-  //   if (
-  //     searchQuery &&
-  //     !t.ticker_code.toLowerCase().includes(searchLower) &&
-  //     !t.event_name.toLowerCase().includes(searchLower)
-  //   ) {
-  //     return false;
-  //   }
-  //   return true;
-  // });
-
-  // const handleOpenEditModal = (ticket: DummyTicket) => {
-  //   setTicketToEdit(ticket);
-  //   setEditStatus(ticket.status);
-  //   setEditSeat(ticket.seat_id || "");
-  //   setIsEditModalOpen(true);
-  // };
-
-  // const handleUpdateTicket = (e: React.FormEvent) => {
-  //   e.preventDefault();
-  //   if (!ticketToEdit) return;
+  const handleUpdateTicket = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!ticketToEdit) return;
     
-  //   const updatedTickets = tickets.map(t => {
-  //     if (t.ticket_id === ticketToEdit.ticket_id) {
-  //       return { ...t, status: editStatus, seat_id: editSeat === "" ? undefined : editSeat };
-  //     }
-  //     return t;
-  //   });
+    const updatedTickets = tickets.map(t => {
+      if (t.ticket_id === ticketToEdit.ticket_id) {
+        return { ...t, status: editStatus, seat_id: editSeat === "" ? undefined : editSeat };
+      }
+      return t;
+    });
 
-  //   setTickets(updatedTickets);
-  //   setIsEditModalOpen(false);
-  //   setTicketToEdit(null);
-  // };
+    const payload = {
+      ticket_id: ticketToEdit.ticket_id,
+      status: editStatus,
+      seat_id: editSeat === "" ? null : editSeat
+    };
+
+    if (editSeat !== "") {
+      const postPayload = {
+        seat_id: editSeat,
+        ticket_id: ticketToEdit.ticket_id
+      };
+      try {
+        const response = await fetch("/api/has-relationship", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(postPayload)
+        });
+      } catch (error) {
+        console.error("Error updating has-relationship:", error);
+      }
+    } else {
+      try {
+        const response = await fetch("/api/has-relationship", {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ ticket_id: ticketToEdit.ticket_id })
+        });
+      } catch (error) {
+        console.error("Error deleting has-relationship:", error);
+      }
+    }
+
+    try {
+      const response = await fetch("/api/ticket", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+    }
+    catch (error) {
+      console.error("Error updating ticket:", error);
+      alert("Gagal memperbarui tiket. Silakan coba lagi.");
+      return;
+    }
+    setTickets(updatedTickets);
+    setIsEditModalOpen(false);
+    setTicketToEdit(null);
+  };
   
-  // const handleCreateTicket = (e: React.FormEvent) => {
-    // e.preventDefault();
-    // if (!formOrder || !formCategory) return;
-    
-    // const selectedOrder = DUMMY_ORDERS.find(o => o.id === formOrder);
-    // const selectedCat = DUMMY_CATEGORIES.find(c => c.id === formCategory);
+  const handleCreateTicket = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!createOrderId || !createCategoryId) {
+      alert("Pilih kategori dan order terlebih dahulu.");
+      return;
+    }
+    const serNum = tickets.length < 100 ? `0${tickets.length + 1}` : `${tickets.length + 1}`;
+    try {
+      const ticketCode = `TKT-JEANS-${serNum}`;
+      const payload = {
+        ticket_code: ticketCode,
+        tcategory_id: createCategoryId,
+        torder_id: createOrderId
+      };
 
-    // const newTicket: Ticket = {
-    //   ticket_id: `TKT-NEW-${Date.now()}`,
-    //   ticket_code: `TKT-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
-    //   event_name: selectedOrder?.event || "Unknown Event",
-    //   venue_name: "Venue Selected By Organizer",
-    //   category_name: selectedCat?.name || "Unknown Category",
-    //   booking_date: new Date().toISOString().split('T')[0] + " 00:00",
-    //   status: "Dipesan",
-    //   customer_name: selectedOrder?.customer || "Unknown Customer",
-    //   customer_id: "user_new", 
-    //   organizer_id: "org_new",
-    //   seat_id: formSeat === "" ? undefined : formSeat
-    // };
+      const response = await fetch("/api/ticket", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
 
-  //   setTickets([newTicket, ...tickets]);
-  //   setIsModalOpen(false);
-    
-  //   setFormOrder("");
-  //   setFormCategory("");
-  //   setFormSeat("");
-  // };
+      if (response.ok) {
+        const updatedTickets = await retrieveTickets();
+        setTickets(updatedTickets || []);
+        const recent = updatedTickets.filter((t) => t.ticket_code === ticketCode)[0];
+        // Refresh 
+        if (createSeat !== "") {
+          const responseSeat = await fetch("/api/has-relationship", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              seat_id: createSeat,
+              ticket_id: recent?.ticket_id
+            })
+          });
+        }
+        
+        setIsCreateModalOpen(false);
+        setCreateOrderId("");
+        setCreateCategoryId("");
+        alert("Tiket berhasil dibuat!");
+      } else {
+        const errorData = await response.json();
+        alert(`Gagal menambahkan tiket: ${errorData.message}`);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Terjadi kesalahan.");
+    }
+  };
 
-  // const handleDeleteTicket = (id: string) => {
-  //   if (confirm("Apakah Anda yakin ingin menghapus tiket ini?")) {
-  //     setTickets(visibleTickets.filter(t => t.ticket_id !== id));
-  //   }
-  // };
+  const handleDeleteTicket = async (id: string) => {
+    if (confirm("Apakah Anda yakin ingin menghapus tiket ini?")) {
+      setLoading(true);
+      try {
+        const response = await fetch(`/api/ticket`, {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ ticket_id: id }) 
+        });
+        const updatedTickets = await retrieveTickets();
+        setTickets(updatedTickets || []);
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
   if (!isStaff && !isAdmin) {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col">
@@ -398,7 +439,7 @@ export default function TicketPage() {
               ))}
             </div>
           </div>
-  
+
           {visibleTickets.length > 0 ? (
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
               <div className="overflow-x-auto">
@@ -406,10 +447,9 @@ export default function TicketPage() {
                   <thead className="bg-slate-50 text-slate-600 font-semibold uppercase tracking-wider text-xs">
                     <tr>
                       <th scope="col" className="px-6 py-4">Kode Tiket</th>
-                      <th scope="col" className="px-6 py-4">Order ID</th>
                       <th scope="col" className="px-6 py-4">Event</th>
+                      <th scope="col" className="px-6 py-4">Venue</th>
                       <th scope="col" className="px-6 py-4">Kategori</th>
-                      {/* <th scope="col" className="px-6 py-4">Status</th> */}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 bg-white">
@@ -421,41 +461,17 @@ export default function TicketPage() {
                           <span className="font-mono font-semibold text-slate-900">{ticket.ticket_code}</span>
                         </td>
                         <td className="px-6 py-5 align-top">
-                          {/* <div className="font-bold text-slate-900 mb-1">{ticket.event_name}</div>
-                          <div className="text-slate-500 text-xs">{ticket.venue_name}</div> */}
-                          <span className="font-bold text-slate-900 mb-1">{ticket.torder_id}</span>
+                          <span className="font-bold text-slate-900 mb-1">{ticket.event_title}</span>
                         </td>
 
                         <td className="px-6 py-5 align-top">
-                          {/* <div className="font-bold text-slate-900 mb-1">{ticket.event_name}</div>
-                          <div className="text-slate-500 text-xs">{ticket.venue_name}</div> */}
-                          <span className="font-bold text-slate-900 mb-1">{ticket.event_name}</span>
+                          <span className="font-bold text-slate-900 mb-1">{ticket.venue_name}</span>
                         </td>
+
                         
                         <td className="px-6 py-5 align-top">
-                          {/* <div className="inline-flex py-1 px-2.5 bg-slate-100 rounded-lg text-slate-700 font-medium mb-2 w-max text-xs">
-                            {ticket.category_name}
-                          </div>
-                          <div className="text-xs text-slate-500 flex items-center gap-1.5 break-words line-clamp-1">
-                            {ticket.booking_date}
-                          </div> */}
-                          <span className="font-medium text-slate-900 mb-1">{ticket.tcategory_name}</span>
+                          <span className="font-bold text-slate-900 mb-1">{ticket.  category_name}</span>
                         </td>
-                        {/* <td className="px-6 py-5 align-top">
-                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${
-                            ticket.status === "Dipakai"
-                            ? "bg-slate-100 text-slate-500 border border-slate-200"
-                            : "bg-emerald-50 text-emerald-600 border border-emerald-200"
-                          }`}
-                          >
-                            {ticket.status === "Dipakai" ? (
-                              <span className="w-1.5 h-1.5 rounded-full bg-slate-400 mr-2" />
-                            ) : (
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-2" />
-                            )}
-                            {ticket.status}
-                          </span>
-                        </td> */}
                       </tr>
                     ))}
                   </tbody>
@@ -507,7 +523,6 @@ export default function TicketPage() {
                     <th className="px-6 py-4">Kode Tiket</th>
                     <th className="px-6 py-4">Pelanggan</th>
                     <th className="px-6 py-4">Event & Kategori</th>
-                    <th className="px-6 py-4">Status</th>
                     {isAdmin && <th className="px-6 py-4 text-right">Organizer</th>}
                     <th className="px-6 py-4 text-right">Aksi</th>
                   </tr>
@@ -520,21 +535,11 @@ export default function TicketPage() {
                         {ticket.ticket_code}
                       </td>
                       <td className="px-6 py-4 font-medium text-slate-800">
-                        {ticket.customer_name}
+                        {ticket.full_name}
                       </td>
                       <td className="px-6 py-4">
-                        <div className="font-semibold text-slate-800">{ticket.event_name}</div>
+                        <div className="font-semibold text-slate-800">{ticket.event_title}</div>
                         <div className="text-xs text-slate-500 mt-0.5">{ticket.venue_name} - {ticket.category_name}</div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${
-                          ticket.status === 'Dipesan' 
-                            ? 'bg-emerald-100 text-emerald-700'
-                            : 'bg-slate-200 text-slate-700'
-                        }`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${ticket.status === 'Dipesan' ? 'bg-emerald-500' : 'bg-slate-500'}`}></span>
-                          {ticket.status}
-                        </span>
                       </td>
                       {isAdmin && (
                         <td className="px-6 py-4 text-right text-sm text-slate-600">
@@ -564,6 +569,7 @@ export default function TicketPage() {
                       </td>
                     </tr>
                   ))
+
                 ) : (
                     <tr>
                       <td colSpan={isAdmin ? 7 : 6} className="px-6 py-8 text-center text-slate-500">
@@ -606,7 +612,7 @@ export default function TicketPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
                     <div>
                       <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Kode Tiket</label>
-                      <p className="font-mono font-bold text-slate-800">{ticketToEdit.ticker_code}</p>
+                      <p className="font-mono font-bold text-slate-800">{ticketToEdit.ticket_code}</p>
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Pelanggan</label>
@@ -614,7 +620,7 @@ export default function TicketPage() {
                     </div>
                     <div className="sm:col-span-2">
                       <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Event & Kategori</label>
-                      <p className="font-semibold text-slate-800">{ticketToEdit.event_name}</p>
+                      <p className="font-semibold text-slate-800">{ticketToEdit.event_title}</p>
                       <p className="text-slate-600 text-xs mt-0.5">{ticketToEdit.venue_name} \&mdash; {ticketToEdit.category_name}</p>
                     </div>
                   </div>
@@ -628,41 +634,41 @@ export default function TicketPage() {
                       <div className="grid grid-cols-2 gap-3">
                         <label className={`
                           flex items-center justify-center px-4 py-3 rounded-xl border-2 cursor-pointer transition-all
-                          ${editStatus === 'Dipesan' 
+                          ${editStatus === 'Valid' 
                             ? 'border-emerald-500 bg-emerald-50/50 text-emerald-800' 
                             : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50'}
                         `}>
                           <input 
                             type="radio" 
                             name="status" 
-                            value="Dipesan"
-                            checked={editStatus === 'Dipesan'}
-                            onChange={() => setEditStatus('Dipesan')}
+                            value="Valid"
+                            checked={editStatus === 'Valid'}
+                            onChange={() => setEditStatus('Valid')}
                             className="hidden"
                           />
                           <span className="font-bold text-sm flex items-center gap-2">
-                            <span className={`w-2 h-2 rounded-full ${editStatus === 'Dipesan' ? 'bg-emerald-500' : 'bg-slate-300'}`} />
-                            Dipesan
+                            <span className={`w-2 h-2 rounded-full ${editStatus === 'Valid' ? 'bg-emerald-500' : 'bg-slate-300'}`} />
+                            Valid
                           </span>
                         </label>
   
                         <label className={`
                           flex items-center justify-center px-4 py-3 rounded-xl border-2 cursor-pointer transition-all
-                          ${editStatus === 'Dipakai' 
-                            ? 'border-slate-800 bg-slate-100 text-slate-800' 
+                          ${editStatus === 'Invalid' 
+                            ? 'border-rose-500 bg-rose-50/50 text-rose-800' 
                             : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50'}
                         `}>
                           <input 
                             type="radio" 
                             name="status" 
-                            value="Dipakai"
-                            checked={editStatus === 'Dipakai'}
-                            onChange={() => setEditStatus('Dipakai')}
+                            value="Invalid"
+                            checked={editStatus === 'Invalid'}
+                            onChange={() => setEditStatus('Invalid')}
                             className="hidden"
                           />
                           <span className="font-bold text-sm flex items-center gap-2">
-                            <span className={`w-2 h-2 rounded-full ${editStatus === 'Dipakai' ? 'bg-slate-700' : 'bg-slate-300'}`} />
-                            Dipakai
+                            <span className={`w-2 h-2 rounded-full ${editStatus === 'Invalid' ? 'bg-rose-500' : 'bg-slate-300'}`} />
+                            Invalid
                           </span>
                         </label>
                       </div>
@@ -680,7 +686,7 @@ export default function TicketPage() {
                         style={{ backgroundImage: "url(\"data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e\")", backgroundPosition: "right 0.5rem center", backgroundRepeat: "no-repeat", backgroundSize: "1.5em 1.5em", paddingRight: "2.5rem" }}
                       >
                         <option value="">Tanpa Kursi (General Admission)</option>
-                        {DUMMY_SEATS.map(s => (
+                        {seats.filter((s) => {if (s.status == "Tersedia") return true; }).map(s => (
                           <option key={s.id} value={s.id}>{s.display}</option>
                         ))}
                       </select>
@@ -730,6 +736,20 @@ export default function TicketPage() {
               <div className="p-6 overflow-y-auto flex-1">
                 <form id="createTicketForm" onSubmit={handleCreateTicket} className="space-y-5">
                   <div>
+                    <label className="block text-sm font-semibold text-slate-800 mb-2">Kategori Tiket</label>
+                    <select
+                      required
+                      value={createCategoryId}
+                      onChange={(e) => setCreateCategoryId(e.target.value)}
+                      className="w-full border-2 border-slate-200 text-slate-700 rounded-xl px-4 py-3 text-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50 outline-none cursor-pointer bg-white transition-all font-medium"
+                    >
+                      <option id="1" value="">Pilih kategori</option>
+                      {categories.map((category) => (
+                        <option key={category.category_id} value={category.category_id}>{category.event_title} - {category.category_name} - Rp.{category.price}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
                     <label className="block text-sm font-semibold text-slate-800 mb-2">Order</label>
                     <select
                       required
@@ -738,55 +758,35 @@ export default function TicketPage() {
                       className="w-full border-2 border-slate-200 text-slate-700 rounded-xl px-4 py-3 text-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50 outline-none cursor-pointer bg-white transition-all font-medium"
                     >
                       <option value="">Pilih order</option>
-                      {DUMMY_ORDERS.map((order) => (
-                        <option key={order.id} value={order.id}>{order.id} - {order.customer} ({order.event})</option>
+                      {orders
+                        .filter(order => {
+                          if (!createCategoryId) return true;
+                          const selectedCat = categories.find(c => c.category_id === createCategoryId);
+                          return selectedCat ? order.event_title === selectedCat.event_title : true;
+                        })
+                        .map((order) => (
+                        <option key={order.order_id} value={order.order_id}>{order.order_id} - {order.customer_name} ({order.event_title})</option>
                       ))}
                     </select>
                   </div>
-  
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-800 mb-2">Kategori Tiket</label>
-                    <select
-                      required
-                      value={createCategoryId}
-                      onChange={(e) => setCreateCategoryId(e.target.value)}
-                      className="w-full border-2 border-slate-200 text-slate-700 rounded-xl px-4 py-3 text-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50 outline-none cursor-pointer bg-white transition-all font-medium"
-                    >
-                      <option value="">Pilih kategori</option>
-                      {DUMMY_CATEGORIES.map((category) => (
-                        <option key={category.id} value={category.id}>{category.name}</option>
-                      ))}
-                    </select>
+                  <div >
+                      <label className="flex items-center justify-between text-sm font-semibold text-slate-800 mb-2">
+                        Alokasi Kursi
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider bg-slate-100 text-slate-500 border border-slate-200">Opsional</span>
+                      </label>
+                      <select 
+                        value={createSeat}
+                        onChange={(e) => setCreateSeat(e.target.value)}
+                        className="w-full border-2 border-slate-200 text-slate-700 rounded-xl px-4 py-3 text-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50 outline-none cursor-pointer bg-white transition-all font-medium appearance-none"
+                        style={{ backgroundImage: "url(\"data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e\")", backgroundPosition: "right 0.5rem center", backgroundRepeat: "no-repeat", backgroundSize: "1.5em 1.5em", paddingRight: "2.5rem" }}>
+                        <option value="">Tanpa Kursi (General Admission)</option>
+                       {seats.filter((s) => {if (s.status == "Tersedia") return true; }).map(s => (
+                          <option key={s.seat_id} value={s.seat_id}>{s.section} - Row {s.row_number} - No.{s.seat_number}</option>
+                        ))}
+                      </select>
+
                   </div>
   
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-800 mb-2">Status</label>
-                    <select
-                      value={createStatus}
-                      onChange={(e) => setCreateStatus(e.target.value as "Dipesan" | "Dipakai")}
-                      className="w-full border-2 border-slate-200 text-slate-700 rounded-xl px-4 py-3 text-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50 outline-none cursor-pointer bg-white transition-all font-medium"
-                    >
-                      <option value="Dipesan">Dipesan</option>
-                      <option value="Dipakai">Dipakai</option>
-                    </select>
-                  </div>
-  
-                  <div>
-                    <label className="flex items-center justify-between text-sm font-semibold text-slate-800 mb-2">
-                      Alokasi Kursi
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider bg-slate-100 text-slate-500 border border-slate-200">Opsional</span>
-                    </label>
-                    <select
-                      value={createSeat}
-                      onChange={(e) => setCreateSeat(e.target.value)}
-                      className="w-full border-2 border-slate-200 text-slate-700 rounded-xl px-4 py-3 text-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50 outline-none cursor-pointer bg-white transition-all font-medium"
-                    >
-                      <option value="">Tanpa Kursi (General Admission)</option>
-                      {DUMMY_SEATS.map((seat) => (
-                        <option key={seat.id} value={seat.id}>{seat.display}</option>
-                      ))}
-                    </select>
-                  </div>
                 </form>
               </div>
   

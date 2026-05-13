@@ -48,6 +48,7 @@ const menuByRole: Record<Role, MenuItem[]> = {
   customer: [
     { label: "Dashboard", href: "/dashboard" },
     { label: "Tiket Saya", href: "/my-tickets" },
+    { label: "Kursi", href: "/seats" },
     { label: "Pesanan", href: "/order" },
     { label: "Cari Event", href: "/events" },
     { label: "Promosi", href: "/promotion" },

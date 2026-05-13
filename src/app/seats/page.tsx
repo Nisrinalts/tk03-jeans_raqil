@@ -4,49 +4,52 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import { AuthUser, getUser } from "@/lib/auth";
+import LoadingState from "@/components/LoadingState";
 
-// --- Dummy Data ---
-// In a real application, this data will be fetched from the backend
+const retrieveSeats = async () => {
+  try {
+    const res = await fetch("/api/seat");
+    if (res.ok) {
+      const data = await res.json();
+      console.log("Seats fetch status:", res.status);
+      return data;
+    }
+  } catch (error) {
+    console.error("Error fetching seats:", error);
+    throw error;
+  }
+};
 
-interface Venue {
-  id: string;
-  name: string;
+const retrieveVenues = async () => {
+  try {
+    const res = await fetch("/api/venues");
+    if (res.ok) {
+      const data = await res.json();
+      console.log("Venues fetch status:", res.status);
+      return data;
+    }
+  } catch (error) {
+    console.error("Error fetching venues:", error);
+    throw error;
+  }
 }
 
-const DUMMY_VENUES: Venue[] = [
-  { id: "V-001", name: "Jakarta Convention Center" },
-  { id: "V-002", name: "Sabuga Bandung" },
-  { id: "V-003", name: "Grand City Surabaya" },
-];
-
-interface Seat {
-  id: string;
-  venue_id: string;
-  venue_name: string;
-  section: string;
-  row_name: string;
-  seat_number: string;
-  status: "Terisi" | "Tersedia";
-}
-
-const INITIAL_SEATS: Seat[] = [
-  { id: "S-1", venue_id: "V-001", venue_name: "Jakarta Convention Center", section: "VIP", row_name: "A", seat_number: "1", status: "Terisi" },
-  { id: "S-2", venue_id: "V-001", venue_name: "Jakarta Convention Center", section: "VIP", row_name: "A", seat_number: "2", status: "Tersedia" },
-  { id: "S-3", venue_id: "V-002", venue_name: "Sabuga Bandung", section: "Tribune West", row_name: "10", seat_number: "15", status: "Tersedia" },
-  { id: "S-4", venue_id: "V-002", venue_name: "Sabuga Bandung", section: "Festival", row_name: "-", seat_number: "1", status: "Terisi" },
-];
 
 export default function SeatsPage() {
   const router = useRouter();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isChecking, setIsChecking] = useState(true);
 
-  const [seats, setSeats] = useState<Seat[]>([]);
+  const [venues, setVenues] = useState<any[]>([]);
+  const [seats, setSeats] = useState<any[]>([]);
 
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<"create" | "update">("create");
   const [editingSeatId, setEditingSeatId] = useState<string | null>(null);
+
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [seatToDelete, setSeatToDelete] = useState<any | null>(null);
 
   // Form states
   const [formVenueId, setFormVenueId] = useState("");
@@ -59,16 +62,35 @@ export default function SeatsPage() {
     if (!u) {
       router.replace("/login");
     } else {
-      setUser(u);
+      setUser(prev => prev?.user_id === u.user_id ? prev : u);
     }
-    setSeats(INITIAL_SEATS);
-    setIsChecking(false);
-  }, [router]);
 
-  if (isChecking) return null;
-  if (!user) return null;
+    const loadSeats = async () => {
+      try {
+        const data = await retrieveSeats();
+          setSeats(data || []);
+        } catch (error) {
+          console.error("Error loading seats:", error);
+        } finally {
+          setIsChecking(false);
+        }
+      };
 
-  const isStaff = user.role === "admin" || user.role === "organizer";
+      const loadVenue = async () => {
+        try {
+          const data = await retrieveVenues();
+            setVenues(data || []);
+        } catch (error) {
+          console.error("Error loading venues:", error);
+        }
+      }
+
+      loadSeats();
+      loadVenue();
+    }, [router]);
+  const role = user?.role || "guest";
+  const isStaff = user?.role === "admin" || user?.role === "organizer";
+  console.log(seats);
 
   // Statistics
   const totalSeats = seats.length;
@@ -84,7 +106,7 @@ export default function SeatsPage() {
     setIsModalOpen(true);
   };
 
-  const openUpdateModal = (seat: Seat) => {
+  const openUpdateModal = (seat: any) => {
     setModalMode("update");
     setEditingSeatId(seat.id);
     setFormVenueId(seat.venue_id);
@@ -99,59 +121,99 @@ export default function SeatsPage() {
     setEditingSeatId(null);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const selectedVenue = DUMMY_VENUES.find((v) => v.id === formVenueId);
+    const selectedVenue = venues.find((v) => v.venue_id === formVenueId);
     if (!selectedVenue) {
       alert("Pilih venue terlebih dahulu");
       return;
     }
 
     if (modalMode === "create") {
-      const newSeat: Seat = {
-        id: `S-NEW-${Date.now()}`,
+      const newSeat = {
+        seat_id: crypto.randomUUID(),
         venue_id: formVenueId,
-        venue_name: selectedVenue.name,
         section: formSection,
-        row_name: formRow,
+        row_number: formRow,
         seat_number: formSeatNumber,
-        status: "Tersedia", // Defaults to available upon creation
-      };
-      setSeats([...seats, newSeat]);
+      }
+
+      const result = await fetch("/api/seat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newSeat),
+      });
+      const updatedSeats = await retrieveSeats();
+      setSeats(updatedSeats);
+      handleCloseModal();
+
     } else if (modalMode === "update" && editingSeatId) {
       setSeats(seats.map(s => {
         if (s.id === editingSeatId) {
-          return {
+          const updatedSeat = {
             ...s,
             venue_id: formVenueId,
-            venue_name: selectedVenue.name,
             section: formSection,
             row_name: formRow,
             seat_number: formSeatNumber,
           };
+
+          const update = fetch("/api/seat", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ updatedSeat })
+          });
+          return updatedSeat;
         }
-        return s;
       }));
+      
+      const updatedSeats = await retrieveSeats();
+      setSeats(updatedSeats);
+      handleCloseModal();
     }
+    };
 
-    handleCloseModal();
-  };
-
-  const handleDelete = (seat: Seat) => {
+  const handleDelete = (seat: any) => {
     if (seat.status === "Terisi") {
       alert("Kursi ini sudah di-assign ke tiket dan tidak dapat dihapus. Hapus atau ubah tiket terlebih dahulu.");
       return;
     }
+    setSeatToDelete(seat);
+    setIsDeleteModalOpen(true);
+  };
 
-    if (confirm("Apakah Anda yakin ingin menghapus kursi ini?")) {
-      setSeats(seats.filter((s) => s.id !== seat.id));
+  const confirmDelete = async () => {
+    if (seatToDelete) {
+      setSeats(seats.filter((s) => s.seat_id !== seatToDelete.seat_id));
+      await fetch("/api/seat", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ seat_id: seatToDelete.seat_id })
+      });
+      setIsDeleteModalOpen(false);
+      setSeatToDelete(null);
     }
   };
 
+  const cancelDelete = () => {
+    setIsDeleteModalOpen(false);
+    setSeatToDelete(null);
+  };
+
+  if (isChecking) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <LoadingState message="Memuat data kursi..." />
+      </div>
+    );
+  }
+
+  if (!user) return null; // Jika null / belum login, router.replace akan mengambil alih
+
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
-      <Navbar role={user.role} />
+      <Navbar role={user?.role || ""} />
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 py-8">
         
         {/* Header Section */}
@@ -221,12 +283,12 @@ export default function SeatsPage() {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {seats.map(seat => (
-                  <tr key={seat.id} className="hover:bg-slate-50 transition-colors">
+                  <tr key={seat.seat_id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-6 py-4 font-bold">{seat.section}</td>
                     <td className="px-6 py-4 font-medium text-slate-800">
                       {seat.venue_name}
                     </td>
-                    <td className="px-6 py-4 font-mono">{seat.row_name}</td>
+                    <td className="px-6 py-4 font-mono">{seat.row_number}</td>
                     <td className="px-6 py-4 font-mono font-bold text-slate-800">{seat.seat_number}</td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${
@@ -303,8 +365,8 @@ export default function SeatsPage() {
                     style={{ backgroundImage: "url(\"data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e\")", backgroundPosition: "right 0.5rem center", backgroundRepeat: "no-repeat", backgroundSize: "1.5em 1.5em", paddingRight: "2.5rem" }}
                   >
                     <option value="" disabled>Pilih Venue...</option>
-                    {DUMMY_VENUES.map(v => (
-                      <option key={v.id} value={v.id}>{v.name}</option>
+                    {venues.map(v => (
+                      <option key={v.id} value={v.venue_id}>{v.venue_name}</option>
                     ))}
                   </select>
                 </div>
@@ -360,6 +422,39 @@ export default function SeatsPage() {
                 className="px-5 py-2.5 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-all shadow-sm shadow-blue-200"
               >
                 {modalMode === "create" ? "Tambah" : "Simpan"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {isDeleteModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden flex flex-col">
+            <div className="p-6 pb-2 text-center">
+              <div className="w-16 h-16 rounded-full bg-red-100 text-red-500 mx-auto flex items-center justify-center mb-4">
+                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <h2 className="text-xl font-bold text-slate-800 mb-2">Hapus Kursi</h2>
+              <p className="text-sm text-slate-500">
+                Apakah Anda yakin ingin menghapus kursi <strong className="text-slate-700">{seatToDelete?.seat_number}</strong> di area <strong className="text-slate-700">{seatToDelete?.section}</strong>? Tindakan ini tidak dapat dibatalkan.
+              </p>
+            </div>
+            <div className="p-6 flex items-center gap-3">
+              <button
+                onClick={cancelDelete}
+                className="flex-1 px-4 py-2.5 text-sm font-semibold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl transition-all shadow-sm"
+              >
+                Batal
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="flex-1 px-4 py-2.5 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl transition-all shadow-sm shadow-red-200"
+              >
+                Ya, Hapus
               </button>
             </div>
           </div>

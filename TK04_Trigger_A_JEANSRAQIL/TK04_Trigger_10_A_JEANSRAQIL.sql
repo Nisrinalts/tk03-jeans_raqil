@@ -1,21 +1,21 @@
 SET search_path TO tiktaktuk;
 
-CREATE OR REPLACE FUNCTION validate_seat_delete()
+CREATE OR REPLACE FUNCTION validate_category_capacity()
 RETURNS TRIGGER AS $$ 
-BEGIN
-    IF EXISTS (
-        SELECT 1 FROM ticket t
-        JOIN seat s ON t.seat_id = s.seat_id
-        WHERE s.seat_id = OLD.seat_id
-    ) THEN
-        RAISE EXCEPTION 'ERROR: Kursi % - Baris % - No.% Tidak dapat dihapus karenas udah terisi.', OLD.section, OLD.row_number, OLD.seat_number;
+DECLARE
+    sold_count BIGINT;
+    BEGIN
+    SELECT COUNT(*) INTO sold_count
+    FROM tiktaktuk.ticket t
+    WHERE t.tcategory_id = NEW.category_id; 
+    IF sold_count >= (SELECT quota FROM tiktaktuk.ticket_category WHERE category_id = NEW.category_id) THEN
+        RAISE EXCEPTION 'ERROR: Kuota kategori tiket % sudah penuh. Tidak dapat membuat tiket baru.', **NEW.category_id;
     END IF;
-
-    RETURN OLD;
+    RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trg_validate_seat_delete
-BEFORE DELETE ON seat
+CREATE OR REPLACE TRIGGER trg_validate_category_capacity
+BEFORE INSERT ON tiktaktuk.ticket
 FOR EACH ROW
-EXECUTE FUNCTION validate_seat_delete();
+EXECUTE FUNCTION validate_category_capacity();
