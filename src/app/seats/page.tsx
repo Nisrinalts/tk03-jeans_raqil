@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import { AuthUser, getUser } from "@/lib/auth";
 import LoadingState from "@/components/LoadingState";
+import toast from "react-hot-toast";
 
 const retrieveSeats = async () => {
   try {
@@ -90,7 +91,6 @@ export default function SeatsPage() {
     }, [router]);
   const role = user?.role || "guest";
   const isStaff = user?.role === "admin" || user?.role === "organizer";
-  console.log(seats);
 
   // Statistics
   const totalSeats = seats.length;
@@ -126,7 +126,7 @@ export default function SeatsPage() {
 
     const selectedVenue = venues.find((v) => v.venue_id === formVenueId);
     if (!selectedVenue) {
-      alert("Pilih venue terlebih dahulu");
+      toast.error("Pilih venue terlebih dahulu");
       return;
     }
 
@@ -144,6 +144,13 @@ export default function SeatsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newSeat),
       });
+      
+      if (result.ok) {
+        toast.success("Kursi berhasil ditambahkan!");
+      } else {
+        toast.error("Gagal menambahkan kursi");
+      }
+      
       const updatedSeats = await retrieveSeats();
       setSeats(updatedSeats);
       handleCloseModal();
@@ -159,13 +166,18 @@ export default function SeatsPage() {
             seat_number: formSeatNumber,
           };
 
-          const update = fetch("/api/seat", {
+          fetch("/api/seat", {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ updatedSeat })
-          });
+          }).then(res => {
+            if (res.ok) toast.success("Kursi berhasil diperbarui!");
+            else toast.error("Gagal memperbarui kursi");
+          }).catch(() => toast.error("Gagal memperbarui kursi"));
+          
           return updatedSeat;
         }
+        return s;
       }));
       
       const updatedSeats = await retrieveSeats();
@@ -176,7 +188,7 @@ export default function SeatsPage() {
 
   const handleDelete = (seat: any) => {
     if (seat.status === "Terisi") {
-      alert("Kursi ini sudah di-assign ke tiket dan tidak dapat dihapus. Hapus atau ubah tiket terlebih dahulu.");
+      toast.error("Kursi ini sudah di-assign ke tiket dan tidak dapat dihapus. Hapus atau ubah tiket terlebih dahulu.");
       return;
     }
     setSeatToDelete(seat);
@@ -185,14 +197,27 @@ export default function SeatsPage() {
 
   const confirmDelete = async () => {
     if (seatToDelete) {
-      setSeats(seats.filter((s) => s.seat_id !== seatToDelete.seat_id));
-      await fetch("/api/seat", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ seat_id: seatToDelete.seat_id })
-      });
-      setIsDeleteModalOpen(false);
-      setSeatToDelete(null);
+      setIsChecking(true);
+      try {
+        const response = await fetch("/api/seat", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ seat_id: seatToDelete.seat_id })
+        });
+
+        if (response.ok) {
+          toast.success("Kursi berhasil dihapus.");
+          setSeats(seats.filter((s) => s.seat_id !== seatToDelete.seat_id));
+        } else {
+          toast.error("Gagal menghapus kursi.");
+        }
+      } catch (error) {
+        toast.error("Terjadi kesalahan sistem saat menghapus.");
+      } finally {
+        setIsChecking(false);
+        setIsDeleteModalOpen(false);
+        setSeatToDelete(null);
+      }
     }
   };
 
@@ -209,7 +234,7 @@ export default function SeatsPage() {
     );
   }
 
-  if (!user) return null; // Jika null / belum login, router.replace akan mengambil alih
+  if (!user) return null; 
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">

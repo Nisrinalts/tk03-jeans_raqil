@@ -116,6 +116,10 @@ export default function TicketPage() {
   const [editStatus, setEditStatus] = useState<"Valid" | "Invalid">("Valid");
   const [editSeat, setEditSeat] = useState<string>("");
 
+  // Delete Modal State
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [ticketToDelete, setTicketToDelete] = useState<any | null>(null);
+
   const [hasRelationships, setHasRelationships] = useState<any[]>([]);
   const [seats, setSeats] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
@@ -153,8 +157,8 @@ export default function TicketPage() {
           }
         }
         data.sort((a: any, b: any) => a.ticket_code - b.ticket_code);
-        setTickets(data); // Simpan hasil objek normal ke state
-      } // Set loading ke false setelah data berhasil diambil
+        setTickets(data); 
+      } // 
       setLoading(false);
       setIsChecking(false);
     };
@@ -213,7 +217,6 @@ export default function TicketPage() {
   const isAdmin = role === "admin";
 
   const visibleTickets = tickets.filter((t) => {
-    // Terapkan filter berdasarkan input pencarian
     const searchLower = searchQuery.toLowerCase();
     if (
       searchQuery &&
@@ -375,33 +378,46 @@ export default function TicketPage() {
     }
   };
 
-  const handleDeleteTicket = async (id: string) => {
-    if (confirm("Apakah Anda yakin ingin menghapus tiket ini?")) {
-      setLoading(true);
-      try {
-        const response = await fetch(`/api/ticket`, {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({ ticket_id: id }) 
-        });
-        
-        if (response.ok) {
-          toast.success("Tiket berhasil dihapus.");
-        } else {
-          toast.error("Gagal menghapus tiket.");
-        }
-        
-        const updatedTickets = await retrieveTickets();
-        setTickets(updatedTickets || []);
-      } catch (error) {
-        console.error("Error menghapus:", error);
-        toast.error("Terjadi kesalahan sistem saat menghapus.");
-      } finally {
-        setLoading(false);
+  const handleDeleteTicket = (ticket: any) => {
+    setTicketToDelete(ticket);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDeleteTicket = async () => {
+    if (!ticketToDelete) return;
+    
+    setLoading(true);
+    setIsDeleteModalOpen(false);
+    try {
+      const response = await fetch(`/api/ticket`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ ticket_id: ticketToDelete.ticket_id }) 
+      });
+      
+      if (response.ok) {
+        toast.success("Tiket berhasil dihapus.");
+        setTickets(tickets.filter(t => t.ticket_id !== ticketToDelete.ticket_id));
+      } else {
+        toast.error("Gagal menghapus tiket.");
       }
+      
+      const updatedTickets = await retrieveTickets();
+      if (updatedTickets) setTickets(updatedTickets);
+    } catch (error) {
+      console.error("Error menghapus:", error);
+      toast.error("Terjadi kesalahan sistem saat menghapus.");
+    } finally {
+      setLoading(false);
+      setTicketToDelete(null);
     }
+  };
+
+  const cancelDeleteTicket = () => {
+    setIsDeleteModalOpen(false);
+    setTicketToDelete(null);
   };
 
   if (!isStaff && !isAdmin) {
@@ -578,7 +594,7 @@ export default function TicketPage() {
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                         </button>
                          <button 
-                          onClick={() => handleDeleteTicket(ticket.ticket_id)}
+                          onClick={() => handleDeleteTicket(ticket)}
                           disabled={ticket.status === "Dipakai"}
                           className={`p-2 rounded-lg transition-colors ${
                             ticket.status === "Dipakai" 
@@ -832,6 +848,51 @@ export default function TicketPage() {
             </div>
           </div>
         )}
+
+        {isDeleteModalOpen && ticketToDelete && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm transition-all duration-300">
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden transform transition-all scale-100 opacity-100 border border-slate-100">
+              <div className="p-6 text-center">
+                <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-bold text-slate-800 mb-2">Hapus Tiket</h3>
+                <p className="text-slate-500 mb-6">
+                  Apakah Anda yakin ingin menghapus tiket ini? Tindakan ini tidak dapat dibatalkan dan tiket yang telah dihapus tidak dapat dipulihkan.
+                </p>
+                
+                <div className="flex gap-3 justify-center">
+                  <button
+                    onClick={cancelDeleteTicket}
+                    className="px-5 py-2.5 text-sm font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl transition-all shadow-sm flex-1"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    onClick={confirmDeleteTicket}
+                    disabled={loading}
+                    className={`px-5 py-2.5 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl transition-all shadow-sm shadow-red-200 flex-1 flex justify-center items-center ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
+                  >
+                    {loading ? (
+                      <span className="flex items-center">
+                         <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Menghapus...
+                      </span>
+                    ) : (
+                      "Ya, Hapus"
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
       </div>
     );
   }
