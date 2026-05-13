@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Navbar from "@/components/Navbar";
+import LoadingState from "@/components/LoadingState";
 import { Artist } from "@/types/artist";
 import { getUser } from "@/lib/auth";
 import { useRouter } from "next/navigation";
@@ -579,12 +580,7 @@ const handleDeleteEventArtist = async () => {
             </div>
           </div>
 
-          <div className="flex min-h-[260px] flex-col items-center justify-center px-6 py-14 text-center">
-            <div className="mb-4 h-8 w-8 animate-spin rounded-full border-4 border-blue-100 border-t-blue-500" />
-            <p className="text-sm font-medium text-slate-400">
-              Memuat data artist...
-            </p>
-          </div>
+          <LoadingState message="Memuat data artist..." />
         </div>
       </section>
     </main>

@@ -1,48 +1,57 @@
 SET search_path TO tiktaktuk;
 
-CREATE OR REPLACE FUNCTION validate_username_unique()
+CREATE OR REPLACE FUNCTION validate_venue_name_city()
 RETURNS TRIGGER AS $$
+DECLARE
+    existing_id UUID;
 BEGIN
-    -- Cek duplikat username (case-insensitive)
-    IF EXISTS (
-        SELECT 1
-        FROM user_account u
-        WHERE LOWER(u.username) = LOWER(NEW.username)
-    ) THEN
-        RAISE EXCEPTION 'ERROR: Username "%" sudah terdaftar, gunakan username lain.', NEW.username;
+    SELECT venue_id INTO existing_id
+    FROM venue
+    WHERE LOWER(name) = LOWER(NEW.name)
+      AND LOWER(city) = LOWER(NEW.city)
+      AND venue_id != COALESCE(NEW.venue_id, '00000000-0000-0000-0000-000000000000');
+
+    IF existing_id IS NOT NULL THEN
+        RAISE EXCEPTION 'Venue "%" di kota "%" sudah terdaftar dengan ID %.', NEW.name, NEW.city, existing_id;
     END IF;
 
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS trg_validate_username_unique ON user_account;
+DROP TRIGGER IF EXISTS trg_validate_venue_name_city ON venue;
 
-CREATE TRIGGER trg_validate_username_unique
-BEFORE INSERT ON user_account
+CREATE TRIGGER trg_validate_venue_name_city
+BEFORE INSERT OR UPDATE ON venue
 FOR EACH ROW
-EXECUTE FUNCTION validate_username_unique();
+EXECUTE FUNCTION validate_venue_name_city();
 
 
--- ============================================================
--- STORED PROCEDURE: Register user baru
--- Procedure akan INSERT ke tabel users, lalu trigger di atas
--- akan otomatis melakukan validasi. Jika validasi gagal,
--- procedure akan melempar exception yang sama (di-bubble-up).
--- ============================================================
 
-CREATE OR REPLACE PROCEDURE register_user(
-    p_user_id UUID,
-    p_username VARCHAR,
-    p_password VARCHAR,
-    p_role VARCHAR
-)
-LANGUAGE plpgsql
-AS $$
+
+CREATE OR REPLACE FUNCTION validate_venue_delete()
+RETURNS TRIGGER AS $$
+DECLARE
+    venue_name TEXT;
+    has_event BOOLEAN;
 BEGIN
-    -- Trigger trg_validate_username_chars dan trg_validate_username_unique
-    -- akan otomatis dipanggil sebelum INSERT.
-    INSERT INTO user_account (user_id, username, password, role)
-    VALUES (p_user_id, p_username, p_password, p_role);
+    SELECT name INTO venue_name FROM venue WHERE venue_id = OLD.venue_id;
+
+    SELECT EXISTS (
+        SELECT 1 FROM event WHERE venue_id = OLD.venue_id
+    ) INTO has_event;
+
+    IF has_event THEN
+        RAISE EXCEPTION 'Venue "%" masih memiliki event aktif sehingga tidak dapat dihapus.', venue_name;
+    END IF;
+
+    RETURN OLD;
 END;
-$$;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_validate_venue_delete ON venue;
+
+CREATE TRIGGER trg_validate_venue_delete
+BEFORE DELETE ON venue
+FOR EACH ROW
+EXECUTE FUNCTION validate_venue_delete();
