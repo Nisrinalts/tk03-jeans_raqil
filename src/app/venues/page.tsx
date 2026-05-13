@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import { Venue } from "@/types/venue";
 import { getUser, AuthUser } from "@/lib/auth";
+import LoadingState from "@/components/LoadingState";
 
 const initialVenues: Venue[] = [];
 
@@ -57,7 +58,6 @@ export default function VenuesPage() {
       return;
     }
     setUser(u);
-    setLoading(false);
 
     async function fetchVenues() {
       try {
@@ -68,6 +68,8 @@ export default function VenuesPage() {
         }
       } catch (e) {
         console.error("Failed to fetch venues:", e);
+      } finally {
+        setLoading(false);
       }
     }
     fetchVenues();
@@ -206,7 +208,7 @@ export default function VenuesPage() {
     }
   };
 
-  if (loading || !user) return null;
+  if (!user) return null;
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-100 via-slate-50 to-white">
@@ -241,18 +243,18 @@ export default function VenuesPage() {
           <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-3">
             <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
               <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">Total Venue</p>
-              <p className="mt-3 text-5xl font-bold text-slate-900">{venues.length}</p>
+              <p className="mt-3 text-5xl font-bold text-slate-900">{loading ? "—" : venues.length}</p>
             </div>
             <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
               <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">Kapasitas Terbesar</p>
               <p className="mt-3 text-5xl font-bold text-slate-900">
-                {Math.max(...venues.map((v) => v.capacity)).toLocaleString("id-ID")}
+                {loading ? "—" : Math.max(...venues.map((v) => v.capacity)).toLocaleString("id-ID")}
               </p>
             </div>
             <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
               <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">Total Kota</p>
               <p className="mt-3 text-5xl font-bold text-slate-900">
-                {new Set(venues.map((v) => v.city)).size}
+                {loading ? "—" : new Set(venues.map((v) => v.city)).size}
               </p>
             </div>
           </div>
@@ -291,70 +293,74 @@ export default function VenuesPage() {
             </div>
 
             <div className="overflow-x-auto">
-              <table className="min-w-full text-left">
-                <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-400">
-                  <tr>
-                    <th className="px-6 py-4">Venue</th>
-                    <th className="px-6 py-4">Venue ID</th>
-                    <th className="px-6 py-4">Kapasitas</th>
-                    <th className="px-6 py-4">Kota</th>
-                    <th className="px-6 py-4">Reserved Seating</th>
-                    {canManage && <th className="px-6 py-4 text-right">Action</th>}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {filtered.map((venue) => (
-                    <tr key={venue.venue_id} className="text-sm text-slate-700">
-                      <td className="px-6 py-5">
-                        <div className="flex items-center gap-4">
-                          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-lg font-bold text-white shadow-sm">
-                            {venue.venue_name.charAt(0)}
-                          </div>
-                          <div>
-                            <p className="font-semibold text-slate-900">{venue.venue_name}</p>
-                            <p className="mt-1 text-xs text-slate-400">{venue.address}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-5 font-medium text-slate-700">{venue.venue_id}</td>
-                      <td className="px-6 py-5 font-semibold text-slate-900">{venue.capacity.toLocaleString("id-ID")}</td>
-                      <td className="px-6 py-5">
-                        <span className={`inline-flex rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide ${getCityBadgeClass(venue.city)}`}>
-                          {venue.city}
-                        </span>
-                      </td>
-                      <td className="px-6 py-5">
-                        <span className={`inline-flex rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide ${venue.is_reserved_seating ? "bg-indigo-50 text-indigo-700 border border-indigo-100" : "bg-slate-100 text-slate-500 border border-slate-200"}`}>
-                          {venue.is_reserved_seating ? "Ya" : "Tidak"}
-                        </span>
-                      </td>
-                      {canManage && (
+              {loading ? (
+                <LoadingState message="Memuat data venue..." />
+              ) : (
+                <table className="min-w-full text-left">
+                  <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-400">
+                    <tr>
+                      <th className="px-6 py-4">Venue</th>
+                      <th className="px-6 py-4">Venue ID</th>
+                      <th className="px-6 py-4">Kapasitas</th>
+                      <th className="px-6 py-4">Kota</th>
+                      <th className="px-6 py-4">Reserved Seating</th>
+                      {canManage && <th className="px-6 py-4 text-right">Action</th>}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {filtered.map((venue) => (
+                      <tr key={venue.venue_id} className="text-sm text-slate-700">
                         <td className="px-6 py-5">
-                          <div className="flex justify-end gap-3">
-                            <button
-                              onClick={() => handleOpenEdit(venue)}
-                              className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
-                              title="Update Venue"
-                            >✎</button>
-                            <button
-                              onClick={() => handleOpenDelete(venue)}
-                              className="flex h-11 w-11 items-center justify-center rounded-2xl border border-rose-200 bg-white text-rose-600 shadow-sm transition hover:bg-rose-50"
-                              title="Delete Venue"
-                            >🗑</button>
+                          <div className="flex items-center gap-4">
+                            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-lg font-bold text-white shadow-sm">
+                              {venue.venue_name.charAt(0)}
+                            </div>
+                            <div>
+                              <p className="font-semibold text-slate-900">{venue.venue_name}</p>
+                              <p className="mt-1 text-xs text-slate-400">{venue.address}</p>
+                            </div>
                           </div>
                         </td>
-                      )}
-                    </tr>
-                  ))}
-                  {filtered.length === 0 && (
-                    <tr>
-                      <td colSpan={canManage ? 6 : 5} className="px-6 py-10 text-center text-sm text-slate-400">
-                        Tidak ada venue yang sesuai dengan pencarian.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                        <td className="px-6 py-5 font-medium text-slate-700">{venue.venue_id}</td>
+                        <td className="px-6 py-5 font-semibold text-slate-900">{venue.capacity.toLocaleString("id-ID")}</td>
+                        <td className="px-6 py-5">
+                          <span className={`inline-flex rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide ${getCityBadgeClass(venue.city)}`}>
+                            {venue.city}
+                          </span>
+                        </td>
+                        <td className="px-6 py-5">
+                          <span className={`inline-flex rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide ${venue.is_reserved_seating ? "bg-indigo-50 text-indigo-700 border border-indigo-100" : "bg-slate-100 text-slate-500 border border-slate-200"}`}>
+                            {venue.is_reserved_seating ? "Ya" : "Tidak"}
+                          </span>
+                        </td>
+                        {canManage && (
+                          <td className="px-6 py-5">
+                            <div className="flex justify-end gap-3">
+                              <button
+                                onClick={() => handleOpenEdit(venue)}
+                                className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+                                title="Update Venue"
+                              >✎</button>
+                              <button
+                                onClick={() => handleOpenDelete(venue)}
+                                className="flex h-11 w-11 items-center justify-center rounded-2xl border border-rose-200 bg-white text-rose-600 shadow-sm transition hover:bg-rose-50"
+                                title="Delete Venue"
+                              >🗑</button>
+                            </div>
+                          </td>
+                        )}
+                      </tr>
+                    ))}
+                    {filtered.length === 0 && (
+                      <tr>
+                        <td colSpan={canManage ? 6 : 5} className="px-6 py-10 text-center text-sm text-slate-400">
+                          Tidak ada venue yang sesuai dengan pencarian.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              )}
             </div>
           </div>
         </div>

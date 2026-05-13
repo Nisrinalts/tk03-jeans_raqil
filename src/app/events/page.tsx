@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import { getUser, AuthUser } from "@/lib/auth";
+import LoadingState from "@/components/LoadingState";
 
 type EventDisplay = {
   event_id: string;
@@ -68,7 +69,6 @@ export default function EventsPage() {
       return;
     }
     setUser(u);
-    setLoading(false);
     if (u.role === "organizer" && u.organizer_id) {
       setOrganizerId(u.organizer_id);
     }
@@ -82,6 +82,8 @@ export default function EventsPage() {
         }
       } catch (e) {
         console.error("Failed to fetch events:", e);
+      } finally {
+        setLoading(false);
       }
     }
     fetchEvents();
@@ -215,7 +217,7 @@ export default function EventsPage() {
     }
   };
 
-  if (loading || !user) return null;
+  if (!user) return null;
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-100 via-slate-50 to-white">
@@ -254,18 +256,18 @@ export default function EventsPage() {
               <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">
                 {isOrganizer ? "Event Saya" : "Total Event"}
               </p>
-              <p className="mt-3 text-5xl font-bold text-slate-900">{visibleEvents.length}</p>
+              <p className="mt-3 text-5xl font-bold text-slate-900">{loading ? "—" : visibleEvents.length}</p>
             </div>
             <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
               <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">Total Venue</p>
               <p className="mt-3 text-5xl font-bold text-slate-900">
-                {new Set(visibleEvents.map((e) => e.venue_id)).size}
+                {loading ? "—" : new Set(visibleEvents.map((e) => e.venue_id)).size}
               </p>
             </div>
             <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
               <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">Total Artis</p>
               <p className="mt-3 text-5xl font-bold text-slate-900">
-                {new Set(visibleEvents.map((e) => e.artist_id)).size}
+                {loading ? "—" : new Set(visibleEvents.map((e) => e.artist_id)).size}
               </p>
             </div>
           </div>
@@ -305,81 +307,85 @@ export default function EventsPage() {
             </div>
 
             <div className="overflow-x-auto">
-              <table className="min-w-full text-left">
-                <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-400">
-                  <tr>
-                    <th className="px-6 py-4">Event</th>
-                    <th className="px-6 py-4">Tanggal & Waktu</th>
-                    <th className="px-6 py-4">Artis</th>
-                    <th className="px-6 py-4">Venue</th>
-                    <th className="px-6 py-4">Kategori</th>
-                    {!isOrganizer && <th className="px-6 py-4">Organizer</th>}
-                    <th className="px-6 py-4 text-right">Aksi</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {visibleEvents.map((event) => (
-                    <tr key={event.event_id} className="text-sm text-slate-700">
-                      <td className="px-6 py-5">
-                        <div className="flex items-center gap-4">
-                          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 text-lg font-bold text-white shadow-sm">
-                            {event.event_title.charAt(0)}
+              {loading ? (
+                <LoadingState message="Memuat data event..." />
+              ) : (
+                <table className="min-w-full text-left">
+                  <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-400">
+                    <tr>
+                      <th className="px-6 py-4">Event</th>
+                      <th className="px-6 py-4">Tanggal & Waktu</th>
+                      <th className="px-6 py-4">Artis</th>
+                      <th className="px-6 py-4">Venue</th>
+                      <th className="px-6 py-4">Kategori</th>
+                      {!isOrganizer && <th className="px-6 py-4">Organizer</th>}
+                      <th className="px-6 py-4 text-right">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {visibleEvents.map((event) => (
+                      <tr key={event.event_id} className="text-sm text-slate-700">
+                        <td className="px-6 py-5">
+                          <div className="flex items-center gap-4">
+                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 text-lg font-bold text-white shadow-sm">
+                              {event.event_title.charAt(0)}
+                            </div>
+                            <div>
+                              <p className="font-semibold text-slate-900">{event.event_title}</p>
+                              {event.description && (
+                                <p className="mt-0.5 max-w-xs truncate text-xs text-slate-400">{event.description}</p>
+                              )}
+                            </div>
                           </div>
-                          <div>
-                            <p className="font-semibold text-slate-900">{event.event_title}</p>
-                            {event.description && (
-                              <p className="mt-0.5 max-w-xs truncate text-xs text-slate-400">{event.description}</p>
+                        </td>
+                        <td className="px-6 py-5 whitespace-nowrap">{event.event_datetime.replace("T", " ")}</td>
+                        <td className="px-6 py-5">
+                          <span className="inline-flex rounded-full bg-purple-50 border border-purple-100 px-3 py-1 text-xs font-semibold text-purple-700">
+                            {event.artist_name}
+                          </span>
+                        </td>
+                        <td className="px-6 py-5 font-medium text-slate-900">{event.venue_name}</td>
+                        <td className="px-6 py-5">
+                          <div className="flex flex-wrap gap-1">
+                            {event.category_names.map((cat) => (
+                              <span key={cat} className="inline-flex rounded-full bg-slate-100 border border-slate-200 px-2 py-0.5 text-xs font-medium text-slate-600">
+                                {cat}
+                              </span>
+                            ))}
+                          </div>
+                        </td>
+                        {!isOrganizer && <td className="px-6 py-5 text-slate-600">{event.organizer_name}</td>}
+                        <td className="px-6 py-5">
+                          <div className="flex justify-end gap-2">
+                            {user?.role === "customer" && (
+                              <a
+                                href={`/checkout?event_id=${event.event_id}&user_id=${user?.user_id}`}
+                                className="flex h-9 items-center justify-center rounded-xl bg-blue-600 px-3 text-xs font-semibold text-white transition hover:bg-blue-700"
+                              >
+                                Beli
+                              </a>
+                            )}
+                            {canManage && (
+                              <button
+                                onClick={() => handleOpenEdit(event)}
+                                className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700"
+                                title="Edit Event"
+                              >✎</button>
                             )}
                           </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-5 whitespace-nowrap">{event.event_datetime.replace("T", " ")}</td>
-                      <td className="px-6 py-5">
-                        <span className="inline-flex rounded-full bg-purple-50 border border-purple-100 px-3 py-1 text-xs font-semibold text-purple-700">
-                          {event.artist_name}
-                        </span>
-                      </td>
-                      <td className="px-6 py-5 font-medium text-slate-900">{event.venue_name}</td>
-                      <td className="px-6 py-5">
-                        <div className="flex flex-wrap gap-1">
-                          {event.category_names.map((cat) => (
-                            <span key={cat} className="inline-flex rounded-full bg-slate-100 border border-slate-200 px-2 py-0.5 text-xs font-medium text-slate-600">
-                              {cat}
-                            </span>
-                          ))}
-                        </div>
-                      </td>
-                      {!isOrganizer && <td className="px-6 py-5 text-slate-600">{event.organizer_name}</td>}
-                      <td className="px-6 py-5">
-                        <div className="flex justify-end gap-2">
-                          {user?.role === "customer" && (
-                            <a
-                              href={`/checkout?event_id=${event.event_id}&user_id=${user?.user_id}`}
-                              className="flex h-9 items-center justify-center rounded-xl bg-blue-600 px-3 text-xs font-semibold text-white transition hover:bg-blue-700"
-                            >
-                              Beli
-                            </a>
-                          )}
-                          {canManage && (
-                            <button
-                              onClick={() => handleOpenEdit(event)}
-                              className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700"
-                              title="Edit Event"
-                            >✎</button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                  {visibleEvents.length === 0 && (
-                    <tr>
-                      <td colSpan={isOrganizer ? 6 : 7} className="px-6 py-10 text-center text-sm text-slate-400">
-                        Tidak ada event yang sesuai.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                        </td>
+                      </tr>
+                    ))}
+                    {visibleEvents.length === 0 && (
+                      <tr>
+                        <td colSpan={isOrganizer ? 6 : 7} className="px-6 py-10 text-center text-sm text-slate-400">
+                          Tidak ada event yang sesuai.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              )}
             </div>
           </div>
         </div>
