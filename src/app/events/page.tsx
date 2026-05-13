@@ -59,8 +59,12 @@ export default function EventsPage() {
   const [editCategoryIds, setEditCategoryIds] = useState<string[]>([]);
   const [editError, setEditError] = useState("");
 
-  const [successMessage, setSuccessMessage] = useState("");
-  const [successType, setSuccessType] = useState<"create" | "update" | "">("");
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  const showToast = (message: string, type: 'success' | 'error') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
 
   useEffect(() => {
     const u = getUser();
@@ -158,10 +162,9 @@ export default function EventsPage() {
 
       resetCreate();
       setIsCreateOpen(false);
-      setSuccessMessage("Event berhasil ditambahkan.");
-      setSuccessType("create");
+      showToast("Event berhasil ditambahkan.", "success");
     } catch (e: any) {
-      setError(e.message);
+      showToast(e.message, "error");
     }
   };
 
@@ -175,7 +178,6 @@ export default function EventsPage() {
     setEditArtistId(event.artist_id);
     setEditCategoryIds(event.category_ids);
     setEditError("");
-    setSuccessMessage("");
     setIsEditOpen(true);
   };
 
@@ -210,10 +212,9 @@ export default function EventsPage() {
       }
 
       setIsEditOpen(false);
-      setSuccessMessage("Event berhasil diperbarui.");
-      setSuccessType("update");
+      showToast("Event berhasil diperbarui.", "success");
     } catch (e: any) {
-      setEditError(e.message);
+      showToast(e.message, "error");
     }
   };
 
@@ -242,7 +243,7 @@ export default function EventsPage() {
             </div>
             {canManage && (
               <button
-                onClick={() => { resetCreate(); setIsCreateOpen(true); setSuccessMessage(""); }}
+                onClick={() => { resetCreate(); setIsCreateOpen(true); }}
                 className="inline-flex items-center justify-center rounded-full bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700"
               >
                 <span className="mr-2 text-lg leading-none">＋</span>Tambah Event
@@ -273,12 +274,12 @@ export default function EventsPage() {
           </div>
 
           {/* Success / error banner */}
-          {successMessage && (
-            <div className={`mb-6 rounded-2xl px-4 py-3 text-sm font-medium border ${
-              successType === "create" ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-              : "border-yellow-200 bg-yellow-50 text-yellow-700"
+          {toast && (
+            <div className={`fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-3 rounded-lg shadow-lg text-white transition-all animate-in fade-in slide-in-from-right-5 ${
+              toast.type === 'success' ? 'bg-emerald-600' : 'bg-rose-600'
             }`}>
-              {successMessage}
+              <span>{toast.type === 'success' ? '✅' : '⛔'}</span>
+              <span className="font-medium">{toast.message}</span>
             </div>
           )}
 

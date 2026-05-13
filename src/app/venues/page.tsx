@@ -48,8 +48,12 @@ export default function VenuesPage() {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [venueToDelete, setVenueToDelete] = useState<Venue | null>(null);
 
-  const [successMessage, setSuccessMessage] = useState("");
-  const [successType, setSuccessType] = useState<"create" | "update" | "delete" | "">("");
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  const showToast = (message: string, type: 'success' | 'error') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
 
   useEffect(() => {
     const u = getUser();
@@ -119,10 +123,9 @@ export default function VenuesPage() {
 
       setVenueName(""); setCapacity(""); setAddress(""); setCity(""); setIsReserved(false); setError("");
       setIsCreateOpen(false);
-      setSuccessMessage("Venue berhasil ditambahkan.");
-      setSuccessType("create");
+      showToast("Venue berhasil ditambahkan.", "success");
     } catch (e: any) {
-      setError(e.message);
+      showToast(e.message, "error");
     }
   };
 
@@ -134,7 +137,6 @@ export default function VenuesPage() {
     setEditCity(venue.city);
     setEditIsReserved(venue.is_reserved_seating);
     setEditError("");
-    setSuccessMessage("");
     setIsEditOpen(true);
   };
 
@@ -168,16 +170,14 @@ export default function VenuesPage() {
       }
 
       setIsEditOpen(false);
-      setSuccessMessage("Venue berhasil diperbarui.");
-      setSuccessType("update");
+      showToast("Venue berhasil diperbarui.", "success");
     } catch (e: any) {
-      setEditError(e.message);
+      showToast(e.message, "error");
     }
   };
 
   const handleOpenDelete = (venue: Venue) => {
     setVenueToDelete(venue);
-    setSuccessMessage("");
     setIsDeleteOpen(true);
   };
 
@@ -200,11 +200,9 @@ export default function VenuesPage() {
 
       setIsDeleteOpen(false);
       setVenueToDelete(null);
-      setSuccessMessage("Venue berhasil dihapus.");
-      setSuccessType("delete");
+      showToast("Venue berhasil dihapus.", "success");
     } catch (e: any) {
-      setSuccessMessage(e.message);
-      setSuccessType("delete");
+      showToast(e.message, "error");
     }
   };
 
@@ -231,7 +229,7 @@ export default function VenuesPage() {
             </div>
             {canManage && (
               <button
-                onClick={() => { setIsCreateOpen(true); setError(""); setSuccessMessage(""); }}
+                onClick={() => { setIsCreateOpen(true); setError(""); }}
                 className="inline-flex items-center justify-center rounded-full bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
               >
                 <span className="mr-2 text-lg leading-none">＋</span>Tambah Venue
@@ -259,14 +257,12 @@ export default function VenuesPage() {
             </div>
           </div>
 
-          {/* Success message */}
-          {successMessage && (
-            <div className={`mb-6 rounded-2xl px-4 py-3 text-sm font-medium border ${
-              successType === "create" ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-              : successType === "update" ? "border-yellow-200 bg-yellow-50 text-yellow-700"
-              : "border-red-200 bg-red-50 text-red-700"
+          {toast && (
+            <div className={`fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-3 rounded-lg shadow-lg text-white transition-all animate-in fade-in slide-in-from-right-5 ${
+              toast.type === 'success' ? 'bg-emerald-600' : 'bg-rose-600'
             }`}>
-              {successMessage}
+              <span>{toast.type === 'success' ? '✅' : '⛔'}</span>
+              <span className="font-medium">{toast.message}</span>
             </div>
           )}
 
