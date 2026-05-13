@@ -7,6 +7,7 @@ import { AuthUser, getUser } from "@/lib/auth";
 import { Ticket } from "@/types/ticket";
 import LoadingState from "@/components/LoadingState";
 import { error } from "console";
+import toast from "react-hot-toast";
 
 const retrievHaseRelationship = async () => {
   try {
@@ -44,7 +45,7 @@ const retrieveTickets = async () => {
     }
   } catch (error) {
     console.error("Error fetching tickets:", error);
-    return [];
+    return error;
   } 
 };
 
@@ -151,6 +152,7 @@ export default function TicketPage() {
             data[i].status = "Dipesan";
           }
         }
+        data.sort((a: any, b: any) => a.ticket_code - b.ticket_code);
         setTickets(data); // Simpan hasil objek normal ke state
       } // Set loading ke false setelah data berhasil diambil
       setLoading(false);
@@ -207,7 +209,6 @@ export default function TicketPage() {
 
   const role = user.role;
   console.log("User Role:", role);
-  console.log(tickets);
   const isStaff = role === "admin" || role === "organizer";
   const isAdmin = role === "admin";
 
@@ -299,42 +300,54 @@ export default function TicketPage() {
     }
     catch (error) {
       console.error("Error updating ticket:", error);
-      alert("Gagal memperbarui tiket. Silakan coba lagi.");
+      toast.error("Gagal memperbarui tiket. Silakan coba lagi.");
       return;
     }
     setTickets(updatedTickets);
     setIsEditModalOpen(false);
+    toast.success("Tiket berhasil diperbarui!");
     setTicketToEdit(null);
   };
   
   const handleCreateTicket = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!createOrderId || !createCategoryId) {
-      alert("Pilih kategori dan order terlebih dahulu.");
+      toast.error("Pilih kategori dan order terlebih dahulu.");
       return;
     }
-    const serNum = tickets.length < 100 ? `0${tickets.length + 1}` : `${tickets.length + 1}`;
+
+    let serNum = "001";
+    const lastTicketCode = tickets[tickets.length - 1]?.ticket_code; 
+    if (lastTicketCode) {
+      serNum = (parseInt(lastTicketCode.slice(-3)) + 1).toString().padStart(3, '0');
+    }
     try {
-      const ticketCode = `TKT-JEANS-${serNum}`;
+      const ticketCode = `TKT-JEANS-${serNum.toString().padStart(3, '0')}`;
       const payload = {
         ticket_code: ticketCode,
         tcategory_id: createCategoryId,
         torder_id: createOrderId
       };
-
-      const response = await fetch("/api/ticket", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(payload)
-      });
+      let response;
+      try {
+          response = await fetch("/api/ticket", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(payload)
+        });
+      } catch (error) {
+        console.error("Error creating ticket:", error);
+        toast.error(String(error));
+        return;
+      }
 
       if (response.ok) {
         const updatedTickets = await retrieveTickets();
         setTickets(updatedTickets || []);
         const recent = updatedTickets.filter((t) => t.ticket_code === ticketCode)[0];
-        // Refresh 
+        // Refresh \
         if (createSeat !== "") {
           const responseSeat = await fetch("/api/has-relationship", {
             method: "POST",
@@ -351,14 +364,14 @@ export default function TicketPage() {
         setIsCreateModalOpen(false);
         setCreateOrderId("");
         setCreateCategoryId("");
-        alert("Tiket berhasil dibuat!");
+        toast.success("Tiket berhasil dibuat!");
       } else {
         const errorData = await response.json();
-        alert(`Gagal menambahkan tiket: ${errorData.message}`);
+        toast.error(`${errorData.detail}`);
       }
     } catch (err) {
       console.error(err);
-      alert("Terjadi kesalahan.");
+      toast.error("Terjadi kesalahan.");
     }
   };
 
@@ -373,8 +386,18 @@ export default function TicketPage() {
           },
           body: JSON.stringify({ ticket_id: id }) 
         });
+        
+        if (response.ok) {
+          toast.success("Tiket berhasil dihapus.");
+        } else {
+          toast.error("Gagal menghapus tiket.");
+        }
+        
         const updatedTickets = await retrieveTickets();
         setTickets(updatedTickets || []);
+      } catch (error) {
+        console.error("Error menghapus:", error);
+        toast.error("Terjadi kesalahan sistem saat menghapus.");
       } finally {
         setLoading(false);
       }
