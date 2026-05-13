@@ -9,20 +9,21 @@ export async function GET(
     const { id } = await params; 
 
     const result = await pool.query(
-      `
-      SELECT
-        e.event_id,
-        e.event_title,
-        e.event_datetime,
-        v.venue_name,
-        o.organizer_name
-      FROM tiktaktuk.event e
-      JOIN tiktaktuk.venue v ON e.venue_id = v.venue_id
-      JOIN tiktaktuk.organizer o ON e.organizer_id = o.organizer_id
-      WHERE e.event_id = $1;
-      `,
-      [id]
-    );
+  `
+  SELECT
+    e.event_id,
+    e.event_title,
+    e.event_datetime,
+    v.venue_id,
+    v.venue_name,
+    o.organizer_name
+  FROM tiktaktuk.event e
+  JOIN tiktaktuk.venue v ON e.venue_id = v.venue_id
+  JOIN tiktaktuk.organizer o ON e.organizer_id = o.organizer_id
+  WHERE e.event_id = $1;
+  `,
+  [id]
+);
 
     if (result.rows.length === 0) {
       return NextResponse.json(
