@@ -2,7 +2,7 @@
 
 export const dynamic = "force-dynamic";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import LoadingState from "@/components/LoadingState";
@@ -56,6 +56,14 @@ function formatRp(n: number) {
 }
 
 export default function OrderPage() {
+  return (
+    <Suspense fallback={<LoadingState message="Memuat data event..." />}>
+      <OrderPageInner />
+    </Suspense>
+  );
+}
+
+function OrderPageInner() {
   const params = useSearchParams();
   const eventId = params.get("event_id") ?? "";
 
