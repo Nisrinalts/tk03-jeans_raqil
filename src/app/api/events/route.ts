@@ -32,7 +32,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { event_title, description, event_datetime, venue_id, organizer_id, artist_id, category_ids } = body;
+    const { event_title, description, event_datetime, venue_id, organizer_id, artist_id } = body;
 
     const result = await pool.query(
       `INSERT INTO tiktaktuk.event (event_title, description, event_datetime, venue_id, organizer_id)
@@ -43,34 +43,48 @@ export async function POST(request: Request) {
     const event_id = result.rows[0].event_id;
 
     if (artist_id) {
-      await pool.query(`INSERT INTO tiktaktuk.event_artist (event_id, artist_id, role) VALUES ($1, $2, 'Main Artist');`, [event_id, artist_id]);
-    }
-
-    if (category_ids && Array.isArray(category_ids)) {
-      for (const cat_id of category_ids) {
-        await pool.query(`INSERT INTO tiktaktuk.ticket_category (event_id, category_id) VALUES ($1, $2);`, [event_id, cat_id]);
-      }
+      await pool.query(
+        `INSERT INTO tiktaktuk.event_artist (event_id, artist_id, role) VALUES ($1, $2, 'Main Artist');`,
+        [event_id, artist_id]
+      );
     }
 
     return NextResponse.json({ event_id });
   } catch (error: unknown) {
+    console.error("Database Error:", error);
     return NextResponse.json({ message: "Gagal membuat event." }, { status: 500 });
   }
 }
 
 export async function PUT(request: Request) {
+  const client = await pool.connect();
   try {
     const body = await request.json();
-    const { event_id, event_title, description, event_datetime, venue_id, organizer_id } = body;
+    const { event_id, event_title, description, event_datetime, venue_id, organizer_id, artist_id } = body;
 
-    await pool.query(
+    await client.query("BEGIN");
+
+    await client.query(
       `UPDATE tiktaktuk.event SET event_title = $2, description = $3, event_datetime = $4, venue_id = $5, organizer_id = $6 WHERE event_id = $1;`,
       [event_id, event_title, description, event_datetime, venue_id, organizer_id]
     );
 
+    if (artist_id) {
+      await client.query(`DELETE FROM tiktaktuk.event_artist WHERE event_id = $1;`, [event_id]);
+      await client.query(
+        `INSERT INTO tiktaktuk.event_artist (event_id, artist_id, role) VALUES ($1, $2, 'Main Artist');`,
+        [event_id, artist_id]
+      );
+    }
+
+    await client.query("COMMIT");
     return NextResponse.json({ message: "Event updated" });
   } catch (error: unknown) {
+    await client.query("ROLLBACK");
+    console.error("Database Error:", error);
     return NextResponse.json({ message: "Gagal memperbarui event." }, { status: 500 });
+  } finally {
+    client.release();
   }
 }
 
