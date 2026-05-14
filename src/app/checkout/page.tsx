@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Navbar from "@/components/Navbar";
+import LoadingState from "@/components/LoadingState";
 
 type EventDisplay = {
   event_id: string;
@@ -330,11 +331,7 @@ export default function OrderPage() {
     return (
       <main className="min-h-screen bg-slate-100">
         <Navbar role="customer" />
-        <div className="flex items-center justify-center py-32">
-          <p className="text-slate-500 text-sm animate-pulse">
-            Memuat data event...
-          </p>
-        </div>
+        <LoadingState message="Memuat data event..." />
       </main>
     );
   }
@@ -590,9 +587,7 @@ export default function OrderPage() {
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
               <h3 className="font-semibold text-gray-900 mb-4">Pilih Kursi</h3>
               {loadingSeats ? (
-                <p className="text-sm text-gray-400 animate-pulse">
-                  Memuat kursi...
-                </p>
+                <LoadingState message="Memuat kursi..." />
               ) : seats.length === 0 ? (
                 <p className="text-sm text-gray-400">
                   Tidak ada data kursi.

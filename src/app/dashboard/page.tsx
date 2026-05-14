@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
+import LoadingState from "@/components/LoadingState";
 import { getUser, AuthUser } from "@/lib/auth";
 
 type DiscountType = "PERCENTAGE" | "NOMINAL";
@@ -197,39 +198,16 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        {data.loading ? (
-          <LoadingDashboard />
-        ) : (
-          <>
-            {role === "admin" && <AdminDashboard data={data} />}
-            {role === "organizer" && <OrganizerDashboard user={user} data={data} />}
-            {role === "customer" && <CustomerDashboard user={user} data={data} />}
-          </>
-        )}
+        {role === "admin" && <AdminDashboard data={data} />}
+        {role === "organizer" && <OrganizerDashboard user={user} data={data} />}
+        {role === "customer" && <CustomerDashboard user={user} data={data} />}
       </section>
     </main>
   );
 }
 
-function LoadingDashboard() {
-  return (
-    <div className="space-y-8">
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {[0, 1, 2, 3].map((i) => (
-          <div
-            key={i}
-            className="h-32 animate-pulse rounded-3xl border border-slate-200 bg-white"
-          />
-        ))}
-      </div>
-      <div className="h-64 animate-pulse rounded-[28px] border border-slate-200 bg-white" />
-      <p className="text-center text-sm italic text-slate-400">Memuat data dashboard…</p>
-    </div>
-  );
-}
-
 function AdminDashboard({ data }: { data: DashboardData }) {
-  const { events, orders, promotions, seats, venues } = data;
+  const { events, orders, promotions, seats, venues, loading } = data;
 
   const omset = orders
     .filter((o) => o.payment_status === "Paid")
@@ -240,58 +218,72 @@ function AdminDashboard({ data }: { data: DashboardData }) {
     ? Math.max(...venues.map((v) => toNum(v.capacity)))
     : 0;
 
+  const dash = (val: string) => (loading ? "—" : val);
+
   return (
     <div className="space-y-8">
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Total Pengguna" value="4" hint="3 user seed + 1 admin" color="from-blue-500 to-indigo-500" />
-        <StatCard label="Total Acara" value={String(events.length)} hint="acara terjadwal" color="from-indigo-500 to-purple-500" />
-        <StatCard label="Omset Platform" value={formatRp(omset)} hint="total transaksi Paid" color="from-emerald-500 to-teal-500" />
-        <StatCard label="Promosi Aktif" value={String(promotions.length)} hint="kode promo terdaftar" color="from-amber-500 to-orange-500" />
+        <StatCard label="Total Pengguna" value={dash("4")} hint="3 user seed + 1 admin" color="from-blue-500 to-indigo-500" />
+        <StatCard label="Total Acara" value={dash(String(events.length))} hint="acara terjadwal" color="from-indigo-500 to-purple-500" />
+        <StatCard label="Omset Platform" value={dash(formatRp(omset))} hint="total transaksi Paid" color="from-emerald-500 to-teal-500" />
+        <StatCard label="Promosi Aktif" value={dash(String(promotions.length))} hint="kode promo terdaftar" color="from-amber-500 to-orange-500" />
       </div>
 
       <Section title="Infrastruktur Venue" desc="Ringkasan kapasitas venue yang terdaftar di platform.">
-        <div className="grid gap-4 md:grid-cols-3">
-          <MiniStat label="Total Venue Terdaftar" value={String(venues.length)} />
-          <MiniStat label="Reserved Seating" value={String(reservedSeats)} hint="kursi terisi" />
-          <MiniStat label="Kapasitas Terbesar" value={kapasitasTerbesar.toLocaleString("id-ID")} hint="kursi" />
-        </div>
-        <div className="mt-5">
-          <Link href="/venues" className="inline-flex rounded-full bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700">
-            Kelola Venue
-          </Link>
-        </div>
+        {loading ? (
+          <LoadingState message="Memuat data venue..." />
+        ) : (
+          <>
+            <div className="grid gap-4 md:grid-cols-3">
+              <MiniStat label="Total Venue Terdaftar" value={String(venues.length)} />
+              <MiniStat label="Reserved Seating" value={String(reservedSeats)} hint="kursi terisi" />
+              <MiniStat label="Kapasitas Terbesar" value={kapasitasTerbesar.toLocaleString("id-ID")} hint="kursi" />
+            </div>
+            <div className="mt-5">
+              <Link href="/venues" className="inline-flex rounded-full bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700">
+                Kelola Venue
+              </Link>
+            </div>
+          </>
+        )}
       </Section>
 
       <Section title="Marketing & Promosi" desc="Pantau performa kampanye promo platform.">
-        <div className="grid gap-4 md:grid-cols-3">
-          <MiniStat
-            label="Promo Persentase Aktif"
-            value={String(promotions.filter((p) => p.discount_type === "PERCENTAGE").length)}
-            hint="kode diskon %"
-          />
-          <MiniStat
-            label="Promo Potongan Nominal Aktif"
-            value={String(promotions.filter((p) => p.discount_type === "NOMINAL").length)}
-            hint="kode diskon Rp"
-          />
-          <MiniStat
-            label="Total Penggunaan"
-            value={`${promotions.reduce((sum, p) => sum + toNum(p.usage_count), 0)}×`}
-            hint="kali digunakan"
-          />
-        </div>
-        <div className="mt-5">
-          <Link href="/promotion" className="inline-flex rounded-full bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700">
-            Kelola Promosi
-          </Link>
-        </div>
+        {loading ? (
+          <LoadingState message="Memuat data promosi..." />
+        ) : (
+          <>
+            <div className="grid gap-4 md:grid-cols-3">
+              <MiniStat
+                label="Promo Persentase Aktif"
+                value={String(promotions.filter((p) => p.discount_type === "PERCENTAGE").length)}
+                hint="kode diskon %"
+              />
+              <MiniStat
+                label="Promo Potongan Nominal Aktif"
+                value={String(promotions.filter((p) => p.discount_type === "NOMINAL").length)}
+                hint="kode diskon Rp"
+              />
+              <MiniStat
+                label="Total Penggunaan"
+                value={`${promotions.reduce((sum, p) => sum + toNum(p.usage_count), 0)}×`}
+                hint="kali digunakan"
+              />
+            </div>
+            <div className="mt-5">
+              <Link href="/promotion" className="inline-flex rounded-full bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700">
+                Kelola Promosi
+              </Link>
+            </div>
+          </>
+        )}
       </Section>
     </div>
   );
 }
 
 function OrganizerDashboard({ user, data }: { user: AuthUser; data: DashboardData }) {
-  const { events, orders, tickets } = data;
+  const { events, orders, tickets, loading } = data;
 
   const myEvents = events.filter((e) => e.organizer_id === user.organizer_id);
   const venuesUsed = new Set(myEvents.map((e) => e.venue_name)).size;
@@ -304,17 +296,21 @@ function OrganizerDashboard({ user, data }: { user: AuthUser; data: DashboardDat
     .filter((o) => o.organizer_id === user.organizer_id && o.payment_status === "Paid")
     .reduce((sum, o) => sum + toNum(o.total_amount), 0);
 
+  const dash = (val: string) => (loading ? "—" : val);
+
   return (
     <div className="space-y-8">
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Acara Aktif" value={String(myEvents.length)} hint="event milik anda" color="from-blue-500 to-indigo-500" />
-        <StatCard label="Total Tiket Terjual" value={String(myTicketsSold)} hint="tiket terdata" color="from-emerald-500 to-teal-500" />
-        <StatCard label="Total Revenue" value={formatRp(totalRevenue)} hint="dari transaksi Paid" color="from-amber-500 to-orange-500" />
-        <StatCard label="Venue Mitra Aktif" value={String(venuesUsed)} hint="venue yang dipakai" color="from-rose-500 to-pink-500" />
+        <StatCard label="Acara Aktif" value={dash(String(myEvents.length))} hint="event milik anda" color="from-blue-500 to-indigo-500" />
+        <StatCard label="Total Tiket Terjual" value={dash(String(myTicketsSold))} hint="tiket terdata" color="from-emerald-500 to-teal-500" />
+        <StatCard label="Total Revenue" value={dash(formatRp(totalRevenue))} hint="dari transaksi Paid" color="from-amber-500 to-orange-500" />
+        <StatCard label="Venue Mitra Aktif" value={dash(String(venuesUsed))} hint="venue yang dipakai" color="from-rose-500 to-pink-500" />
       </div>
 
       <Section title="Performa Acara" desc="Daftar event yang Anda kelola beserta data tiket dan revenue.">
-        {myEvents.length === 0 ? (
+        {loading ? (
+          <LoadingState message="Memuat data event..." />
+        ) : myEvents.length === 0 ? (
           <EmptyState text="Belum ada acara yang Anda buat." />
         ) : (
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
@@ -370,7 +366,7 @@ function OrganizerDashboard({ user, data }: { user: AuthUser; data: DashboardDat
 }
 
 function CustomerDashboard({ user, data }: { user: AuthUser; data: DashboardData }) {
-  const { tickets, orders, promotions, customerEntityId } = data;
+  const { tickets, orders, promotions, customerEntityId, loading } = data;
 
   const myTickets = tickets.filter((t) => t.cust_user_id === user.user_id);
   const tiketAktif = myTickets.filter((t) => t.status === "Dipesan" || !t.status);
@@ -385,17 +381,21 @@ function CustomerDashboard({ user, data }: { user: AuthUser; data: DashboardData
     )
     .reduce((sum, o) => sum + toNum(o.total_amount), 0);
 
+  const dash = (val: string) => (loading ? "—" : val);
+
   return (
     <div className="space-y-8">
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Tiket Aktif" value={String(tiketAktif.length)} hint="tiket belum dipakai" color="from-blue-500 to-indigo-500" />
-        <StatCard label="Acara Diikuti" value={String(acaraDiikuti)} hint="event unik" color="from-indigo-500 to-purple-500" />
-        <StatCard label="Kode Promo Tersedia" value={String(promotions.length)} hint="promo aktif di platform" color="from-amber-500 to-orange-500" />
-        <StatCard label="Total Belanja" value={formatRp(totalBelanja)} hint="dari transaksi Paid" color="from-emerald-500 to-teal-500" />
+        <StatCard label="Tiket Aktif" value={dash(String(tiketAktif.length))} hint="tiket belum dipakai" color="from-blue-500 to-indigo-500" />
+        <StatCard label="Acara Diikuti" value={dash(String(acaraDiikuti))} hint="event unik" color="from-indigo-500 to-purple-500" />
+        <StatCard label="Kode Promo Tersedia" value={dash(String(promotions.length))} hint="promo aktif di platform" color="from-amber-500 to-orange-500" />
+        <StatCard label="Total Belanja" value={dash(formatRp(totalBelanja))} hint="dari transaksi Paid" color="from-emerald-500 to-teal-500" />
       </div>
 
       <Section title="Tiket Mendatang" desc="Tiket Anda yang sudah dipesan dan belum dipakai.">
-        {tiketAktif.length === 0 ? (
+        {loading ? (
+          <LoadingState message="Memuat data tiket..." />
+        ) : tiketAktif.length === 0 ? (
           <EmptyState text="Belum ada tiket aktif." />
         ) : (
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
@@ -446,29 +446,25 @@ function StatCard({
   label,
   value,
   hint,
-  color,
   placeholder,
 }: {
   label: string;
   value: string;
   hint?: string;
-  color: string;
+  color?: string;
   placeholder?: boolean;
 }) {
   return (
-    <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-      <div className={`h-1.5 w-full bg-gradient-to-r ${color}`} />
-      <div className="p-6">
-        <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{label}</p>
-        <p className={`mt-3 text-4xl font-bold ${placeholder ? "text-slate-300" : "text-slate-900"}`}>
-          {value}
+    <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+      <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">{label}</p>
+      <p className={`text-3xl font-bold ${placeholder ? "text-gray-300" : "text-gray-900"}`}>
+        {value}
+      </p>
+      {hint && (
+        <p className={`mt-1 text-xs ${placeholder ? "italic text-gray-400" : "text-gray-500"}`}>
+          {hint}
         </p>
-        {hint && (
-          <p className={`mt-1 text-xs ${placeholder ? "italic text-slate-400" : "text-slate-500"}`}>
-            {hint}
-          </p>
-        )}
-      </div>
+      )}
     </div>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Navbar from "@/components/Navbar";
+import LoadingState from "@/components/LoadingState";
 import { getUser, AuthUser } from "@/lib/auth";
 //types
 type DiscountType = "PERCENTAGE" | "NOMINAL";
@@ -477,19 +478,7 @@ export default function PromotionsPage() {
 
           <div className="overflow-x-auto">
             {loading ? (
-              <div className="flex items-center justify-center py-16">
-                <div className="flex flex-col items-center gap-3">
-                  <svg
-                    className="w-7 h-7 text-blue-400 animate-spin"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4z" />
-                  </svg>
-                  <p className="text-sm text-gray-400">Memuat data promosi...</p>
-                </div>
-              </div>
+              <LoadingState message="Memuat data promosi..." />
             ) : (
               <table className="w-full">
                 <thead>

@@ -69,7 +69,15 @@ export default function SeatsPage() {
     const loadSeats = async () => {
       try {
         const data = await retrieveSeats();
-          setSeats(data || []);
+          // Dedupe by seat_id sebagai safety net kalau API masih kasih duplikat
+          const list = Array.isArray(data) ? data : [];
+          const seen = new Set<string>();
+          const unique = list.filter((s: { seat_id: string }) => {
+            if (!s?.seat_id || seen.has(s.seat_id)) return false;
+            seen.add(s.seat_id);
+            return true;
+          });
+          setSeats(unique);
         } catch (error) {
           console.error("Error loading seats:", error);
         } finally {
@@ -226,15 +234,19 @@ export default function SeatsPage() {
     setSeatToDelete(null);
   };
 
+  if (!user) return null;
+
   if (isChecking) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <LoadingState message="Memuat data kursi..." />
+      <div className="min-h-screen bg-slate-50 flex flex-col">
+        <Navbar role={user?.role || ""} />
+        <main className="flex-1 w-full max-w-7xl mx-auto px-4 py-8">
+          <LoadingState message="Memuat data kursi..." />
+        </main>
       </div>
     );
   }
 
-  if (!user) return null; 
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">

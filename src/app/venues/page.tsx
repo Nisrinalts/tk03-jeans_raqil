@@ -239,20 +239,22 @@ export default function VenuesPage() {
 
           {/* Stats */}
           <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-3">
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-              <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">Total Venue</p>
-              <p className="mt-3 text-5xl font-bold text-slate-900">{loading ? "—" : venues.length}</p>
-            </div>
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-              <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">Kapasitas Terbesar</p>
-              <p className="mt-3 text-5xl font-bold text-slate-900">
-                {loading ? "—" : Math.max(...venues.map((v) => v.capacity)).toLocaleString("id-ID")}
+            <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+              <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Total Venue</p>
+              <p className="text-3xl font-bold text-gray-900">
+                {loading ? <span className="text-gray-300">—</span> : venues.length}
               </p>
             </div>
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-              <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">Total Kota</p>
-              <p className="mt-3 text-5xl font-bold text-slate-900">
-                {loading ? "—" : new Set(venues.map((v) => v.city)).size}
+            <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+              <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Kapasitas Terbesar</p>
+              <p className="text-3xl font-bold text-gray-900">
+                {loading ? <span className="text-gray-300">—</span> : Math.max(...venues.map((v) => v.capacity)).toLocaleString("id-ID")}
+              </p>
+            </div>
+            <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+              <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Total Kota</p>
+              <p className="text-3xl font-bold text-gray-900">
+                {loading ? <span className="text-gray-300">—</span> : new Set(venues.map((v) => v.city)).size}
               </p>
             </div>
           </div>

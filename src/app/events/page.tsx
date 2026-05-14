@@ -253,22 +253,24 @@ export default function EventsPage() {
 
           {/* Stats */}
           <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-3">
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-              <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">
+            <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+              <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">
                 {isOrganizer ? "Event Saya" : "Total Event"}
               </p>
-              <p className="mt-3 text-5xl font-bold text-slate-900">{loading ? "—" : visibleEvents.length}</p>
-            </div>
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-              <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">Total Venue</p>
-              <p className="mt-3 text-5xl font-bold text-slate-900">
-                {loading ? "—" : new Set(visibleEvents.map((e) => e.venue_id)).size}
+              <p className="text-3xl font-bold text-gray-900">
+                {loading ? <span className="text-gray-300">—</span> : visibleEvents.length}
               </p>
             </div>
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-              <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">Total Artis</p>
-              <p className="mt-3 text-5xl font-bold text-slate-900">
-                {loading ? "—" : new Set(visibleEvents.map((e) => e.artist_id)).size}
+            <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+              <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Total Venue</p>
+              <p className="text-3xl font-bold text-gray-900">
+                {loading ? <span className="text-gray-300">—</span> : new Set(visibleEvents.map((e) => e.venue_id)).size}
+              </p>
+            </div>
+            <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+              <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Total Artis</p>
+              <p className="text-3xl font-bold text-gray-900">
+                {loading ? <span className="text-gray-300">—</span> : new Set(visibleEvents.map((e) => e.artist_id)).size}
               </p>
             </div>
           </div>

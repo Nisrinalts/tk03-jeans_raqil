@@ -202,14 +202,17 @@ export default function TicketPage() {
     loadRelationships();
   }, [router]);
 
+  if (!user) return null;
   if (loading || isChecking) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <LoadingState message="Memuat data tiket..." />
+      <div className="min-h-screen bg-slate-50 flex flex-col">
+        <Navbar role={user.role} />
+        <main className="flex-1 w-full max-w-7xl mx-auto px-4 py-8">
+          <LoadingState message="Memuat data tiket..." />
+        </main>
       </div>
     );
   }
-  if (!user) return null;
 
   const role = user.role;
   console.log("User Role:", role);
