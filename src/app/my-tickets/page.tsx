@@ -4,9 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import { AuthUser, getUser } from "@/lib/auth";
-import { Ticket } from "@/types/ticket";
 import LoadingState from "@/components/LoadingState";
-import { error } from "console";
 import toast from "react-hot-toast";
 
 const retrievHaseRelationship = async () => {
@@ -102,28 +100,44 @@ const retrieveSeats = async () => {
   }
 };
 
+interface ExtendedTicket {
+  ticket_id: string;
+  ticket_code: string;
+  status: string;
+  seat_id?: string;
+  tcategory_id?: string;
+  torder_id?: string;
+  event_title: string;
+  venue_name: string;
+  category_name: string;
+  cust_user_id?: string;
+  org_user_id?: string;
+  full_name?: string;
+  organizer_id?: string;
+  [key: string]: any;
+}
+
 export default function TicketPage() {
     // Create Modal State
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [createOrderId, setCreateOrderId] = useState("");
   const [createCategoryId, setCreateCategoryId] = useState("");
   const [createSeat, setCreateSeat] = useState<string>("");
-  const [createStatus, setCreateStatus] = useState<"Dipesan" | "Dipakai">("Dipesan");
 
   // Edit Modal State
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [ticketToEdit, setTicketToEdit] = useState<any | null>(null);
-  const [editStatus, setEditStatus] = useState<"Valid" | "Invalid">("Valid");
+  const [ticketToEdit, setTicketToEdit] = useState<ExtendedTicket | null>(null);
+  const [editStatus, setEditStatus] = useState<string>("Valid");
   const [editSeat, setEditSeat] = useState<string>("");
 
   // Delete Modal State
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [ticketToDelete, setTicketToDelete] = useState<any | null>(null);
+  const [ticketToDelete, setTicketToDelete] = useState<ExtendedTicket | null>(null);
 
-  const [hasRelationships, setHasRelationships] = useState<any[]>([]);
-  const [seats, setSeats] = useState<any[]>([]);
-  const [orders, setOrders] = useState<any[]>([]);
-  const [tickets, setTickets] = useState<any[]>([]); 
+  const [hasRelationships, setHasRelationships] = useState<Record<string, any>[]>([]);
+  const [seats, setSeats] = useState<Record<string, any>[]>([]);
+  const [orders, setOrders] = useState<Record<string, any>[]>([]);
+  const [tickets, setTickets] = useState<ExtendedTicket[]>([]); 
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isChecking, setIsChecking] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -131,7 +145,7 @@ export default function TicketPage() {
   const [loading, setLoading] = useState(true);
 
   const router = useRouter();
-  const [categories, setCategories] = useState<any[]>([]);
+  const [categories, setCategories] = useState<Record<string, any>[]>([]);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -156,7 +170,7 @@ export default function TicketPage() {
             data[i].status = "Dipesan";
           }
         }
-        data.sort((a: any, b: any) => a.ticket_code - b.ticket_code);
+        data.sort((a: ExtendedTicket, b: ExtendedTicket) => (a.ticket_code > b.ticket_code ? 1 : -1));
         setTickets(data); 
       } // 
       setLoading(false);
@@ -241,7 +255,7 @@ export default function TicketPage() {
     
   });
 
-  const handleOpenEditModal = (ticket: any) => {
+  const handleOpenEditModal = (ticket: ExtendedTicket) => {
     setTicketToEdit(ticket);
     setEditStatus(ticket.status);
     setEditSeat(ticket.seat_id || "");
@@ -352,7 +366,7 @@ export default function TicketPage() {
       if (response.ok) {
         const updatedTickets = await retrieveTickets();
         setTickets(updatedTickets || []);
-        const recent = updatedTickets.filter((t) => t.ticket_code === ticketCode)[0];
+        const recent = updatedTickets.filter((t: ExtendedTicket) => t.ticket_code === ticketCode)[0];
         // Refresh \
         if (createSeat !== "") {
           const responseSeat = await fetch("/api/has-relationship", {
@@ -381,7 +395,7 @@ export default function TicketPage() {
     }
   };
 
-  const handleDeleteTicket = (ticket: any) => {
+  const handleDeleteTicket = (ticket: ExtendedTicket) => {
     setTicketToDelete(ticket);
     setIsDeleteModalOpen(true);
   };
