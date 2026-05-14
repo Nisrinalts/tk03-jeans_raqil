@@ -17,7 +17,6 @@ export async function GET() {
     return NextResponse.json(result);
 
   } catch (error) {
-    console.error(error); return NextResponse.json({ message: "Gagal menambahkan ticket.", detail: error.message || String(error) }, { status: 500 });
     return NextResponse.json(
       { message: "Gagal mengambil data ticket." },
       { status: 500 }
@@ -31,7 +30,6 @@ export async function GetCat() {
     return NextResponse.json(result);
 
   } catch (error) {
-    console.error(error); return NextResponse.json({ message: "Gagal menambahkan ticket.", detail: error.message || String(error) }, { status: 500 });
     return NextResponse.json(
       { message: "Gagal mengambil data ticket category." },
       { status: 500 }
@@ -60,7 +58,6 @@ export async function POST(request: Request) {
     return NextResponse.json(result[0]);
 
   } catch (error) {
-    console.error(error); return NextResponse.json({ message: "Gagal menambahkan ticket.", detail: error.message || String(error) }, { status: 500 });
     return NextResponse.json(
       { message: "Gagal menambahkan ticket." },
       { status: 500 }
@@ -105,7 +102,6 @@ export async function PUT(request: Request) {
 
     return NextResponse.json(result[0]);
   } catch (error) {
-    console.error(error); return NextResponse.json({ message: "Gagal menambahkan ticket.", detail: error.message || String(error) }, { status: 500 });
     return NextResponse.json(
       { message: "Gagal memperbarui ticket." },
       { status: 500 }
@@ -133,7 +129,6 @@ export async function DELETE(request: Request) {
 
     return NextResponse.json(result[0]);
   } catch (error) {
-    console.error(error); return NextResponse.json({ message: "Gagal menambahkan ticket.", detail: error.message || String(error) }, { status: 500 });
     return NextResponse.json(
       { message: "Gagal menghapus ticket." },
       { status: 500 }

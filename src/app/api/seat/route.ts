@@ -3,10 +3,11 @@ import { sql } from "@/lib/db";
 export async function GET() {
   try {
     const result = await sql`
-    SELECT s.seat_id, s.section, s.seat_number, s.row_number, t.ticket_id, t.torder_id, og.user_id AS org_user_id, c.full_name, u.user_id, e.event_title, v.venue_name, 
-    CASE 
+    SELECT DISTINCT ON (s.seat_id)
+      s.seat_id, s.section, s.seat_number, s.row_number, t.ticket_id, t.torder_id, og.user_id AS org_user_id, c.full_name, u.user_id, e.event_title, v.venue_name,
+    CASE
         WHEN s.seat_id IN (SELECT seat_id FROM tiktaktuk.has_relationship) THEN 'Terisi' ELSE 'Tersedia' END AS status
-    FROM tiktaktuk.seat s 
+    FROM tiktaktuk.seat s
     LEFT JOIN tiktaktuk.has_relationship hr ON s.seat_id = hr.seat_id
     LEFT JOIN tiktaktuk.ticket t ON hr.ticket_id = t.ticket_id
     LEFT JOIN tiktaktuk.venue v ON s.venue_id = v.venue_id
@@ -16,7 +17,7 @@ export async function GET() {
     LEFT JOIN tiktaktuk.ticket_category tc ON t.tcategory_id = tc.category_id
     LEFT JOIN tiktaktuk.event e ON tc.event_id = e.event_id
     LEFT JOIN tiktaktuk.organizer og ON e.organizer_id = og.organizer_id
-    ORDER BY v.venue_name ASC;`;
+    ORDER BY s.seat_id, v.venue_name ASC;`;
 
     return NextResponse.json(result);
 

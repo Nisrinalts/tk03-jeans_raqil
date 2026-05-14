@@ -3,10 +3,10 @@ import { sql } from "@/lib/db";
 export async function GET() {
   try {
     const result = await sql`
-    SELECT hr.relationship_id, hr.seat_id, hr.ticket_id, s.section, s.seat_number, s.row_number
+    SELECT hr.seat_id, hr.ticket_id, s.section, s.seat_number, s.row_number
     FROM tiktaktuk.has_relationship hr
     JOIN tiktaktuk.seat s ON hr.seat_id = s.seat_id
-    ORDER BY hr.relationship_id ASC;`;
+    ORDER BY hr.seat_id ASC;`;
 
     return NextResponse.json(result);
   } catch (error) {
