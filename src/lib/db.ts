@@ -1,16 +1,15 @@
-import { Pool } from "pg";
+import { Pool, neonConfig } from "@neondatabase/serverless";
 import { neon, NeonQueryFunction } from "@neondatabase/serverless";
+import ws from "ws";
+
+neonConfig.webSocketConstructor = ws;
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: true,
-  },
 });
 
 export default pool;
 
-// Lazy initialization — neon() hanya dipanggil saat query pertama, bukan saat build
 let _sql: NeonQueryFunction<false, false> | null = null;
 
 const getSql = (): NeonQueryFunction<false, false> => {
