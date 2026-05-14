@@ -22,11 +22,6 @@ type EventDisplay = {
   category_names: string[];
 };
 
-const venueOptions: any[] = [];
-const organizerOptions: any[] = [];
-const artistOptions: any[] = [];
-const categoryOptions: any[] = [];
-
 const initialEvents: EventDisplay[] = [];
 
 export default function EventsPage() {
@@ -36,6 +31,11 @@ export default function EventsPage() {
   const [events, setEvents] = useState<EventDisplay[]>(initialEvents);
   const [search, setSearch] = useState("");
 
+  // dropdown options
+  const [venueOptions, setVenueOptions] = useState<any[]>([]);
+  const [organizerOptions, setOrganizerOptions] = useState<any[]>([]);
+  const [artistOptions, setArtistOptions] = useState<any[]>([]);
+
   // create
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [title, setTitle] = useState("");
@@ -44,7 +44,6 @@ export default function EventsPage() {
   const [venueId, setVenueId] = useState("");
   const [organizerId, setOrganizerId] = useState("");
   const [artistId, setArtistId] = useState("");
-  const [categoryIds, setCategoryIds] = useState<string[]>([]);
   const [error, setError] = useState("");
 
   // edit
@@ -56,7 +55,6 @@ export default function EventsPage() {
   const [editVenueId, setEditVenueId] = useState("");
   const [editOrganizerId, setEditOrganizerId] = useState("");
   const [editArtistId, setEditArtistId] = useState("");
-  const [editCategoryIds, setEditCategoryIds] = useState<string[]>([]);
   const [editError, setEditError] = useState("");
 
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
@@ -77,20 +75,39 @@ export default function EventsPage() {
       setOrganizerId(u.organizer_id);
     }
 
-    async function fetchEvents() {
+    async function fetchAll() {
       try {
-        const res = await fetch("/api/events");
-        if (res.ok) {
-          const data = await res.json();
-          setEvents(data);
+        const [eventsRes, venuesRes, organizersRes, artistsRes] = await Promise.all([
+          fetch("/api/events"),
+          fetch("/api/venues"),
+          fetch("/api/organizer"),
+          fetch("/api/artists"),
+        ]);
+
+        if (eventsRes.ok) {
+          const data = await eventsRes.json();
+          if (Array.isArray(data)) setEvents(data);
+        }
+        if (venuesRes.ok) {
+          const data = await venuesRes.json();
+          if (Array.isArray(data)) setVenueOptions(data);
+        }
+        if (organizersRes.ok) {
+          const data = await organizersRes.json();
+          if (Array.isArray(data)) setOrganizerOptions(data);
+        }
+        if (artistsRes.ok) {
+          const data = await artistsRes.json();
+          if (Array.isArray(data)) setArtistOptions(data);
+          else if (Array.isArray(data.artists)) setArtistOptions(data.artists);
         }
       } catch (e) {
-        console.error("Failed to fetch events:", e);
+        console.error("Failed to fetch data:", e);
       } finally {
         setLoading(false);
       }
     }
-    fetchEvents();
+    fetchAll();
   }, [router]);
 
   const canManage = user?.role === "admin" || user?.role === "organizer";
@@ -116,14 +133,10 @@ export default function EventsPage() {
   const resolveOrganizer = (id: string) => organizerOptions.find((o) => o.organizer_id === id);
   const resolveArtist = (id: string) => artistOptions.find((a) => a.artist_id === id);
 
-  const toggleCategory = (id: string, current: string[], setter: (v: string[]) => void) => {
-    setter(current.includes(id) ? current.filter((c) => c !== id) : [...current, id]);
-  };
-
   const resetCreate = () => {
     setTitle(""); setDescription(""); setDatetime(""); setVenueId("");
     if (!isOrganizer) setOrganizerId("");
-    setArtistId(""); setCategoryIds([]); setError("");
+    setArtistId(""); setError("");
   };
 
   const handleCreate = async () => {
@@ -132,7 +145,6 @@ export default function EventsPage() {
     if (!venueId) { setError("Venue wajib dipilih."); return; }
     if (!organizerId) { setError("Organizer wajib dipilih."); return; }
     if (!artistId) { setError("Artis wajib dipilih."); return; }
-    if (categoryIds.length === 0) { setError("Pilih minimal satu kategori tiket."); return; }
 
     try {
       const res = await fetch("/api/events", {
@@ -145,7 +157,6 @@ export default function EventsPage() {
           venue_id: venueId,
           organizer_id: organizerId,
           artist_id: artistId,
-          category_ids: categoryIds,
         }),
       });
 
@@ -176,7 +187,6 @@ export default function EventsPage() {
     setEditVenueId(event.venue_id);
     setEditOrganizerId(event.organizer_id);
     setEditArtistId(event.artist_id);
-    setEditCategoryIds(event.category_ids);
     setEditError("");
     setIsEditOpen(true);
   };
@@ -187,7 +197,6 @@ export default function EventsPage() {
     if (!editVenueId) { setEditError("Venue wajib dipilih."); return; }
     if (!editOrganizerId) { setEditError("Organizer wajib dipilih."); return; }
     if (!editArtistId) { setEditError("Artis wajib dipilih."); return; }
-    if (editCategoryIds.length === 0) { setEditError("Pilih minimal satu kategori tiket."); return; }
 
     try {
       const res = await fetch("/api/events", {
@@ -200,6 +209,7 @@ export default function EventsPage() {
           event_datetime: editDatetime,
           venue_id: editVenueId,
           organizer_id: editOrganizerId,
+          artist_id: editArtistId,
         }),
       });
 
@@ -244,7 +254,7 @@ export default function EventsPage() {
             {canManage && (
               <button
                 onClick={() => { resetCreate(); setIsCreateOpen(true); }}
-                className="inline-flex items-center justify-center rounded-full bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700"
+                className="inline-flex items-center justify-center rounded-full bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
               >
                 <span className="mr-2 text-lg leading-none">＋</span>Tambah Event
               </button>
@@ -424,41 +434,26 @@ export default function EventsPage() {
                 <FormField label="Organizer" required>
                   <select value={organizerId} onChange={(e) => setOrganizerId(e.target.value)} className={inputCls}>
                     <option value="">-- Pilih Organizer --</option>
-                    {organizerOptions.map((o) => <option key={o.organizer_id} value={o.organizer_id}>{o.organizer_name}</option>)}
+                    {organizerOptions.map((o) => <option key={o.organizer_id} value={o.organizer_id}>{o.username}</option>)}
                   </select>
                 </FormField>
               )}
               <FormField label="Artis" required>
                 <select value={artistId} onChange={(e) => setArtistId(e.target.value)} className={inputCls}>
                   <option value="">-- Pilih Artis --</option>
-                  {artistOptions.map((a) => <option key={a.artist_id} value={a.artist_id}>{a.artist_name}</option>)}
+                  {artistOptions.map((a) => <option key={a.artist_id} value={a.artist_id}>{a.name}</option>)}
                 </select>
               </FormField>
-              <FormField label="Kategori Tiket" required>
-                <div className="flex flex-wrap gap-2">
-                  {categoryOptions.map((c) => (
-                    <button
-                      key={c.category_id}
-                      type="button"
-                      onClick={() => toggleCategory(c.category_id, categoryIds, setCategoryIds)}
-                      className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
-                        categoryIds.includes(c.category_id)
-                          ? "border-indigo-500 bg-indigo-600 text-white"
-                          : "border-slate-200 bg-white text-slate-600 hover:border-indigo-300 hover:bg-indigo-50"
-                      }`}
-                    >
-                      {c.category_name}
-                    </button>
-                  ))}
-                </div>
-              </FormField>
+              <p className="text-xs text-slate-500">
+                Kategori tiket dikelola terpisah di halaman <span className="font-semibold">Kategori Tiket</span> setelah event dibuat.
+              </p>
               {error && <p className="text-sm font-medium text-rose-500">{error}</p>}
             </div>
             <div className="flex gap-3 px-7 py-5 border-t border-slate-100">
               <button onClick={() => { setIsCreateOpen(false); resetCreate(); }}
                 className="w-full rounded-2xl border border-slate-200 px-4 py-3 font-semibold text-slate-700 transition hover:bg-slate-50">Batal</button>
               <button onClick={handleCreate}
-                className="w-full rounded-2xl bg-indigo-600 px-4 py-3 font-semibold text-white transition hover:bg-indigo-700">Tambah Event</button>
+                className="w-full rounded-2xl bg-blue-600 px-4 py-3 font-semibold text-white transition hover:bg-blue-700">Tambah Event</button>
             </div>
           </div>
         </div>
@@ -494,41 +489,26 @@ export default function EventsPage() {
                 <FormField label="Organizer" required>
                   <select value={editOrganizerId} onChange={(e) => setEditOrganizerId(e.target.value)} className={inputCls}>
                     <option value="">-- Pilih Organizer --</option>
-                    {organizerOptions.map((o) => <option key={o.organizer_id} value={o.organizer_id}>{o.organizer_name}</option>)}
+                    {organizerOptions.map((o) => <option key={o.organizer_id} value={o.organizer_id}>{o.username}</option>)}
                   </select>
                 </FormField>
               )}
               <FormField label="Artis" required>
                 <select value={editArtistId} onChange={(e) => setEditArtistId(e.target.value)} className={inputCls}>
                   <option value="">-- Pilih Artis --</option>
-                  {artistOptions.map((a) => <option key={a.artist_id} value={a.artist_id}>{a.artist_name}</option>)}
+                  {artistOptions.map((a) => <option key={a.artist_id} value={a.artist_id}>{a.name}</option>)}
                 </select>
               </FormField>
-              <FormField label="Kategori Tiket" required>
-                <div className="flex flex-wrap gap-2">
-                  {categoryOptions.map((c) => (
-                    <button
-                      key={c.category_id}
-                      type="button"
-                      onClick={() => toggleCategory(c.category_id, editCategoryIds, setEditCategoryIds)}
-                      className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
-                        editCategoryIds.includes(c.category_id)
-                          ? "border-indigo-500 bg-indigo-600 text-white"
-                          : "border-slate-200 bg-white text-slate-600 hover:border-indigo-300 hover:bg-indigo-50"
-                      }`}
-                    >
-                      {c.category_name}
-                    </button>
-                  ))}
-                </div>
-              </FormField>
+              <p className="text-xs text-slate-500">
+                Kategori tiket dikelola terpisah di halaman <span className="font-semibold">Kategori Tiket</span>.
+              </p>
               {editError && <p className="text-sm font-medium text-rose-500">{editError}</p>}
             </div>
             <div className="flex gap-3 px-7 py-5 border-t border-slate-100">
               <button onClick={() => setIsEditOpen(false)}
                 className="w-full rounded-2xl border border-slate-200 px-4 py-3 font-semibold text-slate-700 transition hover:bg-slate-50">Batal</button>
               <button onClick={handleUpdate}
-                className="w-full rounded-2xl bg-indigo-600 px-4 py-3 font-semibold text-white transition hover:bg-indigo-700">Simpan Perubahan</button>
+                className="w-full rounded-2xl bg-blue-600 px-4 py-3 font-semibold text-white transition hover:bg-blue-700">Simpan Perubahan</button>
             </div>
           </div>
         </div>
