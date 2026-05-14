@@ -9,6 +9,7 @@ export async function GET() {
         e.event_title,
         e.event_datetime,
         e.venue_id,
+        v.venue_name,
         e.organizer_id,
         ea.artist_id,
         ARRAY_AGG(tc.category_id) as category_ids,
@@ -19,7 +20,7 @@ export async function GET() {
       LEFT JOIN tiktaktuk.event_artist ea ON e.event_id = ea.event_id
       LEFT JOIN tiktaktuk.artist a ON ea.artist_id = a.artist_id
       LEFT JOIN tiktaktuk.ticket_category tc ON e.event_id = tc.event_id
-      GROUP BY e.event_id, ea.artist_id;
+      GROUP BY e.event_id, v.venue_name, ea.artist_id;
     `);
     return NextResponse.json(result.rows);
   } catch (error: any) {
