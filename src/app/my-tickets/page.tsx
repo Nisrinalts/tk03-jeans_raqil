@@ -352,7 +352,7 @@ export default function TicketPage() {
       if (response.ok) {
         const updatedTickets = await retrieveTickets();
         setTickets(updatedTickets || []);
-        const recent = updatedTickets.filter((t) => t.ticket_code === ticketCode)[0];
+        const recent = updatedTickets.filter((t: Ticket) => t.ticket_code === ticketCode)[0];
         // Refresh \
         if (createSeat !== "") {
           const responseSeat = await fetch("/api/has-relationship", {
