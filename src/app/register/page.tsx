@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import toast, { Toaster } from "react-hot-toast";
 
 type Role = "customer" | "organizer" | "admin";
 
@@ -37,19 +38,21 @@ export default function RegisterPage() {
   const handleSubmit = async () => {
     setError("");
     if (!username.trim() || !password.trim() || !confirmPassword.trim()) {
-      setError("Username dan password wajib diisi.");
+      const msg = "Username dan password wajib diisi.";
+      toast.error(msg);
       return;
     }
     if (password !== confirmPassword) {
-      setError("Konfirmasi password tidak cocok.");
+      const msg = "Konfirmasi password tidak cocok.";
+      toast.error(msg);
       return;
     }
     if (role === "customer" && !fullName.trim()) {
-      setError("Nama lengkap wajib diisi.");
+      toast.error("Nama lengkap wajib diisi.");
       return;
     }
     if (role === "organizer" && !organizerName.trim()) {
-      setError("Nama organizer wajib diisi.");
+      toast.error("Nama organizer wajib diisi.");
       return;
     }
     // admin: tidak ada field tambahan
@@ -73,16 +76,17 @@ export default function RegisterPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        // Tampilkan pesan error langsung dari trigger/procedure database.
-        setError(data?.message ?? "Pendaftaran gagal.");
+        // Pesan error langsung dari trigger/procedure database → tampilkan sebagai toast.
+        toast.error(data?.message ?? "Pendaftaran gagal.");
         return;
       }
 
+      toast.success("Pendaftaran berhasil. Mengarahkan ke halaman login...");
       setSuccess(true);
       setTimeout(() => router.push("/login"), 1500);
     } catch (e) {
       console.error(e);
-      setError("Terjadi kesalahan jaringan. Coba lagi.");
+      toast.error("Terjadi kesalahan jaringan. Coba lagi.");
     } finally {
       setSubmitting(false);
     }
@@ -182,12 +186,6 @@ export default function RegisterPage() {
               </div>
             )}
 
-            {error && (
-              <p className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600">
-                {error}
-              </p>
-            )}
-
             <button
               onClick={handleSubmit}
               disabled={success || submitting}
@@ -206,6 +204,7 @@ export default function RegisterPage() {
           </Link>
         </div>
       </div>
+      <Toaster position="top-right" />
     </main>
   );
 }

@@ -30,7 +30,7 @@ export async function POST(request: Request) {
     }
 
     const result = await pool.query(
-      `INSERT INTO tiktaktuk.venue (name, city, address, capacity) VALUES ($1, $2, $3, $4) RETURNING *;`,
+      `INSERT INTO tiktaktuk.venue (venue_id, venue_name, city, address, capacity) VALUES (gen_random_uuid(), $1, $2, $3, $4) RETURNING *;`,
       [name, city, address, capacity]
     );
 
@@ -56,7 +56,7 @@ export async function PUT(request: Request) {
     }
 
     const result = await pool.query(
-      `UPDATE tiktaktuk.venue SET name = $2, city = $3, address = $4, capacity = $5 WHERE venue_id = $1 RETURNING *;`,
+      `UPDATE tiktaktuk.venue SET venue_name = $2, city = $3, address = $4, capacity = $5 WHERE venue_id = $1 RETURNING *;`,
       [venue_id, name, city, address, capacity]
     );
 

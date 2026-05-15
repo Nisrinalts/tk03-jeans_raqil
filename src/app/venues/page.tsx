@@ -113,7 +113,10 @@ export default function VenuesPage() {
         }),
       });
 
-      if (!res.ok) throw new Error("Gagal menambahkan venue.");
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.message ?? "Gagal menambahkan venue.");
+      }
 
       const fetchRes = await fetch("/api/venues");
       if (fetchRes.ok) {
@@ -161,7 +164,10 @@ export default function VenuesPage() {
         }),
       });
 
-      if (!res.ok) throw new Error("Gagal memperbarui venue.");
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.message ?? "Gagal memperbarui venue.");
+      }
 
       const fetchRes = await fetch("/api/venues");
       if (fetchRes.ok) {
@@ -190,7 +196,10 @@ export default function VenuesPage() {
         body: JSON.stringify({ venue_id: venueToDelete.venue_id }),
       });
 
-      if (!res.ok) throw new Error("Gagal menghapus venue.");
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.message ?? "Gagal menghapus venue.");
+      }
 
       const fetchRes = await fetch("/api/venues");
       if (fetchRes.ok) {
