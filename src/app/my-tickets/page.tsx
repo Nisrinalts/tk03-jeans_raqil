@@ -612,7 +612,6 @@ export default function TicketPage() {
                         </button>
                          <button 
                           onClick={() => handleDeleteTicket(ticket)}
-                          disabled={ticket.status === "Dipakai"}
                           className="p-2 rounded-lg transition-colors 
                                text-red-500 hover:bg-red-50"
                           
