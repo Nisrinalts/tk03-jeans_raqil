@@ -7,19 +7,31 @@ import Navbar from "@/components/Navbar";
 import { getUser, AuthUser } from "@/lib/auth";
 import LoadingState from "@/components/LoadingState";
 
+type CategoryDraft = {
+  category_id?: string;
+  category_name: string;
+  price: string;
+  quota: string;
+};
+
+type CategoryFromApi = {
+  category_id: string;
+  category_name: string;
+  price: number;
+  quota: number;
+};
+
 type EventDisplay = {
   event_id: string;
   event_datetime: string;
   event_title: string;
-  description: string;
   venue_id: string;
   venue_name: string;
   organizer_id: string;
   organizer_name: string;
-  artist_id: string;
-  artist_name: string;
-  category_ids: string[];
-  category_names: string[];
+  artist_ids: string[];
+  artist_names: string[];
+  categories: CategoryFromApi[];
 };
 
 const initialEvents: EventDisplay[] = [];
@@ -39,22 +51,24 @@ export default function EventsPage() {
   // create
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
   const [datetime, setDatetime] = useState("");
   const [venueId, setVenueId] = useState("");
   const [organizerId, setOrganizerId] = useState("");
-  const [artistId, setArtistId] = useState("");
+  const [artistIds, setArtistIds] = useState<string[]>([]);
+  const [createCategories, setCreateCategories] = useState<CategoryDraft[]>([
+    { category_name: "", price: "", quota: "" },
+  ]);
   const [error, setError] = useState("");
 
   // edit
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [selectedId, setSelectedId] = useState("");
   const [editTitle, setEditTitle] = useState("");
-  const [editDescription, setEditDescription] = useState("");
   const [editDatetime, setEditDatetime] = useState("");
   const [editVenueId, setEditVenueId] = useState("");
   const [editOrganizerId, setEditOrganizerId] = useState("");
-  const [editArtistId, setEditArtistId] = useState("");
+  const [editArtistIds, setEditArtistIds] = useState<string[]>([]);
+  const [editCategories, setEditCategories] = useState<CategoryDraft[]>([]);
   const [editError, setEditError] = useState("");
 
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
@@ -125,7 +139,7 @@ export default function EventsPage() {
         e.event_title.toLowerCase().includes(kw) ||
         e.venue_name.toLowerCase().includes(kw) ||
         e.organizer_name.toLowerCase().includes(kw) ||
-        e.artist_name.toLowerCase().includes(kw)
+        (Array.isArray(e.artist_names) && e.artist_names.some((n) => n?.toLowerCase().includes(kw)))
     );
   }, [search, events, isOrganizer, user]);
 
@@ -134,9 +148,42 @@ export default function EventsPage() {
   const resolveArtist = (id: string) => artistOptions.find((a) => a.artist_id === id);
 
   const resetCreate = () => {
-    setTitle(""); setDescription(""); setDatetime(""); setVenueId("");
+    setTitle(""); setDatetime(""); setVenueId("");
     if (!isOrganizer) setOrganizerId("");
-    setArtistId(""); setError("");
+    setArtistIds([]);
+    setCreateCategories([{ category_name: "", price: "", quota: "" }]);
+    setError("");
+  };
+
+  const updateCategoryField = (
+    list: CategoryDraft[],
+    setter: (v: CategoryDraft[]) => void,
+    idx: number,
+    field: keyof CategoryDraft,
+    value: string
+  ) => {
+    const next = list.map((c, i) => (i === idx ? { ...c, [field]: value } : c));
+    setter(next);
+  };
+
+  const addCategoryRow = (list: CategoryDraft[], setter: (v: CategoryDraft[]) => void) => {
+    setter([...list, { category_name: "", price: "", quota: "" }]);
+  };
+
+  const removeCategoryRow = (list: CategoryDraft[], setter: (v: CategoryDraft[]) => void, idx: number) => {
+    setter(list.filter((_, i) => i !== idx));
+  };
+
+  const validateCategories = (cats: CategoryDraft[]): string | null => {
+    if (cats.length === 0) return "Minimal satu kategori tiket wajib diisi.";
+    for (const c of cats) {
+      if (!c.category_name.trim()) return "Nama kategori wajib diisi.";
+      const price = Number(c.price);
+      const quota = Number(c.quota);
+      if (!Number.isFinite(price) || price < 0) return "Harga kategori tidak valid.";
+      if (!Number.isFinite(quota) || quota <= 0) return "Kuota kategori harus lebih dari 0.";
+    }
+    return null;
   };
 
   const handleCreate = async () => {
@@ -144,7 +191,9 @@ export default function EventsPage() {
     if (!datetime) { setError("Tanggal & waktu wajib diisi."); return; }
     if (!venueId) { setError("Venue wajib dipilih."); return; }
     if (!organizerId) { setError("Organizer wajib dipilih."); return; }
-    if (!artistId) { setError("Artis wajib dipilih."); return; }
+    if (artistIds.length === 0) { setError("Pilih minimal satu artis."); return; }
+    const catErr = validateCategories(createCategories);
+    if (catErr) { setError(catErr); return; }
 
     try {
       const res = await fetch("/api/events", {
@@ -152,11 +201,15 @@ export default function EventsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           event_title: title.trim(),
-          description: description.trim(),
           event_datetime: datetime,
           venue_id: venueId,
           organizer_id: organizerId,
-          artist_id: artistId,
+          artist_ids: artistIds,
+          categories: createCategories.map((c) => ({
+            category_name: c.category_name.trim(),
+            price: Number(c.price),
+            quota: Number(c.quota),
+          })),
         }),
       });
 
@@ -179,14 +232,32 @@ export default function EventsPage() {
     }
   };
 
+  const formatDatetimeLocal = (raw: string) => {
+    if (!raw) return "";
+    // Postgres timestamp -> "YYYY-MM-DDTHH:MM" for <input type="datetime-local">
+    const d = new Date(raw);
+    if (isNaN(d.getTime())) return "";
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  };
+
   const handleOpenEdit = (event: EventDisplay) => {
     setSelectedId(event.event_id);
-    setEditTitle(event.event_title);
-    setEditDescription(event.description);
-    setEditDatetime(event.event_datetime);
-    setEditVenueId(event.venue_id);
-    setEditOrganizerId(event.organizer_id);
-    setEditArtistId(event.artist_id);
+    setEditTitle(event.event_title ?? "");
+    setEditDatetime(formatDatetimeLocal(event.event_datetime));
+    setEditVenueId(event.venue_id ?? "");
+    setEditOrganizerId(event.organizer_id ?? "");
+    setEditArtistIds(Array.isArray(event.artist_ids) ? event.artist_ids : []);
+    setEditCategories(
+      Array.isArray(event.categories)
+        ? event.categories.map((c) => ({
+            category_id: c.category_id,
+            category_name: c.category_name,
+            price: String(c.price ?? ""),
+            quota: String(c.quota ?? ""),
+          }))
+        : []
+    );
     setEditError("");
     setIsEditOpen(true);
   };
@@ -196,7 +267,9 @@ export default function EventsPage() {
     if (!editDatetime) { setEditError("Tanggal & waktu wajib diisi."); return; }
     if (!editVenueId) { setEditError("Venue wajib dipilih."); return; }
     if (!editOrganizerId) { setEditError("Organizer wajib dipilih."); return; }
-    if (!editArtistId) { setEditError("Artis wajib dipilih."); return; }
+    if (editArtistIds.length === 0) { setEditError("Pilih minimal satu artis."); return; }
+    const catErr = validateCategories(editCategories);
+    if (catErr) { setEditError(catErr); return; }
 
     try {
       const res = await fetch("/api/events", {
@@ -205,11 +278,16 @@ export default function EventsPage() {
         body: JSON.stringify({
           event_id: selectedId,
           event_title: editTitle.trim(),
-          description: editDescription.trim(),
           event_datetime: editDatetime,
           venue_id: editVenueId,
           organizer_id: editOrganizerId,
-          artist_id: editArtistId,
+          artist_ids: editArtistIds,
+          categories: editCategories.map((c) => ({
+            category_id: c.category_id,
+            category_name: c.category_name.trim(),
+            price: Number(c.price),
+            quota: Number(c.quota),
+          })),
         }),
       });
 
@@ -345,26 +423,33 @@ export default function EventsPage() {
                             </div>
                             <div>
                               <p className="font-semibold text-slate-900">{event.event_title}</p>
-                              {event.description && (
-                                <p className="mt-0.5 max-w-xs truncate text-xs text-slate-400">{event.description}</p>
-                              )}
                             </div>
                           </div>
                         </td>
                         <td className="px-6 py-5 whitespace-nowrap">{event.event_datetime.replace("T", " ")}</td>
                         <td className="px-6 py-5">
-                          <span className="inline-flex rounded-full bg-purple-50 border border-purple-100 px-3 py-1 text-xs font-semibold text-purple-700">
-                            {event.artist_name}
-                          </span>
+                          <div className="flex flex-wrap gap-1">
+                            {(event.artist_names ?? []).map((n, idx) => (
+                              <span key={`${event.event_id}-${idx}`} className="inline-flex rounded-full bg-purple-50 border border-purple-100 px-3 py-1 text-xs font-semibold text-purple-700">
+                                {n}
+                              </span>
+                            ))}
+                            {(event.artist_names ?? []).length === 0 && (
+                              <span className="text-xs text-slate-400 italic">Belum ada artis</span>
+                            )}
+                          </div>
                         </td>
                         <td className="px-6 py-5 font-medium text-slate-900">{event.venue_name}</td>
                         <td className="px-6 py-5">
                           <div className="flex flex-wrap gap-1">
-                            {event.category_names.map((cat) => (
-                              <span key={cat} className="inline-flex rounded-full bg-slate-100 border border-slate-200 px-2 py-0.5 text-xs font-medium text-slate-600">
-                                {cat}
+                            {(event.categories ?? []).map((cat) => (
+                              <span key={cat.category_id} className="inline-flex rounded-full bg-slate-100 border border-slate-200 px-2 py-0.5 text-xs font-medium text-slate-600">
+                                {cat.category_name}
                               </span>
                             ))}
+                            {(event.categories ?? []).length === 0 && (
+                              <span className="text-xs text-slate-400 italic">Belum ada</span>
+                            )}
                           </div>
                         </td>
                         {!isOrganizer && <td className="px-6 py-5 text-slate-600">{event.organizer_name}</td>}
@@ -417,10 +502,6 @@ export default function EventsPage() {
                 <input type="text" placeholder="cth. The Weeknd After Hours Tour" value={title} onChange={(e) => setTitle(e.target.value)}
                   className={inputCls} />
               </FormField>
-              <FormField label="Deskripsi">
-                <textarea rows={3} placeholder="Deskripsi singkat tentang event..." value={description} onChange={(e) => setDescription(e.target.value)}
-                  className={inputCls + " resize-none"} />
-              </FormField>
               <FormField label="Tanggal & Waktu" required>
                 <input type="datetime-local" value={datetime} onChange={(e) => setDatetime(e.target.value)} className={inputCls} />
               </FormField>
@@ -439,14 +520,76 @@ export default function EventsPage() {
                 </FormField>
               )}
               <FormField label="Artis" required>
-                <select value={artistId} onChange={(e) => setArtistId(e.target.value)} className={inputCls}>
-                  <option value="">-- Pilih Artis --</option>
-                  {artistOptions.map((a) => <option key={a.artist_id} value={a.artist_id}>{a.name}</option>)}
-                </select>
+                <div className="flex flex-wrap gap-2">
+                  {artistOptions.map((a) => {
+                    const selected = artistIds.includes(a.artist_id);
+                    return (
+                      <button
+                        key={a.artist_id}
+                        type="button"
+                        onClick={() => setArtistIds(selected ? artistIds.filter(id => id !== a.artist_id) : [...artistIds, a.artist_id])}
+                        className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                          selected
+                            ? "border-blue-500 bg-blue-600 text-white"
+                            : "border-slate-200 bg-white text-slate-600 hover:border-blue-300 hover:bg-blue-50"
+                        }`}
+                      >
+                        {a.name}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="mt-2 text-xs text-slate-400">Bisa pilih lebih dari satu artis.</p>
               </FormField>
-              <p className="text-xs text-slate-500">
-                Kategori tiket dikelola terpisah di halaman <span className="font-semibold">Kategori Tiket</span> setelah event dibuat.
-              </p>
+              <FormField label="Kategori Tiket" required>
+                <div className="space-y-3">
+                  {createCategories.map((cat, idx) => (
+                    <div key={idx} className="rounded-2xl border border-slate-200 bg-slate-50 p-3 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          placeholder="Nama kategori (cth. VIP)"
+                          value={cat.category_name}
+                          onChange={(e) => updateCategoryField(createCategories, setCreateCategories, idx, "category_name", e.target.value)}
+                          className={inputCls + " flex-1"}
+                        />
+                        {createCategories.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removeCategoryRow(createCategories, setCreateCategories, idx)}
+                            className="flex h-9 w-9 items-center justify-center rounded-full border border-rose-200 bg-white text-rose-500 transition hover:bg-rose-50"
+                          >
+                            ×
+                          </button>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <input
+                          type="number"
+                          placeholder="Harga"
+                          value={cat.price}
+                          onChange={(e) => updateCategoryField(createCategories, setCreateCategories, idx, "price", e.target.value)}
+                          className={inputCls}
+                        />
+                        <input
+                          type="number"
+                          placeholder="Kuota"
+                          value={cat.quota}
+                          onChange={(e) => updateCategoryField(createCategories, setCreateCategories, idx, "quota", e.target.value)}
+                          className={inputCls}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => addCategoryRow(createCategories, setCreateCategories)}
+                    className="text-sm font-semibold text-blue-600 hover:text-blue-700"
+                  >
+                    + Tambah Kategori
+                  </button>
+                </div>
+              </FormField>
               {error && <p className="text-sm font-medium text-rose-500">{error}</p>}
             </div>
             <div className="flex gap-3 px-7 py-5 border-t border-slate-100">
@@ -472,10 +615,6 @@ export default function EventsPage() {
                 <input type="text" placeholder="cth. The Weeknd After Hours Tour" value={editTitle} onChange={(e) => setEditTitle(e.target.value)}
                   className={inputCls} />
               </FormField>
-              <FormField label="Deskripsi">
-                <textarea rows={3} placeholder="Deskripsi singkat tentang event..." value={editDescription} onChange={(e) => setEditDescription(e.target.value)}
-                  className={inputCls + " resize-none"} />
-              </FormField>
               <FormField label="Tanggal & Waktu" required>
                 <input type="datetime-local" value={editDatetime} onChange={(e) => setEditDatetime(e.target.value)} className={inputCls} />
               </FormField>
@@ -494,14 +633,76 @@ export default function EventsPage() {
                 </FormField>
               )}
               <FormField label="Artis" required>
-                <select value={editArtistId} onChange={(e) => setEditArtistId(e.target.value)} className={inputCls}>
-                  <option value="">-- Pilih Artis --</option>
-                  {artistOptions.map((a) => <option key={a.artist_id} value={a.artist_id}>{a.name}</option>)}
-                </select>
+                <div className="flex flex-wrap gap-2">
+                  {artistOptions.map((a) => {
+                    const selected = editArtistIds.includes(a.artist_id);
+                    return (
+                      <button
+                        key={a.artist_id}
+                        type="button"
+                        onClick={() => setEditArtistIds(selected ? editArtistIds.filter(id => id !== a.artist_id) : [...editArtistIds, a.artist_id])}
+                        className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                          selected
+                            ? "border-blue-500 bg-blue-600 text-white"
+                            : "border-slate-200 bg-white text-slate-600 hover:border-blue-300 hover:bg-blue-50"
+                        }`}
+                      >
+                        {a.name}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="mt-2 text-xs text-slate-400">Bisa pilih lebih dari satu artis.</p>
               </FormField>
-              <p className="text-xs text-slate-500">
-                Kategori tiket dikelola terpisah di halaman <span className="font-semibold">Kategori Tiket</span>.
-              </p>
+              <FormField label="Kategori Tiket" required>
+                <div className="space-y-3">
+                  {editCategories.map((cat, idx) => (
+                    <div key={cat.category_id ?? `new-${idx}`} className="rounded-2xl border border-slate-200 bg-slate-50 p-3 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          placeholder="Nama kategori (cth. VIP)"
+                          value={cat.category_name}
+                          onChange={(e) => updateCategoryField(editCategories, setEditCategories, idx, "category_name", e.target.value)}
+                          className={inputCls + " flex-1"}
+                        />
+                        {editCategories.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removeCategoryRow(editCategories, setEditCategories, idx)}
+                            className="flex h-9 w-9 items-center justify-center rounded-full border border-rose-200 bg-white text-rose-500 transition hover:bg-rose-50"
+                          >
+                            ×
+                          </button>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <input
+                          type="number"
+                          placeholder="Harga"
+                          value={cat.price}
+                          onChange={(e) => updateCategoryField(editCategories, setEditCategories, idx, "price", e.target.value)}
+                          className={inputCls}
+                        />
+                        <input
+                          type="number"
+                          placeholder="Kuota"
+                          value={cat.quota}
+                          onChange={(e) => updateCategoryField(editCategories, setEditCategories, idx, "quota", e.target.value)}
+                          className={inputCls}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => addCategoryRow(editCategories, setEditCategories)}
+                    className="text-sm font-semibold text-blue-600 hover:text-blue-700"
+                  >
+                    + Tambah Kategori
+                  </button>
+                </div>
+              </FormField>
               {editError && <p className="text-sm font-medium text-rose-500">{editError}</p>}
             </div>
             <div className="flex gap-3 px-7 py-5 border-t border-slate-100">
