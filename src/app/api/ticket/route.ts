@@ -58,8 +58,10 @@ export async function POST(request: Request) {
     return NextResponse.json(result[0]);
 
   } catch (error) {
+    console.error(error.message);
+    const errorMessage = error.message || "Gagal menambahkan ticket.";
     return NextResponse.json(
-      { message: "Gagal menambahkan ticket." },
+      { message: "Gagal menambahkan ticket.", detail: errorMessage },
       { status: 500 }
     );
   }

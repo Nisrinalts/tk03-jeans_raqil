@@ -359,7 +359,7 @@ export default function TicketPage() {
         });
       } catch (error) {
         console.error("Error creating ticket:", error);
-        toast.error(String(error));
+        toast.error(String(error.message || "Gagal membuat tiket. Silakan coba lagi."));
         return;
       }
 
@@ -672,7 +672,7 @@ export default function TicketPage() {
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Pelanggan</label>
-                      <p className="font-medium text-slate-800">{ticketToEdit.customer_name}</p>
+                      <p className="font-medium text-slate-800">{ticketToEdit.full_name}</p>
                     </div>
                     <div className="sm:col-span-2">
                       <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Event & Kategori</label>
@@ -792,20 +792,6 @@ export default function TicketPage() {
               <div className="p-6 overflow-y-auto flex-1">
                 <form id="createTicketForm" onSubmit={handleCreateTicket} className="space-y-5">
                   <div>
-                    <label className="block text-sm font-semibold text-slate-800 mb-2">Kategori Tiket</label>
-                    <select
-                      required
-                      value={createCategoryId}
-                      onChange={(e) => setCreateCategoryId(e.target.value)}
-                      className="w-full border-2 border-slate-200 text-slate-700 rounded-xl px-4 py-3 text-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50 outline-none cursor-pointer bg-white transition-all font-medium"
-                    >
-                      <option id="1" value="">Pilih kategori</option>
-                      {categories.map((category) => (
-                        <option key={category.category_id} value={category.category_id}>{category.event_title} - {category.category_name} - Rp.{category.price}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
                     <label className="block text-sm font-semibold text-slate-800 mb-2">Order</label>
                     <select
                       required
@@ -814,14 +800,29 @@ export default function TicketPage() {
                       className="w-full border-2 border-slate-200 text-slate-700 rounded-xl px-4 py-3 text-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50 outline-none cursor-pointer bg-white transition-all font-medium"
                     >
                       <option value="">Pilih order</option>
-                      {orders
-                        .filter(order => {
-                          if (!createCategoryId) return true;
-                          const selectedCat = categories.find(c => c.category_id === createCategoryId);
-                          return selectedCat ? order.event_title === selectedCat.event_title : true;
-                        })
-                        .map((order) => (
-                        <option key={order.order_id} value={order.order_id}>{order.order_id} - {order.customer_name} ({order.event_title})</option>
+                      {orders.map((order) => (
+                        <option key={order.order_id} value={order.order_id}>{order.order_id} - {order.customer_name} - {order.event_title}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-800 mb-2">Kategori Tiket</label>
+                    <select
+                      required
+                      value={createCategoryId}
+                      onChange={(e) => setCreateCategoryId(e.target.value)}
+                      className="w-full border-2 border-slate-200 text-slate-700 rounded-xl px-4 py-3 text-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50 outline-none cursor-pointer bg-white transition-all font-medium"
+                    >
+                      <option id="1" value="">Pilih kategori</option>
+                      {categories.
+                      filter((cat) => {
+                        if (!createOrderId) {
+                          return true;
+                        }
+                        const selectedOrder = orders.find(o => o.order_id === createOrderId);
+                        return selectedOrder ? selectedOrder.event_title === cat.event_title : true;
+                      }).map((category) => (
+                        <option key={category.category_id} value={category.category_id}>{category.event_title} - {category.category_name} - Rp.{category.price}</option>
                       ))}
                     </select>
                   </div>
