@@ -74,12 +74,6 @@ export default function ArtistsPage() {
   >("select");
   const [roleEA, setRoleEA] = useState("");
 
-  const [editingEventArtistKey, setEditingEventArtistKey] = useState("");
-  const [editingEventArtistRole, setEditingEventArtistRole] = useState("");
-  const [editingEventArtistError, setEditingEventArtistError] = useState("");
-  const [eventArtistToDelete, setEventArtistToDelete] =
-    useState<EventArtist | null>(null);
-
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [name, setName] = useState("");
   const [genre, setGenre] = useState("");
@@ -381,105 +375,6 @@ const handleAddEventArtist = async () => {
 
 const getEventArtistKey = (eventId: string, artistId: string) =>
   `${eventId}-${artistId}`;
-
-const handleStartEditEventArtist = (item: EventArtist) => {
-  setEditingEventArtistKey(getEventArtistKey(item.event_id, item.artist_id));
-  setEditingEventArtistRole(item.role);
-  setEditingEventArtistError("");
-};
-
-const handleCancelEditEventArtist = () => {
-  setEditingEventArtistKey("");
-  setEditingEventArtistRole("");
-  setEditingEventArtistError("");
-};
-
-const handleUpdateEventArtist = async (item: EventArtist) => {
-  if (!editingEventArtistRole.trim()) {
-    setEditingEventArtistError("Role wajib diisi.");
-    return;
-  }
-
-  try {
-    setEditingEventArtistError("");
-
-    const res = await fetch("/api/event-artists", {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        event_id: item.event_id,
-        artist_id: item.artist_id,
-        role: editingEventArtistRole.trim(),
-      }),
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      setEditingEventArtistError(data.message || "Gagal memperbarui role.");
-      showToast(data.message || "Gagal memperbarui role.", "error");
-      return;
-    }
-
-    setEventArtists((prev) =>
-      prev.map((eventArtist) =>
-        eventArtist.event_id === item.event_id &&
-        eventArtist.artist_id === item.artist_id
-          ? data
-          : eventArtist
-      )
-    );
-    handleCancelEditEventArtist();
-    showToast("Role artist event berhasil diperbarui.", "warning");
-  } catch (error) {
-    console.error(error);
-    setEditingEventArtistError("Gagal memperbarui role.");
-    showToast("Gagal memperbarui role.", "error");
-  }
-};
-
-const handleOpenDeleteEventArtist = (item: EventArtist) => {
-  setEventArtistToDelete(item);
-};
-
-const handleDeleteEventArtist = async () => {
-  if (!eventArtistToDelete) return;
-
-  try {
-    const res = await fetch("/api/event-artists", {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        event_id: eventArtistToDelete.event_id,
-        artist_id: eventArtistToDelete.artist_id,
-      }),
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      showToast(data.message || "Gagal menghapus artist dari event.", "error");
-      return;
-    }
-
-    setEventArtists((prev) =>
-      prev.filter(
-        (eventArtist) =>
-          eventArtist.event_id !== eventArtistToDelete.event_id ||
-          eventArtist.artist_id !== eventArtistToDelete.artist_id
-      )
-    );
-    setEventArtistToDelete(null);
-    showToast("Artist berhasil dihapus dari event.", "danger");
-  } catch (error) {
-    console.error(error);
-    showToast("Gagal menghapus artist dari event.", "error");
-  }
-};
   
   if (!role) return null;
 
@@ -764,84 +659,25 @@ const handleDeleteEventArtist = async () => {
               <th className="px-5 py-4">Event</th>
               <th className="px-5 py-4">Artist</th>
               <th className="px-5 py-4">Role</th>
-              <th className="px-5 py-4 text-right">Action</th>
             </tr>
           </thead>
 
           <tbody className="divide-y divide-slate-100 bg-white">
-            {eventArtists.map((item) => {
-              const key = getEventArtistKey(item.event_id, item.artist_id);
-              const isEditing = editingEventArtistKey === key;
-
-              return (
-                <tr key={key}>
-                  <td className="px-5 py-4 font-medium text-slate-700">
-                    {item.event_title}
-                  </td>
-                  <td className="px-5 py-4 font-semibold text-slate-900">
-                    {item.artist_name}
-                  </td>
-                  <td className="px-5 py-4">
-                    {isEditing ? (
-                      <div>
-                        <input
-                          type="text"
-                          value={editingEventArtistRole}
-                          onChange={(e) =>
-                            setEditingEventArtistRole(e.target.value)
-                          }
-                          className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-blue-500"
-                        />
-                        {editingEventArtistError && (
-                          <p className="mt-2 text-xs font-medium text-rose-600">
-                            {editingEventArtistError}
-                          </p>
-                        )}
-                      </div>
-                    ) : (
-                      <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700">
-                        {item.role}
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-5 py-4">
-                    <div className="flex justify-end gap-2">
-                      {isEditing ? (
-                        <>
-                          <button
-                            onClick={() => handleUpdateEventArtist(item)}
-                            className="rounded-xl bg-blue-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-700"
-                          >
-                            Simpan
-                          </button>
-                          <button
-                            onClick={handleCancelEditEventArtist}
-                            className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-50"
-                          >
-                            Batal
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          <button
-                            onClick={() => handleStartEditEventArtist(item)}
-                            className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => handleOpenDeleteEventArtist(item)}
-                            className="rounded-xl border border-rose-200 px-3 py-2 text-xs font-semibold text-rose-600 transition hover:bg-rose-50"
-                          >
-                            Hapus
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
+            {eventArtists.map((item) => (
+              <tr key={getEventArtistKey(item.event_id, item.artist_id)}>
+                <td className="px-5 py-4 font-medium text-slate-700">
+                  {item.event_title}
+                </td>
+                <td className="px-5 py-4 font-semibold text-slate-900">
+                  {item.artist_name}
+                </td>
+                <td className="px-5 py-4">
+                  <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700">
+                    {item.role}
+                  </span>
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
@@ -1260,64 +1096,6 @@ const handleDeleteEventArtist = async () => {
         </div>
       )}
 
-      {canManage && eventArtistToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 px-4 backdrop-blur-sm">
-          <div className="w-full max-w-xl rounded-[28px] border border-slate-200 bg-white p-7 shadow-2xl">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-3xl font-bold text-rose-600">
-                Hapus Artist dari Event
-              </h2>
-              <button
-                onClick={() => setEventArtistToDelete(null)}
-                className="text-3xl text-slate-300 transition hover:text-slate-500"
-              >
-                ×
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <p className="text-base text-slate-600">
-                Apakah Anda yakin ingin menghapus artist ini dari event?
-              </p>
-
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                <p className="text-sm text-slate-700">
-                  <span className="font-semibold text-slate-900">Event ID:</span>{" "}
-                  {eventArtistToDelete.event_id}
-                </p>
-                <p className="mt-2 text-sm text-slate-700">
-                  <span className="font-semibold text-slate-900">Event:</span>{" "}
-                  {eventArtistToDelete.event_title}
-                </p>
-                <p className="mt-2 text-sm text-slate-700">
-                  <span className="font-semibold text-slate-900">Artist ID:</span>{" "}
-                  {eventArtistToDelete.artist_id}
-                </p>
-                <p className="mt-2 text-sm text-slate-700">
-                  <span className="font-semibold text-slate-900">Artist:</span>{" "}
-                  {eventArtistToDelete.artist_name}
-                </p>
-              </div>
-
-              <div className="flex gap-3 pt-2">
-                <button
-                  onClick={() => setEventArtistToDelete(null)}
-                  className="w-full rounded-2xl border border-slate-200 px-4 py-3 font-semibold text-slate-700 transition hover:bg-slate-50"
-                >
-                  Batal
-                </button>
-
-                <button
-                  onClick={handleDeleteEventArtist}
-                  className="w-full rounded-2xl bg-rose-600 px-4 py-3 font-semibold text-white transition hover:bg-rose-700"
-                >
-                  Hapus
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </main>
   );
 }
